@@ -39,9 +39,10 @@
     "js-beautify": "^1.10.3"
   },
   "nyc": {
-    "excludeNodeModules": true,
+    "excludeNodeModules": false,
     "report-dir": "artifacts/coverage",
     "temp-dir": "artifacts/coverage/temp",
+    "include": [ "node_modules/engine" ],
     "reporter": [
       "text",
       "html"
@@ -53,6 +54,7 @@
     "package": "./package.json",
     "reporter": "spec",
     "slow": 75,
+    "spec": "test/**/*.test.js",
     "timeout": 1000,
     "ui": "bdd",
     "watch-ignore": [
