@@ -1,0 +1,63 @@
+{
+  "name": "engine",
+  "version": "1.0.0",
+  "description": "Wasaby Template Engine",
+  "author": "Max Krylov",
+  "keywords": [
+    "wasaby",
+    "template engine",
+    "web framework",
+    "javascript"
+  ],
+  "bugs": "https://github.com/max-krylow/engine/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/max-krylow/engine"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=0.8"
+  },
+  "scripts": {
+    "precompile": "rm -rf node_modules/engine/",
+    "compile": "tsc",
+    "postcompile": "cp -R build/ node_modules/engine/",
+    "build": "npm run precompile && npm run compile && npm run postcompile",
+    "test": "mocha",
+    "coverage": "nyc npm run test"
+  },
+  "dependencies": {
+    "jison": "0.4.18"
+  },
+  "devDependencies": {
+    "eslint": "^6.4.0",
+    "typescript": "^3.6.3",
+    "tslint": "^5.18.0",
+    "chai": "^4.2.0",
+    "mocha": "^6.2.2",
+    "nyc": "^15.0.0",
+    "js-beautify": "^1.10.3"
+  },
+  "nyc": {
+    "excludeNodeModules": true,
+    "report-dir": "artifacts/coverage",
+    "temp-dir": "artifacts/coverage/temp",
+    "reporter": [
+      "text",
+      "html"
+    ]
+  },
+  "mocha": {
+    "diff": true,
+    "extension": "js",
+    "package": "./package.json",
+    "reporter": "spec",
+    "slow": 75,
+    "timeout": 1000,
+    "ui": "bdd",
+    "watch-ignore": [
+      "node_modules",
+      ".git"
+    ]
+  }
+}
