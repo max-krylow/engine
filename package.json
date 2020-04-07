@@ -23,26 +23,31 @@
     "compile": "tsc",
     "postcompile": "cp -R build/ node_modules/engine/",
     "build": "npm run precompile && npm run compile && npm run postcompile",
-    "test": "mocha",
-    "coverage": "nyc npm run test"
+    "test": "mocha test/**/*.test.js",
+    "coverage": "nyc npm run test",
+    "format": "prettier --write '**/*.{ts,md,json}'"
   },
   "dependencies": {
     "jison": "0.4.18"
   },
   "devDependencies": {
+    "@types/mocha": "7.0.2",
+    "@types/node": "13.11.0",
     "eslint": "^6.4.0",
     "typescript": "^3.6.3",
     "tslint": "^5.18.0",
     "chai": "^4.2.0",
     "mocha": "^6.2.2",
     "nyc": "^15.0.0",
-    "js-beautify": "^1.10.3"
+    "prettier": "^1.18.2"
   },
   "nyc": {
     "excludeNodeModules": false,
     "report-dir": "artifacts/coverage",
     "temp-dir": "artifacts/coverage/temp",
-    "include": [ "node_modules/engine" ],
+    "include": [
+      "node_modules/engine"
+    ],
     "reporter": [
       "text",
       "html"
@@ -61,5 +66,8 @@
       "node_modules",
       ".git"
     ]
+  },
+  "prettier": {
+    "tabWidth": 4
   }
 }

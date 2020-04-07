@@ -3,7 +3,30 @@
     "module": "commonjs",
     "target": "es5",
     "sourceMap": false,
-    "outDir": "build"
+    "outDir": "build",
+    "allowSyntheticDefaultImports": true,
+    "allowJs": false,
+    "checkJs": false,
+    "declaration": false,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "forceConsistentCasingInFileNames": true,
+    "importHelpers": true,
+    "noEmitHelpers": true,
+    "moduleResolution": "node",
+    "noEmitOnError": true,
+    "noFallthroughCasesInSwitch": false, // true
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": false, // true
+    "strictNullChecks": false, // true
+    "pretty": true,
+    "removeComments": true,
+    "baseUrl": ".src/",
+    "paths": {
+      "engine": [""]
+    }
   },
   "exclude": [
     "node_modules"
