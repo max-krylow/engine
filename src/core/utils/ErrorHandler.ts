@@ -69,6 +69,10 @@ enum ErrorHandlerLevel {
    /**
     *
     */
+   NONE = 0,
+   /**
+    *
+    */
    DEBUG = 1,
    /**
     *
@@ -77,15 +81,15 @@ enum ErrorHandlerLevel {
    /**
     *
     */
-   WARN = 4,
+   WARN = 3,
    /**
     *
     */
-   ERROR = 8,
+   ERROR = 4,
    /**
     *
     */
-   FATAL = 16
+   FATAL = 5
 }
 
 /**
@@ -95,20 +99,20 @@ class ErrorHandler implements IErrorHandler {
    /**
     *
     */
-   private readonly level: ErrorHandlerLevel;
+   private readonly emitter: IMessagesEmitter;
    /**
     *
     */
-   private readonly emitter: IMessagesEmitter;
+   private readonly level: ErrorHandlerLevel;
 
    /**
     *
     * @param level
     * @param emitter
     */
-   constructor(level: ErrorHandlerLevel, emitter: IMessagesEmitter) {
-      this.level = level;
+   constructor(emitter: IMessagesEmitter, level: ErrorHandlerLevel) {
       this.emitter = emitter;
+      this.level = level;
    }
 
    /**
@@ -116,7 +120,7 @@ class ErrorHandler implements IErrorHandler {
     * @param message
     */
    debug(message: string): void {
-      if (this.level & ErrorHandlerLevel.DEBUG) {
+      if (this.level >= ErrorHandlerLevel.DEBUG) {
          this.emitter.debug(message);
       }
    }
@@ -126,7 +130,7 @@ class ErrorHandler implements IErrorHandler {
     * @param message
     */
    info(message: string): void {
-      if (this.level & ErrorHandlerLevel.INFO) {
+      if (this.level >= ErrorHandlerLevel.INFO) {
          this.emitter.debug(message);
       }
    }
@@ -136,7 +140,7 @@ class ErrorHandler implements IErrorHandler {
     * @param message
     */
    warn(message: string): void {
-      if (this.level & ErrorHandlerLevel.WARN) {
+      if (this.level >= ErrorHandlerLevel.WARN) {
          this.emitter.debug(message);
       }
    }
@@ -146,7 +150,7 @@ class ErrorHandler implements IErrorHandler {
     * @param message
     */
    error(message: string): void {
-      if (this.level & ErrorHandlerLevel.ERROR) {
+      if (this.level >= ErrorHandlerLevel.ERROR) {
          this.emitter.debug(message);
       }
    }
@@ -156,7 +160,7 @@ class ErrorHandler implements IErrorHandler {
     * @param message
     */
    fatal(message: string): void {
-      if (this.level & ErrorHandlerLevel.FATAL) {
+      if (this.level >= ErrorHandlerLevel.FATAL) {
          this.emitter.debug(message);
       }
    }

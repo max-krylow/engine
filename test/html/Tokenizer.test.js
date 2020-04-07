@@ -8,6 +8,8 @@ const { Source } = require("engine/core/Source");
 const { SourceReader } =  require("engine/core/SourceReader");
 const { MetaInfo } =  require("engine/core/MetaInfo");
 
+const { ERROR_HANDLER } = require('../ErrorHandler');
+
 function assertAttributes(standard, actual) {
    const keys = Object.keys(standard);
    assert.strictEqual(keys.length, Object.keys(actual).length);
@@ -85,6 +87,7 @@ describe('engine/html/Tokenizer', function () {
          }];
          let tokenizer = new Tokenizer(handler);
          tokenizer.start();
+         tokenizer.setErrorHandler(ERROR_HANDLER);
          tokenizer.tokenize(reader);
       });
       it('Open tag, selfClosing=true', function () {
@@ -98,6 +101,7 @@ describe('engine/html/Tokenizer', function () {
          }];
          let tokenizer = new Tokenizer(handler);
          tokenizer.start();
+         tokenizer.setErrorHandler(ERROR_HANDLER);
          tokenizer.tokenize(reader);
       });
       it('Attributes', function () {
@@ -117,6 +121,7 @@ describe('engine/html/Tokenizer', function () {
          }];
          let tokenizer = new Tokenizer(handler);
          tokenizer.start();
+         tokenizer.setErrorHandler(ERROR_HANDLER);
          tokenizer.tokenize(reader);
       });
       it('Tags pair', function () {
@@ -133,6 +138,7 @@ describe('engine/html/Tokenizer', function () {
          }];
          let tokenizer = new Tokenizer(handler);
          tokenizer.start();
+         tokenizer.setErrorHandler(ERROR_HANDLER);
          tokenizer.tokenize(reader);
       });
       it('Comment, allowComments=false', function () {
@@ -142,6 +148,7 @@ describe('engine/html/Tokenizer', function () {
          }];
          let tokenizer = new Tokenizer(handler);
          tokenizer.start();
+         tokenizer.setErrorHandler(ERROR_HANDLER);
          tokenizer.tokenize(reader);
       });
       it('Comment, allowComments=true', function () {
@@ -154,6 +161,7 @@ describe('engine/html/Tokenizer', function () {
          }];
          let tokenizer = new Tokenizer(handler, { allowComments: true });
          tokenizer.start();
+         tokenizer.setErrorHandler(ERROR_HANDLER);
          tokenizer.tokenize(reader);
       });
       it('Text', function () {
@@ -169,6 +177,7 @@ describe('engine/html/Tokenizer', function () {
          }];
          let tokenizer = new Tokenizer(handler);
          tokenizer.start();
+         tokenizer.setErrorHandler(ERROR_HANDLER);
          tokenizer.tokenize(reader);
       });
       it('CDATA, allowCDATA=false', function () {
@@ -178,6 +187,7 @@ describe('engine/html/Tokenizer', function () {
          }];
          let tokenizer = new Tokenizer(handler);
          tokenizer.start();
+         tokenizer.setErrorHandler(ERROR_HANDLER);
          tokenizer.tokenize(reader);
       });
       it('CDATA, allowCDATA=true', function () {
@@ -190,6 +200,7 @@ describe('engine/html/Tokenizer', function () {
          }];
          let tokenizer = new Tokenizer(handler, { allowCDATA: true });
          tokenizer.start();
+         tokenizer.setErrorHandler(ERROR_HANDLER);
          tokenizer.tokenize(reader);
       });
       it('Bogus comment', function () {
@@ -202,6 +213,7 @@ describe('engine/html/Tokenizer', function () {
          }];
          let tokenizer = new Tokenizer(handler, { allowComments: true });
          tokenizer.start();
+         tokenizer.setErrorHandler(ERROR_HANDLER);
          tokenizer.tokenize(reader);
       });
       it('Doctype', function() {
@@ -214,6 +226,7 @@ describe('engine/html/Tokenizer', function () {
          }];
          let tokenizer = new Tokenizer(handler);
          tokenizer.start();
+         tokenizer.setErrorHandler(ERROR_HANDLER);
          tokenizer.tokenize(reader);
       });
    });
@@ -231,6 +244,7 @@ describe('engine/html/Tokenizer', function () {
       }];
       let tokenizer = new Tokenizer(handler);
       tokenizer.start();
+      tokenizer.setErrorHandler(ERROR_HANDLER);
       tokenizer.setState(TokenizerState.ESCAPABLE_RAW_TEXT, 'textarea');
       tokenizer.tokenize(reader);
    });
@@ -251,6 +265,7 @@ describe('engine/html/Tokenizer', function () {
       }];
       let tokenizer = new Tokenizer(handler);
       tokenizer.start();
+      tokenizer.setErrorHandler(ERROR_HANDLER);
       tokenizer.setState(TokenizerState.RAW_TEXT, 'script');
       tokenizer.tokenize(reader);
    });

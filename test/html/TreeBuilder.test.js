@@ -8,12 +8,15 @@ const { Source } = require("engine/core/Source");
 const { SourceReader } =  require("engine/core/SourceReader");
 const { MetaInfo } =  require("engine/core/MetaInfo");
 
+const { ERROR_HANDLER } = require('../ErrorHandler');
+
 const meta = new MetaInfo('test/html/TreeBuilder.test.js');
 const dummyDescriptor = function() { return {}; };
 
 function createTree(html, options) {
    let reader = new SourceReader(new Source(html, meta));
    let builder = new TreeBuilder(dummyDescriptor);
+   builder.setErrorHandler(ERROR_HANDLER);
    let tokenizer = new Tokenizer(builder, options);
    tokenizer.start();
    tokenizer.tokenize(reader);

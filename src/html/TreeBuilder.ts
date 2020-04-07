@@ -17,36 +17,33 @@ class TreeBuilder implements IBuilder {
    /**
     *
     */
-   private tree: Node[];
+   private readonly nodeDescriptor: TNodeDescriptor;
    /**
     *
     */
-   private stack: Node[];
+   private tree: Node[] = null;
    /**
     *
     */
-   private dataNode: DataNode;
+   private stack: Node[] = null;
    /**
     *
     */
-   private nodeDescriptor: TNodeDescriptor;
+   private dataNode: DataNode = null;
    /**
     *
     */
-   private errorHandler: IErrorHandler;
+   private errorHandler: IErrorHandler = null;
    /**
     *
     */
-   private tokenizer: ITokenizer;
+   private tokenizer: ITokenizer = null;
 
    /**
     *
     */
    constructor(nodeDescriptor: TNodeDescriptor) {
-      this.tree = [];
-      this.stack = [];
       this.nodeDescriptor = nodeDescriptor;
-      this.tokenizer = null;
    }
 
    /**
@@ -69,7 +66,10 @@ class TreeBuilder implements IBuilder {
     * @param tokenizer
     */
    public onStart(tokenizer: ITokenizer): void {
+      this.tree = [];
+      this.stack = [];
       this.tokenizer = tokenizer;
+      this.tokenizer.setErrorHandler(this.errorHandler);
    }
 
    /**
