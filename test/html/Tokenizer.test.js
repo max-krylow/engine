@@ -26,6 +26,7 @@ function createReader(data) {
 }
 
 const handler = {
+   onStart: function() { },
    onOpenTag: function (name, attr, selfClosing) {
       assert.isTrue(stack.length > 0);
       let node = stack.shift();

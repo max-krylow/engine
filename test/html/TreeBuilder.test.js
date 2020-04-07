@@ -9,10 +9,11 @@ const { SourceReader } =  require("engine/core/SourceReader");
 const { MetaInfo } =  require("engine/core/MetaInfo");
 
 const meta = new MetaInfo('test/html/TreeBuilder.test.js');
+const dummyDescriptor = function() { return {}; };
 
 function createTree(html, options) {
    let reader = new SourceReader(new Source(html, meta));
-   let builder = new TreeBuilder();
+   let builder = new TreeBuilder(dummyDescriptor);
    let tokenizer = new Tokenizer(builder, options);
    tokenizer.start();
    tokenizer.tokenize(reader);

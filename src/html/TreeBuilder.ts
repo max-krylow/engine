@@ -1,8 +1,14 @@
 /// <amd-module name="engine/html/TreeBuilder" />
 
 import Location from "../core/utils/Location";
-import { IAttributes, IBuilder } from "./Tokenizer";
+import { IAttributes, IBuilder, IErrorHandler, ITokenizer } from "./Tokenizer";
 import { DataNode, Node, NodeType, NodeWithChildren, TagNode } from "./Node";
+import { INodeDescription } from "./Description";
+
+/**
+ *
+ */
+declare type TNodeDescriptor = (name: string) => INodeDescription;
 
 /**
  *
@@ -20,13 +26,50 @@ class TreeBuilder implements IBuilder {
     *
     */
    private dataNode: DataNode;
+   /**
+    *
+    */
+   private nodeDescriptor: TNodeDescriptor;
+   /**
+    *
+    */
+   private errorHandler: IErrorHandler;
+   /**
+    *
+    */
+   private tokenizer: ITokenizer;
 
    /**
     *
     */
-   constructor() {
+   constructor(nodeDescriptor: TNodeDescriptor) {
       this.tree = [];
       this.stack = [];
+      this.nodeDescriptor = nodeDescriptor;
+      this.tokenizer = null;
+   }
+
+   /**
+    *
+    * @param errorHandler
+    */
+   public setErrorHandler(errorHandler: IErrorHandler): void {
+      this.errorHandler = errorHandler;
+   }
+
+   /**
+    *
+    */
+   public getErrorHandler(): IErrorHandler {
+      return this.errorHandler;
+   }
+
+   /**
+    *
+    * @param tokenizer
+    */
+   public onStart(tokenizer: ITokenizer): void {
+      this.tokenizer = tokenizer;
    }
 
    /**
@@ -37,9 +80,17 @@ class TreeBuilder implements IBuilder {
     * @param location
     */
    public onOpenTag(name: string, attributes: IAttributes, selfClosing: boolean, location?: Location): void {
+      const description = this.nodeDescriptor(name);
+      if (selfClosing) {
+         if (!(description.allowSelfClosing || description.isVoid)) {
+            this.error('tryToCloseVoidOrNotSelfClosingTag');
+         }
+      }
       let node = new TagNode(name, attributes, selfClosing);
       this.appendNode(node);
-      this.stack.push(node);
+      if (!selfClosing) {
+         this.stack.push(node);
+      }
    }
 
    /**
@@ -48,10 +99,12 @@ class TreeBuilder implements IBuilder {
     * @param location
     */
    public onCloseTag(name: string, location?: Location): void {
+      const description = this.nodeDescriptor(name);
       this.dataNode = null;
-      // check names
-      this.stack.pop();
-      // write additional info
+      if (description.isVoid) {
+         this.error('tryToCloseVoidTag');
+      }
+      this.popNode(name);
    }
 
    /**
@@ -96,7 +149,7 @@ class TreeBuilder implements IBuilder {
     *
     */
    public onEOF(): void {
-      // TODO: release
+      this.flushStack();
    }
 
    /**
@@ -141,6 +194,58 @@ class TreeBuilder implements IBuilder {
       this.dataNode = node;
    }
 
+   /**
+    *
+    * @param message
+    */
+   private error(message: string): void {
+      if (this.errorHandler && typeof this.errorHandler.error === 'function') {
+         this.errorHandler.error(message);
+      }
+   }
+
+   /**
+    *
+    * @param message
+    */
+   private warn(message: string): void {
+      if (this.errorHandler && typeof this.errorHandler.warn === 'function') {
+         this.errorHandler.warn(message);
+      }
+   }
+
+   /**
+    *
+    * @param name
+    */
+   private popNode(name: string): void {
+      for (let index = this.stack.length - 1; index >= 0; --index) {
+         const node = this.stack[index];
+         const currentNodeName = (node as TagNode).name;
+         if (currentNodeName === name) {
+            this.stack.splice(index, this.stack.length - index);
+            return;
+         }
+         if (!this.nodeDescriptor(currentNodeName).closedByParent) {
+            this.error('unexpectedClosingTagNames');
+            return;
+         }
+      }
+      this.error('wantedCloseTag');
+   }
+
+   /**
+    *
+    */
+   private flushStack(): void {
+      for (let index = this.stack.length - 1; index >= 0; --index) {
+         const node = this.stack[index];
+         const currentNodeName = (node as TagNode).name;
+         if (!this.nodeDescriptor(currentNodeName).closedByParent) {
+            this.error('gotUnclosedTags');
+         }
+      }
+   }
 }
 
 export {

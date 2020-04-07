@@ -35,6 +35,7 @@ interface ITokenizerOptions {
 }
 
 interface IBuilder {
+   onStart(tokenizer: ITokenizer): void;
    onOpenTag(name: string, attributes: IAttributes, selfClosing: boolean, location?: Location): void;
    onCloseTag(name: string, location?: Location): void;
    onText(data: string, location?: Location): void;
@@ -100,7 +101,16 @@ enum TokenizerState {
    ESCAPABLE_RAW_TEXT_END_TAG_NAME
 }
 
-class Tokenizer {
+interface ITokenizer {
+   setErrorHandler(errorHandler: IErrorHandler): void;
+   getErrorHandler(): IErrorHandler;
+   setState(state: TokenizerState, endTagExpectation?: string): void;
+   getState(): TokenizerState;
+   start(): void;
+   tokenize(source: ISourceReader): void;
+}
+
+class Tokenizer implements ITokenizer {
    private tokenHandler: IBuilder;
    private errorHandler: IErrorHandler;
    private source: ISourceReader;
@@ -158,6 +168,7 @@ class Tokenizer {
       this.selfClosing = false;
       this.index = Number.MAX_VALUE;
       this.endTagExpectation = null;
+      this.tokenHandler.onStart(this);
    }
 
    public tokenize(source: ISourceReader): void {
@@ -1786,5 +1797,6 @@ export {
    IBuilder,
    IErrorHandler,
    TokenizerState,
+   ITokenizer,
    Tokenizer
 }

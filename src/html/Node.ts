@@ -140,6 +140,10 @@ class TagNode extends NodeWithChildren {
     *
     */
    public selfClosing: boolean;
+   /**
+    *
+    */
+   public isVoid: boolean;
 
    /**
     *
