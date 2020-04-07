@@ -56,7 +56,6 @@ interface IErrorHandler {
 
 enum TokenizerState {
    DATA = 1,
-   CHARACTER_REFERENCE,
    RCDATA,
    RAWTEXT,
    RCDATA_RAWTEXT_LESS_THAN_SIGN,
@@ -123,12 +122,8 @@ class Tokenizer {
 
    private state: TokenizerState;
    private returnState: TokenizerState;
-   private saveState: TokenizerState;
-   private returnStateSave: TokenizerState;
-
    private charBuffer: string;
-   private refBuffer: string;
-   private additional: string;
+   private index: number;
 
    private endTagExpectation: string;
    private endTag: boolean;
@@ -179,12 +174,12 @@ class Tokenizer {
       this.tagName = '';
       this.selfClosing = false;
       this.lastLF = false;
+      this.index = Number.MAX_VALUE;
    }
 
    public tokenize(buffer: string): void {
       this.buffer = buffer;
       let char;
-      let index;
       let treatAsDefault;
       while (this.position < this.buffer.length) {
          char = this.consumeChar();
@@ -192,13 +187,6 @@ class Tokenizer {
             case TokenizerState.DATA:
                // Consume the next input character.
                switch (char) {
-                  case AMPERSAND:
-                     this.flushCharBuffer();
-                     this.appendCharRefBuffer(char);
-                     this.setAdditional(NULL);
-                     this.returnState = this.state;
-                     this.state = TokenizerState.CHARACTER_REFERENCE;
-                     break;
                   case LESS_THAN_SIGN:
                      this.flushCharBuffer();
                      this.state = TokenizerState.TAG_OPEN;
@@ -212,26 +200,12 @@ class Tokenizer {
                      break;
                }
                break;
-            case TokenizerState.CHARACTER_REFERENCE:
-               // Attempt to consume a character reference, with no additional allowed character.
-               // If nothing is returned, emit a U+0026 AMPERSAND character (&) token.
-               // Otherwise, emit the character token that was returned.
-               // Finally, switch to the data state.
-               this.state = TokenizerState.DATA;
-               break;
             case TokenizerState.RCDATA:
                // Consume the next input character.
                switch (char) {
-                  case AMPERSAND:
-                     this.flushCharBuffer();
-                     this.appendCharRefBuffer(char);
-                     this.setAdditional(NULL);
-                     this.returnState = this.state;
-                     this.state = TokenizerState.CHARACTER_REFERENCE;
-                     break;
                   case LESS_THAN_SIGN:
                      this.flushCharBuffer();
-                     this.returnState = this.state;
+                     this.returnState = TokenizerState.RCDATA;
                      this.state = TokenizerState.RCDATA_RAWTEXT_LESS_THAN_SIGN;
                      break;
                   case NULL:
@@ -249,7 +223,7 @@ class Tokenizer {
                switch (char) {
                   case LESS_THAN_SIGN:
                      this.flushCharBuffer();
-                     this.returnState = this.state;
+                     this.returnState = TokenizerState.RAWTEXT;
                      this.state = TokenizerState.RCDATA_RAWTEXT_LESS_THAN_SIGN;
                      break;
                   case NULL:
@@ -273,8 +247,8 @@ class Tokenizer {
                      // Emit a U+003C LESS-THAN SIGN character token
                      // and reconsume the current input character in the RCDATA state.
                      this.appendCharBuffer(LESS_THAN_SIGN);
-                     this.reconsume = true;
                      this.state = this.returnState;
+                     this.reconsume = true;
                      break;
                }
                break;
@@ -283,19 +257,17 @@ class Tokenizer {
                if (this.endTagExpectation == null) {
                   this.appendCharBuffer('</');
                   this.reconsume = true;
-                  this.state = this.returnState;
                   break;
-               } else if (index < this.endTagExpectation.length) {
-                  if (char != this.endTagExpectation[index]) {
+               } else if (this.index < this.endTagExpectation.length) {
+                  if (char != this.endTagExpectation[this.index]) {
                      this.error('errHtml4LtSlashInRcdata');
                      this.appendCharBuffer('</');
                      this.flushCharBuffer();
                      this.reconsume = true;
-                     this.state = this.returnState;
                      break;
                   }
                   this.appendCharBuffer(char);
-                  index++;
+                  this.index++;
                   break;
                } else {
                   this.endTag = true;
@@ -334,7 +306,6 @@ class Tokenizer {
                         this.cleanCharBuffer();
                         this.emitTagToken();
                         this.state = TokenizerState.SELF_CLOSING_START_TAG;
-                        this.state = this.saveState;
                         // TODO: shouldSuspend
                         break;
                      default:
@@ -351,7 +322,6 @@ class Tokenizer {
                         this.appendCharBuffer('</');
                         this.flushCharBuffer();
                         this.reconsume = true;
-                        this.state = this.returnState;
                         break;
                   }
                }
@@ -360,6 +330,7 @@ class Tokenizer {
                // Consume the next input character.
                switch (char) {
                   case LESS_THAN_SIGN:
+                     this.returnState = this.state;
                      this.state = TokenizerState.SCRIPT_DATA_LESS_THAN_SIGN;
                      break;
                   case NULL:
@@ -754,6 +725,7 @@ class Tokenizer {
                   case SOLIDUS:
                      // Set the temporary buffer to the empty string.
                      // Switch to the script data escaped end tag open state.
+                     this.returnState = TokenizerState.SCRIPT_DATA_ESCAPED;
                      this.state = TokenizerState.SCRIPT_DATA_ESCAPED_END_TAG_OPEN;
                      break;
                   default:
@@ -1245,14 +1217,6 @@ class Tokenizer {
                      this.addAttributeWithValue();
                      this.state = TokenizerState.AFTER_ATTRIBUTE_VALUE_QUOTED;
                      break;
-                  case AMPERSAND:
-                     // Switch to the character reference in attribute value state,
-                     // with the additional allowed character being U+0022 QUOTATION MARK (").
-                     this.appendCharRefBuffer(char);
-                     this.setAdditional(QUOTATION_MARK);
-                     this.returnState = this.state;
-                     this.state = TokenizerState.CHARACTER_REFERENCE;
-                     break;
                   case NULL:
                      // Parse error. Append a U+FFFD REPLACEMENT CHARACTER character to the current attribute's value.
                      // emitReplacementCharacter
@@ -1269,14 +1233,6 @@ class Tokenizer {
                   case APOSTROPHE:
                      this.addAttributeWithValue();
                      this.state = TokenizerState.AFTER_ATTRIBUTE_VALUE_QUOTED;
-                     break;
-                  case AMPERSAND:
-                     // Switch to the character reference in attribute value state,
-                     // with the additional allowed character being U+0027 APOSTROPHE (').
-                     this.appendCharRefBuffer(char);
-                     this.setAdditional(APOSTROPHE);
-                     this.returnState = this.state;
-                     this.state = TokenizerState.CHARACTER_REFERENCE;
                      break;
                   case NULL:
                      // Parse error. Append a U+FFFD REPLACEMENT CHARACTER character to the current attribute's value.
@@ -1297,14 +1253,6 @@ class Tokenizer {
                   case SPACE:
                      this.addAttributeWithValue();
                      this.state = TokenizerState.BEFORE_ATTRIBUTE_NAME;
-                     break;
-                  case AMPERSAND:
-                     // Switch to the character reference in attribute value state,
-                     // with the additional allowed character being U+003E GREATER-THAN SIGN (>).
-                     this.appendCharRefBuffer(char);
-                     this.setAdditional(GREATER_THAN_SIGN);
-                     this.returnState = this.state;
-                     this.state = TokenizerState.CHARACTER_REFERENCE;
                      break;
                   case GREATER_THAN_SIGN:
                      // Switch to the data state. Emit the current tag token.
@@ -1445,13 +1393,13 @@ class Tokenizer {
                   case 'D':
                      this.cleanCharBuffer();
                      this.state = TokenizerState.MARKUP_DECLARATION_OCTYPE;
-                     index = 0;
+                     this.index = 0;
                      break;
                   case LSQB:
                      if (this.isCDATAAllowed()) {
                         this.cleanCharBuffer();
                         this.state = TokenizerState.CDATA_START;
-                        index = 0;
+                        this.index = 0;
                         break;
                      }
                      // fallthrough
@@ -1473,10 +1421,10 @@ class Tokenizer {
                this.state = TokenizerState.BOGUS_COMMENT;
                break;
             case TokenizerState.MARKUP_DECLARATION_OCTYPE:
-               if (index < OCTYPE.length && char === OCTYPE[index]) {
+               if (this.index < OCTYPE.length && char === OCTYPE[this.index]) {
                   char = char.toUpperCase();
-                  if (char === OCTYPE[index]) {
-                     index++;
+                  if (char === OCTYPE[this.index]) {
+                     this.index++;
                   } else {
                      this.error('errBogusComment');
                      this.reconsume = true;
@@ -1484,7 +1432,7 @@ class Tokenizer {
                   }
                } else {
                   this.state = TokenizerState.DOCTYPE;
-                  index = Number.MAX_VALUE;
+                  this.index = Number.MAX_VALUE;
                }
                break;
             case TokenizerState.COMMENT_START:
@@ -1666,10 +1614,10 @@ class Tokenizer {
                }
                break;
             case TokenizerState.CDATA_START:
-               if (index < CDATA_LSQB.length && char === CDATA_LSQB[index]) {
+               if (this.index < CDATA_LSQB.length && char === CDATA_LSQB[this.index]) {
                   char = char.toUpperCase();
-                  if (char === CDATA_LSQB[index]) {
-                     index++;
+                  if (char === CDATA_LSQB[this.index]) {
+                     this.index++;
                   } else {
                      this.error('errBogusComment');
                      this.reconsume = true;
@@ -1678,7 +1626,7 @@ class Tokenizer {
                } else {
                   this.state = TokenizerState.CDATA_SECTION;
                   this.reconsume = true;
-                  index = Number.MAX_VALUE;
+                  this.index = Number.MAX_VALUE;
                }
                break;
             case TokenizerState.CDATA_SECTION:
@@ -1759,14 +1707,6 @@ class Tokenizer {
 
    private appendCharBuffer(char: string): void {
       this.charBuffer += char;
-   }
-
-   private appendCharRefBuffer(char: string): void {
-      this.refBuffer += char;
-   }
-
-   private setAdditional(additional: string): void {
-      this.additional = additional;
    }
 
    private error(message: string): void {
@@ -1875,8 +1815,7 @@ class Tokenizer {
    }
 
    private finalize(): void {
-      let state = this.saveState;
-      let returnState = this.returnStateSave;
+      let state = this.state;
       finalizeLoop: while (true) {
          switch (state) {
             case TokenizerState.SCRIPT_DATA_LESS_THAN_SIGN:
@@ -1930,23 +1869,13 @@ class Tokenizer {
                this.emitComment(0);
                break finalizeLoop;
             case TokenizerState.MARKUP_DECLARATION_OCTYPE:
-               // if (index < 6) {
-               //    errBogusComment();
-               //    emitComment(0, 0);
-               // } else {
-               //    errEofInDoctype();
-               //    doctypeName = "";
-               //    if (systemIdentifier != null) {
-               //       Portability.releaseString(systemIdentifier);
-               //       systemIdentifier = null;
-               //    }
-               //    if (publicIdentifier != null) {
-               //       Portability.releaseString(publicIdentifier);
-               //       publicIdentifier = null;
-               //    }
-               //    forceQuirks = true;
-               //    emitDoctypeToken(0);
-               // }
+               if (this.index < 6) {
+                  this.error('errBogusComment');
+                  this.emitComment(0);
+               } else {
+                  this.error('errEofInDoctype');
+                  this.emitDoctype();
+               }
                break finalizeLoop;
             case TokenizerState.COMMENT_START:
             case TokenizerState.COMMENT:
@@ -1970,18 +1899,6 @@ class Tokenizer {
                this.error('errEofInDoctype');
                this.emitDoctype();
                break finalizeLoop;
-            case TokenizerState.CHARACTER_REFERENCE:
-               // emitOrAppendCharRefBuf(returnState);
-               state = returnState;
-               continue;
-            // case TokenizerState.CHARACTER_REFERENCE_HILO_LOOKUP:
-            //    break finalizeLoop;
-            // case TokenizerState.CHARACTER_REFERENCE_TAIL:
-            //    break finalizeLoop;
-            // case TokenizerState.CONSUME_NCR:
-            // case TokenizerState.DECIMAL_NRC_LOOP:
-            // case TokenizerState.HEX_NCR_LOOP:
-            //    break finalizeLoop;
             case TokenizerState.CDATA_RSQB:
                this.appendCharBuffer('<');
                break finalizeLoop;

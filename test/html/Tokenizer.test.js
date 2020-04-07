@@ -2,9 +2,8 @@
 
 const { assert } = require('chai');
 
-const TokenizerLib = require('engine/html/Tokenizer');
-const Tokenizer = TokenizerLib.Tokenizer;
-const TokenizerState = TokenizerLib.TokenizerState;
+const { Tokenizer } = require('engine/html/Tokenizer');
+const { TokenizerState } = require('engine/html/Tokenizer');
 
 function assertAttributes(standard, actual) {
    const keys = Object.keys(standard);
