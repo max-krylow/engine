@@ -36,21 +36,11 @@ export class SourceReader implements ISourceReader, ISourceNavigation {
    consume(): string | null {
       if (this.reconsumeFlag) {
          this.reconsumeFlag = false;
-         return this.source.getChar(this.index) || EOF;
+         return this.getChar();
       }
-      if (this.index < this.source.getSize()) {
-         ++this.index;
-         ++this.column;
-      }
-      const char = this.source.getChar(this.index) || EOF;
-      if (this.lastLF) {
-         this.lastLF = false;
-         this.column = 0;
-         ++this.line;
-      }
-      if (char === LINE_FEED) {
-         this.lastLF = true;
-      }
+      this.moveNext();
+      const char = this.getChar();
+      this.updateNavigation(char);
       return char;
    }
 
@@ -73,5 +63,30 @@ export class SourceReader implements ISourceReader, ISourceNavigation {
          return this.index < this.source.getSize();
       }
       return this.index + 1 < this.source.getSize();
+   }
+
+   private updateNavigation(char: string): void {
+      if (this.lastLF) {
+         this.lastLF = false;
+         this.column = 0;
+         ++this.line;
+      }
+      if (char === LINE_FEED) {
+         this.lastLF = true;
+      }
+   }
+
+   private moveNext(): void {
+      if (this.index < this.source.getSize()) {
+         ++this.index;
+         ++this.column;
+      }
+   }
+
+   private getChar(): string | null {
+      if (this.index < this.source.getSize()) {
+         return this.source.getChar(this.index);
+      }
+      return EOF;
    }
 }
