@@ -112,7 +112,7 @@ class TreeBuilder implements IBuilder {
     */
    private appendNode(node: Node): void {
       const parent = this.stack.length > 0 ? this.stack[this.stack.length - 1] : null;
-      const siblings = parent ? (parent as NodeWithChildren).childNodes : this.tree;
+      const siblings = parent ? (parent as NodeWithChildren).children : this.tree;
       const prev = siblings.length > 0 ? siblings[siblings.length - 1] : null;
       siblings.push(node);
       if (prev) {

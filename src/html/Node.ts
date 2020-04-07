@@ -1,30 +1,6 @@
 /// <amd-module name="engine/html/Node" />
 
-import Location from "../core/utils/Location";
-
-/**
- *
- */
-interface AttributeValue {
-   /**
-    *
-    */
-   readonly location: Location;
-   /**
-    *
-    */
-   readonly value: string | null;
-}
-
-/**
- *
- */
-interface Attributes {
-   /**
-    *
-    */
-   [attribute: string]: AttributeValue;
-}
+import { IAttributes } from "./Attribute";
 
 /**
  *
@@ -34,14 +10,6 @@ enum NodeType {
     *
     */
    Tag,
-   /**
-    *
-    */
-   Script,
-   /**
-    *
-    */
-   Style,
    /**
     *
     */
@@ -67,7 +35,7 @@ class Node {
    /**
     *
     */
-   public readonly type: NodeType;
+   readonly type: NodeType;
    /**
     *
     */
@@ -95,36 +63,6 @@ class Node {
    /**
     *
     */
-   public get parentNode(): NodeWithChildren | null {
-      return this.parent || null;
-   }
-
-   /**
-    *
-    * @param parent
-    */
-   public set parentNode(parent: NodeWithChildren | null) {
-      this.parent = parent;
-   }
-
-   /**
-    *
-    */
-   public get nextSibling(): Node | null {
-      return this.next || null;
-   }
-
-   /**
-    *
-    * @param next
-    */
-   public set nextSibling(next: Node | null) {
-      this.next = next;
-   }
-
-   /**
-    *
-    */
    public toString(): string {
       return '';
    }
@@ -137,7 +75,7 @@ class DataNode extends Node {
    /**
     *
     */
-   public data: string;
+   data: string;
 
    /**
     *
@@ -146,21 +84,6 @@ class DataNode extends Node {
     */
    constructor(type: NodeType, data: string) {
       super(type);
-      this.data = data;
-   }
-
-   /**
-    *
-    */
-   public get nodeValue(): string {
-      return this.data;
-   }
-
-   /**
-    *
-    * @param data
-    */
-   public set nodeValue(data: string) {
       this.data = data;
    }
 
@@ -183,21 +106,6 @@ class DataNode extends Node {
 
 /**
  *
- * @param name
- */
-function getNodeTypeByName(name: string): NodeType {
-   switch (name) {
-      case 'script':
-         return NodeType.Script;
-      case 'style':
-         return NodeType.Style;
-      default:
-         return NodeType.Tag;
-   }
-}
-
-/**
- *
  */
 class NodeWithChildren extends Node {
    /**
@@ -214,35 +122,6 @@ class NodeWithChildren extends Node {
       super(type);
       this.children = children;
    }
-
-   /**
-    *
-    */
-   get firstChild(): Node | null {
-      return this.children[0] || null;
-   }
-
-   /**
-    *
-    */
-   get lastChild(): Node | null {
-      return this.children[this.children.length - 1] || null;
-   }
-
-   /**
-    *
-    */
-   get childNodes(): Node[] {
-      return this.children;
-   }
-
-   /**
-    *
-    * @param children
-    */
-   set childNodes(children: Node[]) {
-      this.children = children;
-   }
 }
 
 /**
@@ -256,7 +135,7 @@ class TagNode extends NodeWithChildren {
    /**
     *
     */
-   public attribs: Attributes;
+   public attribs: IAttributes;
    /**
     *
     */
@@ -268,26 +147,11 @@ class TagNode extends NodeWithChildren {
     * @param attribs
     * @param selfClosing
     */
-   constructor(name: string, attribs: Attributes, selfClosing: boolean) {
-      super(getNodeTypeByName(name), []);
+   constructor(name: string, attribs: IAttributes, selfClosing: boolean) {
+      super(NodeType.Tag, []);
       this.name = name;
       this.attribs = attribs;
       this.selfClosing = selfClosing;
-   }
-
-   /**
-    *
-    */
-   get tagName(): string {
-      return this.name;
-   }
-
-   /**
-    *
-    * @param name
-    */
-   set tagName(name: string) {
-      this.name = name;
    }
 
    /**

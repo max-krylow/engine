@@ -2,6 +2,7 @@
 
 import Location  from "../core/utils/Location";
 import { ISourceReader } from "../core/SourceReader";
+import { IAttributes, AttributeValue } from "./Attribute";
 
 const NULL: string = '\u0000';
 const AMPERSAND: string = '&';
@@ -32,15 +33,6 @@ interface ITokenizerOptions {
    tagNameToLowerCase: boolean;
 }
 
-interface IAttributeValue {
-   readonly location: Location;
-   readonly value: string | null;
-}
-
-interface IAttributes {
-   [attribute: string]: IAttributeValue;
-}
-
 interface IBuilder {
    onOpenTag(name: string, attributes: IAttributes, selfClosing: boolean, location?: Location): void;
    onCloseTag(name: string, location?: Location): void;
@@ -57,31 +49,11 @@ interface IErrorHandler {
 }
 
 enum TokenizerState {
-   DATA = 1,
-   RCDATA,
-   RAWTEXT,
-   RCDATA_RAWTEXT_LESS_THAN_SIGN,
-   NON_DATA_END_TAG_NAME,
-   SCRIPT_DATA,
-   PLAINTEXT,
+   // Data content model
+   DATA,
    TAG_OPEN,
    END_TAG_OPEN,
    TAG_NAME,
-   SCRIPT_DATA_LESS_THAN_SIGN,
-   SCRIPT_DATA_ESCAPE_START,
-   SCRIPT_DATA_ESCAPE_START_DASH,
-   SCRIPT_DATA_ESCAPED,
-   SCRIPT_DATA_ESCAPED_DASH,
-   SCRIPT_DATA_ESCAPED_DASH_DASH,
-   SCRIPT_DATA_ESCAPED_LESS_THAN_SIGN,
-   SCRIPT_DATA_ESCAPED_END_TAG_OPEN,
-   SCRIPT_DATA_ESCAPED_END_TAG_NAME,
-   SCRIPT_DATA_DOUBLE_ESCAPE_START,
-   SCRIPT_DATA_DOUBLE_ESCAPED,
-   SCRIPT_DATA_DOUBLE_ESCAPED_DASH,
-   SCRIPT_DATA_DOUBLE_ESCAPED_DASH_DASH,
-   SCRIPT_DATA_DOUBLE_ESCAPED_LESS_THAN_SIGN,
-   SCRIPT_DATA_DOUBLE_ESCAPE_END,
    BEFORE_ATTRIBUTE_NAME,
    ATTRIBUTE_NAME,
    AFTER_ATTRIBUTE_NAME,
@@ -106,7 +78,30 @@ enum TokenizerState {
    DOCTYPE,
    CDATA_SECTION,
    CDATA_RSQB,
-   CDATA_RSQB_RSQB
+   CDATA_RSQB_RSQB,
+
+   // Raw text content model
+   RAW_TEXT,
+   RAW_TEXT_LESS_THAN_SIGN,
+   RAW_TEXT_ESCAPE_START,
+   RAW_TEXT_ESCAPE_START_DASH,
+   RAW_TEXT_ESCAPED,
+   RAW_TEXT_ESCAPED_DASH,
+   RAW_TEXT_ESCAPED_DASH_DASH,
+   RAW_TEXT_ESCAPED_LESS_THAN_SIGN,
+   RAW_TEXT_ESCAPED_END_TAG_OPEN,
+   RAW_TEXT_ESCAPED_END_TAG_NAME,
+   RAW_TEXT_DOUBLE_ESCAPE_START,
+   RAW_TEXT_DOUBLE_ESCAPED,
+   RAW_TEXT_DOUBLE_ESCAPED_DASH,
+   RAW_TEXT_DATA_DOUBLE_ESCAPED_DASH_DASH,
+   RAW_TEXT_DOUBLE_ESCAPED_LESS_THAN_SIGN,
+   RAW_TEXT_DOUBLE_ESCAPE_END,
+
+   // Escapable content model
+   ESCAPABLE_RAW_TEXT,
+   ESCAPABLE_RAW_TEXT_LESS_THAN_SIGN,
+   ESCAPABLE_RAW_TEXT_END_TAG_NAME
 }
 
 class Tokenizer {
@@ -185,167 +180,6 @@ class Tokenizer {
                      break;
                   case NULL:
                      // Parse error. Emit the current input character as a character token.
-                     break;
-                  default:
-                     // Emit the current input character as a character token.
-                     this.appendCharBuffer(char);
-                     break;
-               }
-               break;
-            case TokenizerState.RCDATA:
-               // Consume the next input character.
-               switch (char) {
-                  case LESS_THAN_SIGN:
-                     this.flushCharBuffer();
-                     this.returnState = TokenizerState.RCDATA;
-                     this.state = TokenizerState.RCDATA_RAWTEXT_LESS_THAN_SIGN;
-                     break;
-                  case NULL:
-                     // Parse error. Emit a U+FFFD REPLACEMENT CHARACTER character token.
-                     // emitReplacementCharacter
-                     break;
-                  default:
-                     // Emit the current input character as a character token.
-                     this.appendCharBuffer(char);
-                     break;
-               }
-               break;
-            case TokenizerState.RAWTEXT:
-               // Consume the next input character.
-               switch (char) {
-                  case LESS_THAN_SIGN:
-                     this.flushCharBuffer();
-                     this.returnState = TokenizerState.RAWTEXT;
-                     this.state = TokenizerState.RCDATA_RAWTEXT_LESS_THAN_SIGN;
-                     break;
-                  case NULL:
-                     // Parse error. Emit a U+FFFD REPLACEMENT CHARACTER character token.
-                     // emitReplacementCharacter
-                     break;
-                  default:
-                     // Emit the current input character as a character token.
-                     this.appendCharBuffer(char);
-                     break;
-               }
-               break;
-            case TokenizerState.RCDATA_RAWTEXT_LESS_THAN_SIGN:
-               switch (char) {
-                  case SOLIDUS:
-                     // Set the temporary buffer to the empty string.
-                     this.index = 0;
-                     this.cleanCharBuffer();
-                     this.state = TokenizerState.NON_DATA_END_TAG_NAME;
-                     break;
-                  default:
-                     // Emit a U+003C LESS-THAN SIGN character token
-                     // and reconsume the current input character in the RCDATA state.
-                     this.appendCharBuffer(LESS_THAN_SIGN);
-                     this.state = this.returnState;
-                     this.source.reconsume();
-                     break;
-               }
-               break;
-            case TokenizerState.NON_DATA_END_TAG_NAME:
-               // Consume the next input character.
-               if (this.endTagExpectation === null) {
-                  this.appendCharBuffer('</');
-                  this.source.reconsume();
-                  this.state = this.returnState;
-                  break;
-               } else if (this.index < this.endTagExpectation.length) {
-                  char = char.toLowerCase();
-                  if (char !== this.endTagExpectation[this.index]) {
-                     this.error('errHtml4LtSlashInRcdata');
-                     this.appendCharBuffer('</');
-                     this.flushCharBuffer();
-                     this.source.reconsume();
-                     break;
-                  }
-                  this.appendCharBuffer(char);
-                  this.index++;
-                  break;
-               } else {
-                  this.endTag = true;
-                  this.tagName = this.endTagExpectation;
-                  this.endTagExpectation = null;
-                  switch (char) {
-                     case LINE_FEED:
-                     case SPACE:
-                     case CHARACTER_TABULATION:
-                        /*
-                         * U+0009 CHARACTER TABULATION U+000A LINE
-                         * FEED (LF) U+000C FORM FEED (FF) U+0020
-                         * SPACE If the current end tag token is an
-                         * appropriate end tag token, then switch to
-                         * the before attribute name state.
-                         */
-                        this.cleanCharBuffer();
-                        this.state = TokenizerState.BEFORE_ATTRIBUTE_NAME;
-                        break;
-                     case '/':
-                        /*
-                         * U+002F SOLIDUS (/) If the current end tag
-                         * token is an appropriate end tag token,
-                         * then switch to the self-closing start tag
-                         * state.
-                         */
-                        this.cleanCharBuffer();
-                        this.state = TokenizerState.SELF_CLOSING_START_TAG;
-                        break;
-                     case '>':
-                        /*
-                         * U+003E GREATER-THAN SIGN (>) If the
-                         * current end tag token is an appropriate
-                         * end tag token, then emit the current tag
-                         * token and switch to the data state.
-                         */
-                        this.cleanCharBuffer();
-                        this.emitTagToken();
-                        this.state = TokenizerState.SELF_CLOSING_START_TAG;
-                        // TODO: shouldSuspend
-                        break;
-                     default:
-                        /*
-                         * Emit a U+003C LESS-THAN SIGN character
-                         * token, a U+002F SOLIDUS character token,
-                         * a character token for each of the
-                         * characters in the temporary buffer (in
-                         * the order they were added to the buffer),
-                         * and reconsume the current input character
-                         * in the RAWTEXT state.
-                         */
-                        this.error('errWarnLtSlashInRcdata');
-                        this.appendCharBuffer('</');
-                        this.flushCharBuffer();
-                        this.source.reconsume();
-                        break;
-                  }
-               }
-               break;
-            case TokenizerState.SCRIPT_DATA:
-               // Consume the next input character.
-               switch (char) {
-                  case LESS_THAN_SIGN:
-                     this.flushCharBuffer();
-                     this.returnState = this.state;
-                     this.state = TokenizerState.SCRIPT_DATA_LESS_THAN_SIGN;
-                     break;
-                  case NULL:
-                     // Parse error. Emit a U+FFFD REPLACEMENT CHARACTER character token.
-                     // emitReplacementCharacter
-                     break;
-                  default:
-                     // Emit the current input character as a character token.
-                     this.appendCharBuffer(char);
-                     break;
-               }
-               break;
-            case TokenizerState.PLAINTEXT:
-               // Consume the next input character.
-               switch (char) {
-                  case NULL:
-                     // Parse error. Emit a U+FFFD REPLACEMENT CHARACTER character token.
-                     // emitReplacementCharacter
                      break;
                   default:
                      // Emit the current input character as a character token.
@@ -479,446 +313,6 @@ class Tokenizer {
                   default:
                      // Append the current input character to the current tag token's tag name.
                      this.appendCharBuffer(char);
-                     break;
-               }
-               break;
-            case TokenizerState.SCRIPT_DATA_LESS_THAN_SIGN:
-               // Consume the next input character.
-               switch (char) {
-                  case SOLIDUS:
-                     // Set the temporary buffer to the empty string.
-                     // Switch to the script data end tag open state.
-                     this.index = 0;
-                     this.cleanCharBuffer();
-                     this.state = TokenizerState.NON_DATA_END_TAG_NAME;
-                     break;
-                  case EXCLAMATION_MARK:
-                     // Switch to the script data escape start state.
-                     // Emit a U+003C LESS-THAN SIGN character token
-                     // and a U+0021 EXCLAMATION MARK character token.
-                     this.appendCharBuffer('<');
-                     this.state = TokenizerState.SCRIPT_DATA_ESCAPE_START;
-                     break;
-                  default:
-                     // Emit a U+003C LESS-THAN SIGN character token
-                     // and reconsume the current input character in the script data state.
-                     this.source.reconsume();
-                     this.appendCharBuffer('<');
-                     this.state = TokenizerState.SCRIPT_DATA;
-                     break;
-               }
-               break;
-            case TokenizerState.SCRIPT_DATA_ESCAPE_START:
-               // Consume the next input character.
-               switch (char) {
-                  case HYPHEN_MINUS:
-                     // Switch to the script data escape start dash state.
-                     // Emit a U+002D HYPHEN-MINUS character token.
-                     this.state = TokenizerState.SCRIPT_DATA_ESCAPE_START_DASH;
-                     break;
-                  default:
-                     // Reconsume the current input character in the script data state.
-                     this.source.reconsume();
-                     this.state = TokenizerState.SCRIPT_DATA;
-                     break;
-               }
-               break;
-            case TokenizerState.SCRIPT_DATA_ESCAPE_START_DASH:
-               // Consume the next input character.
-               switch (char) {
-                  case HYPHEN_MINUS:
-                     // Switch to the script data escaped dash dash state.
-                     // Emit a U+002D HYPHEN-MINUS character token.
-                     this.state = TokenizerState.SCRIPT_DATA_ESCAPED_DASH_DASH;
-                     break;
-                  default:
-                     // Reconsume the current input character in the script data state.
-                     this.source.reconsume();
-                     this.state = TokenizerState.SCRIPT_DATA;
-                     break;
-               }
-               break;
-            case TokenizerState.SCRIPT_DATA_ESCAPED:
-               // Consume the next input character.
-               switch (char) {
-                  case HYPHEN_MINUS:
-                     // Switch to the script data escaped dash state.
-                     // Emit a U+002D HYPHEN-MINUS character token.
-                     this.state = TokenizerState.SCRIPT_DATA_ESCAPED_DASH;
-                     break;
-                  case LESS_THAN_SIGN:
-                     this.state = TokenizerState.SCRIPT_DATA_DOUBLE_ESCAPED_LESS_THAN_SIGN;
-                     break;
-                  case NULL:
-                     // Parse error. Switch to the script data escaped state.
-                     // Emit a U+FFFD REPLACEMENT CHARACTER character token.
-                     // emitReplacementCharacter
-                     this.state = TokenizerState.SCRIPT_DATA_ESCAPED;
-                     break;
-                  default:
-                     // Switch to the script data escaped state.
-                     // Emit the current input character as a character token.
-                     this.state = TokenizerState.SCRIPT_DATA_ESCAPED;
-                     break;
-               }
-               break;
-            case TokenizerState.SCRIPT_DATA_ESCAPED_DASH:
-               // Consume the next input character.
-               switch (char) {
-                  case HYPHEN_MINUS:
-                     // Emit a U+002D HYPHEN-MINUS character token.
-                     this.state = TokenizerState.SCRIPT_DATA_ESCAPED_DASH_DASH;
-                     break;
-                  case LESS_THAN_SIGN:
-                     // Switch to the script data escaped less-than sign state.
-                     this.state = TokenizerState.SCRIPT_DATA_ESCAPED_LESS_THAN_SIGN;
-                     break;
-                  case NULL:
-                     // Parse error. Switch to the script data escaped state.
-                     // Emit a U+FFFD REPLACEMENT CHARACTER character token.
-                     // emitReplacementCharacter
-                     this.state = TokenizerState.SCRIPT_DATA_ESCAPED;
-                     break;
-                  default:
-                     // Switch to the script data escaped state.
-                     // Emit the current input character as a character token.
-                     this.state = TokenizerState.SCRIPT_DATA_ESCAPED;
-                     break;
-               }
-               break;
-            case TokenizerState.SCRIPT_DATA_ESCAPED_DASH_DASH:
-               // Consume the next input character.
-               switch (char) {
-                  case HYPHEN_MINUS:
-                     // Emit a U+002D HYPHEN-MINUS character token.
-                     break;
-                  case LESS_THAN_SIGN:
-                     // Switch to the script data escaped less-than sign state.
-                     this.state = TokenizerState.SCRIPT_DATA_ESCAPED_LESS_THAN_SIGN;
-                     break;
-                  case GREATER_THAN_SIGN:
-                     // Switch to the script data state.
-                     // Emit a U+003E GREATER-THAN SIGN character token.
-                     this.state = TokenizerState.SCRIPT_DATA;
-                     break;
-                  case NULL:
-                     // Parse error. Switch to the script data escaped state.
-                     // Emit a U+FFFD REPLACEMENT CHARACTER character token.
-                     // emitReplacementCharacter
-                     this.state = TokenizerState.SCRIPT_DATA_ESCAPED;
-                     break;
-                  default:
-                     // Switch to the script data escaped state.
-                     // Emit the current input character as a character token.
-                     this.state = TokenizerState.SCRIPT_DATA_ESCAPED;
-                     break;
-               }
-               break;
-            case TokenizerState.SCRIPT_DATA_ESCAPED_LESS_THAN_SIGN:
-               // Consume the next input character.
-               if (char >= 'A' && char <= 'Z') {
-                  // Set the temporary buffer to the empty string.
-                  // Append the lowercase version of the current input character
-                  // (add 0x0020 to the character's code point) to the temporary buffer.
-                  // Switch to the script data double escape start state.
-                  // Emit a U+003C LESS-THAN SIGN character token
-                  // and the current input character as a character token.
-                  this.state = TokenizerState.SCRIPT_DATA_DOUBLE_ESCAPE_START;
-                  break;
-               }
-               if (char >= 'a' && char <= 'z') {
-                  // Set the temporary buffer to the empty string.
-                  // Append the current input character to the temporary buffer.
-                  // Switch to the script data double escape start state.
-                  // Emit a U+003C LESS-THAN SIGN character token
-                  // and the current input character as a character token.
-                  this.state = TokenizerState.SCRIPT_DATA_DOUBLE_ESCAPE_START;
-                  break;
-               }
-               switch (char) {
-                  case SOLIDUS:
-                     // Set the temporary buffer to the empty string.
-                     // Switch to the script data escaped end tag open state.
-                     this.returnState = TokenizerState.SCRIPT_DATA_ESCAPED;
-                     this.state = TokenizerState.SCRIPT_DATA_ESCAPED_END_TAG_OPEN;
-                     break;
-                  default:
-                     // Emit a U+003C LESS-THAN SIGN character token
-                     // and reconsume the current input character in the script data escaped state.
-                     this.source.reconsume();
-                     this.state = TokenizerState.SCRIPT_DATA_ESCAPED;
-                     break;
-               }
-               break;
-            case TokenizerState.SCRIPT_DATA_ESCAPED_END_TAG_OPEN:
-               // Consume the next input character.
-               if (char >= 'A' && char <= 'Z') {
-                  // Create a new end tag token, and set its tag name
-                  // to the lowercase version of the current input character
-                  // (add 0x0020 to the character's code point).
-                  // Append the current input character to the temporary buffer.
-                  // Finally, switch to the script data escaped end tag name state.
-                  // (Don't emit the token yet; further details will be filled in before it is emitted.)
-                  this.state = TokenizerState.SCRIPT_DATA_ESCAPED_END_TAG_NAME;
-                  break;
-               }
-               else if (char >= 'a' && char <= 'z') {
-                  // Create a new end tag token, and set its tag name to the current input character.
-                  // Append the current input character to the temporary buffer.
-                  // Finally, switch to the script data escaped end tag name state.
-                  // (Don't emit the token yet; further details will be filled in before it is emitted.)
-                  this.state = TokenizerState.SCRIPT_DATA_ESCAPED_END_TAG_NAME;
-                  break;
-               }
-               else {
-                  // Emit a U+003C LESS-THAN SIGN character token, a U+002F SOLIDUS character token,
-                  // and reconsume the current input character in the script data escaped state.
-                  this.source.reconsume();
-                  this.state = TokenizerState.SCRIPT_DATA_ESCAPED;
-               }
-               break;
-            case TokenizerState.SCRIPT_DATA_ESCAPED_END_TAG_NAME:
-               // Consume the next input character.
-               if (char >= 'A' && char <= 'Z') {
-                  // Append the lowercase version of the current input character
-                  // (add 0x0020 to the character's code point) to the current tag token's tag name.
-                  // Append the current input character to the temporary buffer.
-                  break;
-               }
-               if (char >= 'a' && char <= 'z') {
-                  // Append the current input character to the current tag token's tag name.
-                  // Append the current input character to the temporary buffer.
-                  this.state = TokenizerState.SCRIPT_DATA_ESCAPED_END_TAG_NAME;
-                  break;
-               }
-               treatAsDefault = false;
-               switch (char) {
-                  case CHARACTER_TABULATION:
-                  case LINE_FEED:
-                  case FORM_FEED:
-                  case SPACE:
-                     // If the current end tag token is an appropriate end tag token,
-                     // then switch to the before attribute name state.
-                     // Otherwise, treat it as per the "anything else" entry below.
-                     // TODO: release state
-                     if (char.indexOf('random')) {
-                        this.state = TokenizerState.BEFORE_ATTRIBUTE_NAME;
-                        break;
-                     }
-                     treatAsDefault = true;
-                     break;
-                  case SOLIDUS:
-                     // If the current end tag token is an appropriate end tag token,
-                     // then switch to the self-closing start tag state.
-                     // Otherwise, treat it as per the "anything else" entry below.
-                     // TODO: release state
-                     if (char.indexOf('random')) {
-                        this.state = TokenizerState.SELF_CLOSING_START_TAG;
-                        break;
-                     }
-                     treatAsDefault = true;
-                     break;
-                  case GREATER_THAN_SIGN:
-                     // If the current end tag token is an appropriate end tag token,
-                     // then emit the current tag token and switch to the data state.
-                     // Otherwise, treat it as per the "anything else" entry below.
-                     // TODO: release state
-                     if (char.indexOf('random')) {
-                        this.state = TokenizerState.DATA;
-                        break;
-                     }
-                     treatAsDefault = true;
-                     break;
-                  default:
-                     treatAsDefault = true;
-                     break;
-               }
-               if (treatAsDefault) {
-                  // Emit a U+003C LESS-THAN SIGN character token, a U+002F SOLIDUS character token,
-                  // a character token for each of the characters in the temporary buffer
-                  // (in the order they were added to the buffer),
-                  // and reconsume the current input character in the script data escaped state.
-                  this.source.reconsume();
-                  this.state = TokenizerState.SCRIPT_DATA_ESCAPED;
-               }
-               break;
-            case TokenizerState.SCRIPT_DATA_DOUBLE_ESCAPE_START:
-               // Consume the next input character.
-               if (char >= 'A' && char <= 'Z') {
-                  // Append the lowercase version of the current input character
-                  // (add 0x0020 to the character's code point) to the temporary buffer.
-                  // Emit the current input character as a character token.
-                  break;
-               }
-               if (char >= 'a' && char <= 'z') {
-                  // Append the current input character to the temporary buffer.
-                  // Emit the current input character as a character token.
-                  break;
-               }
-               switch (char) {
-                  case CHARACTER_TABULATION:
-                  case LINE_FEED:
-                  case FORM_FEED:
-                  case SPACE:
-                  case SOLIDUS:
-                  case GREATER_THAN_SIGN:
-                     // If the temporary buffer is the string "script",
-                     // then switch to the script data double escaped state.
-                     // Otherwise, switch to the script data escaped state.
-                     // Emit the current input character as a character token.
-                     if (this.index < SCRIPT.length) {
-                        char = char.toUpperCase();
-                        if (char === SCRIPT[this.index]) {
-                           this.index++;
-                        } else {
-                           this.source.reconsume();
-                           this.state = TokenizerState.SCRIPT_DATA_ESCAPED;
-                        }
-                     } else {
-                        this.state = TokenizerState.SCRIPT_DATA_DOUBLE_ESCAPED;
-                        this.index = Number.MAX_VALUE;
-                     }
-                     break;
-                  default:
-                     // Reconsume the current input character in the script data escaped state.
-                     this.source.reconsume();
-                     this.state = TokenizerState.SCRIPT_DATA_ESCAPED;
-                     break;
-               }
-               break;
-            case TokenizerState.SCRIPT_DATA_DOUBLE_ESCAPED:
-               // Consume the next input character.
-               switch (char) {
-                  case HYPHEN_MINUS:
-                     // Switch to the script data double escaped dash state.
-                     // Emit a U+002D HYPHEN-MINUS character token.
-                     this.state = TokenizerState.SCRIPT_DATA_DOUBLE_ESCAPED_DASH;
-                     break;
-                  case LESS_THAN_SIGN:
-                     // Switch to the script data double escaped less-than sign state.
-                     // Emit a U+003C LESS-THAN SIGN character token.
-                     this.state = TokenizerState.SCRIPT_DATA_DOUBLE_ESCAPED_LESS_THAN_SIGN;
-                     break;
-                  case NULL:
-                     // Parse error. Emit a U+FFFD REPLACEMENT CHARACTER character token.
-                     // emitReplacementCharacter
-                     break;
-                  default:
-                     // Emit the current input character as a character token.
-                     break;
-               }
-               break;
-            case TokenizerState.SCRIPT_DATA_DOUBLE_ESCAPED_DASH:
-               // Consume the next input character.
-               switch (char) {
-                  case HYPHEN_MINUS:
-                     // Switch to the script data double escaped dash dash state.
-                     // Emit a U+002D HYPHEN-MINUS character token.
-                     this.state = TokenizerState.SCRIPT_DATA_DOUBLE_ESCAPED_DASH_DASH;
-                     break;
-                  case LESS_THAN_SIGN:
-                     // Switch to the script data double escaped less-than sign state.
-                     // Emit a U+003C LESS-THAN SIGN character token.
-                     this.state = TokenizerState.SCRIPT_DATA_DOUBLE_ESCAPED_LESS_THAN_SIGN;
-                     break;
-                  case NULL:
-                     // Parse error. Switch to the script data double escaped state.
-                     // Emit a U+FFFD REPLACEMENT CHARACTER character token.
-                     // emitReplacementCharacter
-                     this.state = TokenizerState.SCRIPT_DATA_DOUBLE_ESCAPED;
-                     break;
-                  default:
-                     // Switch to the script data double escaped state.
-                     // Emit the current input character as a character token.
-                     this.state = TokenizerState.SCRIPT_DATA_DOUBLE_ESCAPED;
-                     break;
-               }
-               break;
-            case TokenizerState.SCRIPT_DATA_DOUBLE_ESCAPED_DASH_DASH:
-               // Consume the next input character.
-               switch (char) {
-                  case HYPHEN_MINUS:
-                     // Emit a U+002D HYPHEN-MINUS character token.
-                     break;
-                  case LESS_THAN_SIGN:
-                     // Switch to the script data double escaped less-than sign state.
-                     // Emit a U+003C LESS-THAN SIGN character token.
-                     this.state = TokenizerState.SCRIPT_DATA_DOUBLE_ESCAPED_LESS_THAN_SIGN;
-                     break;
-                  case GREATER_THAN_SIGN:
-                     // Switch to the script data state. Emit a U+003E GREATER-THAN SIGN character token.
-                     this.state = TokenizerState.SCRIPT_DATA;
-                     break;
-                  case NULL:
-                     // Parse error. Switch to the script data double escaped state.
-                     // Emit a U+FFFD REPLACEMENT CHARACTER character token.
-                     // emitReplacementCharacter
-                     this.state = TokenizerState.SCRIPT_DATA_DOUBLE_ESCAPED;
-                     break;
-                  default:
-                     // Switch to the script data double escaped state.
-                     // Emit the current input character as a character token.
-                     this.state = TokenizerState.SCRIPT_DATA_DOUBLE_ESCAPED;
-                     break;
-               }
-               break;
-            case TokenizerState.SCRIPT_DATA_DOUBLE_ESCAPED_LESS_THAN_SIGN:
-               // Consume the next input character.
-               switch (char) {
-                  case SOLIDUS:
-                     // Set the temporary buffer to the empty string.
-                     // Switch to the script data double escape end state.
-                     // Emit a U+002F SOLIDUS character token.
-                     this.index = 0;
-                     this.state = TokenizerState.SCRIPT_DATA_DOUBLE_ESCAPE_END;
-                     break;
-                  default:
-                     // Reconsume the current input character in the script data double escaped state.
-                     this.source.reconsume();
-                     this.state = TokenizerState.SCRIPT_DATA_DOUBLE_ESCAPED;
-                     break;
-               }
-               break;
-            case TokenizerState.SCRIPT_DATA_DOUBLE_ESCAPE_END:
-               // Consume the next input character.
-               if (char >= 'A' && char <= 'Z') {
-                  // Append the lowercase version of the current input character
-                  // (add 0x0020 to the character's code point) to the temporary buffer.
-                  // Emit the current input character as a character token.
-                  break;
-               }
-               if (char >= 'a' && char <= 'z') {
-                  // Append the current input character to the temporary buffer.
-                  // Emit the current input character as a character token.
-                  break;
-               }
-               switch (char) {
-                  case CHARACTER_TABULATION:
-                  case LINE_FEED:
-                  case FORM_FEED:
-                  case SPACE:
-                  case SOLIDUS:
-                  case GREATER_THAN_SIGN:
-                     // If the temporary buffer is the string "script", then switch to the script data escaped state.
-                     // Otherwise, switch to the script data double escaped state.
-                     // Emit the current input character as a character token.
-                     if (this.index < SCRIPT.length) {
-                        char = char.toUpperCase();
-                        if (char === SCRIPT[this.index]) {
-                           this.index++;
-                        } else {
-                           this.source.reconsume();
-                           this.state = TokenizerState.SCRIPT_DATA_DOUBLE_ESCAPED;
-                        }
-                     } else {
-                        this.state = TokenizerState.SCRIPT_DATA_ESCAPED;
-                        this.index = Number.MAX_VALUE;
-                     }
-                     break;
-                  default:
-                     // Reconsume the current input character in the script data double escaped state.
-                     this.source.reconsume();
-                     this.state = TokenizerState.SCRIPT_DATA_DOUBLE_ESCAPED;
                      break;
                }
                break;
@@ -1201,7 +595,7 @@ class Tokenizer {
                   case GRAVE_ACCENT:
                      // Parse error. Treat it as per the "anything else" entry below.
                      this.error('errUnquotedAttributeValOrNull');
-                     // fallthrough
+                  // fallthrough
                   default:
                      // Append the current input character to the current attribute's value.
                      this.error('errHtml4NonNameInUnquotedAttribute');
@@ -1332,7 +726,7 @@ class Tokenizer {
                         this.index = 0;
                         break;
                      }
-                     // fallthrough
+                  // fallthrough
                   default:
                      this.error('errBogusComment');
                      this.cleanCharBuffer();
@@ -1619,6 +1013,576 @@ class Tokenizer {
                      break;
                }
                break;
+            case TokenizerState.RAW_TEXT:
+               // Consume the next input character.
+               switch (char) {
+                  case LESS_THAN_SIGN:
+                     this.flushCharBuffer();
+                     this.returnState = this.state;
+                     this.state = TokenizerState.RAW_TEXT_LESS_THAN_SIGN;
+                     break;
+                  case NULL:
+                     // Parse error. Emit a U+FFFD REPLACEMENT CHARACTER character token.
+                     // emitReplacementCharacter
+                     break;
+                  default:
+                     // Emit the current input character as a character token.
+                     this.appendCharBuffer(char);
+                     break;
+               }
+               break;
+            case TokenizerState.RAW_TEXT_LESS_THAN_SIGN:
+               // Consume the next input character.
+               switch (char) {
+                  case SOLIDUS:
+                     // Set the temporary buffer to the empty string.
+                     // Switch to the script data end tag open state.
+                     this.index = 0;
+                     this.cleanCharBuffer();
+                     this.state = TokenizerState.ESCAPABLE_RAW_TEXT_END_TAG_NAME;
+                     break;
+                  case EXCLAMATION_MARK:
+                     // Switch to the script data escape start state.
+                     // Emit a U+003C LESS-THAN SIGN character token
+                     // and a U+0021 EXCLAMATION MARK character token.
+                     this.appendCharBuffer('<');
+                     this.state = TokenizerState.RAW_TEXT_ESCAPE_START;
+                     break;
+                  default:
+                     // Emit a U+003C LESS-THAN SIGN character token
+                     // and reconsume the current input character in the script data state.
+                     this.source.reconsume();
+                     this.appendCharBuffer('<');
+                     this.state = TokenizerState.RAW_TEXT;
+                     break;
+               }
+               break;
+            case TokenizerState.RAW_TEXT_ESCAPE_START:
+               // Consume the next input character.
+               switch (char) {
+                  case HYPHEN_MINUS:
+                     // Switch to the script data escape start dash state.
+                     // Emit a U+002D HYPHEN-MINUS character token.
+                     this.state = TokenizerState.RAW_TEXT_ESCAPE_START_DASH;
+                     break;
+                  default:
+                     // Reconsume the current input character in the script data state.
+                     this.source.reconsume();
+                     this.state = TokenizerState.RAW_TEXT;
+                     break;
+               }
+               break;
+            case TokenizerState.RAW_TEXT_ESCAPE_START_DASH:
+               // Consume the next input character.
+               switch (char) {
+                  case HYPHEN_MINUS:
+                     // Switch to the script data escaped dash dash state.
+                     // Emit a U+002D HYPHEN-MINUS character token.
+                     this.state = TokenizerState.RAW_TEXT_ESCAPED_DASH_DASH;
+                     break;
+                  default:
+                     // Reconsume the current input character in the script data state.
+                     this.source.reconsume();
+                     this.state = TokenizerState.RAW_TEXT;
+                     break;
+               }
+               break;
+            case TokenizerState.RAW_TEXT_ESCAPED:
+               // Consume the next input character.
+               switch (char) {
+                  case HYPHEN_MINUS:
+                     // Switch to the script data escaped dash state.
+                     // Emit a U+002D HYPHEN-MINUS character token.
+                     this.state = TokenizerState.RAW_TEXT_ESCAPED_DASH;
+                     break;
+                  case LESS_THAN_SIGN:
+                     this.state = TokenizerState.RAW_TEXT_DOUBLE_ESCAPED_LESS_THAN_SIGN;
+                     break;
+                  case NULL:
+                     // Parse error. Switch to the script data escaped state.
+                     // Emit a U+FFFD REPLACEMENT CHARACTER character token.
+                     // emitReplacementCharacter
+                     this.state = TokenizerState.RAW_TEXT_ESCAPED;
+                     break;
+                  default:
+                     // Switch to the script data escaped state.
+                     // Emit the current input character as a character token.
+                     this.state = TokenizerState.RAW_TEXT_ESCAPED;
+                     break;
+               }
+               break;
+            case TokenizerState.RAW_TEXT_ESCAPED_DASH:
+               // Consume the next input character.
+               switch (char) {
+                  case HYPHEN_MINUS:
+                     // Emit a U+002D HYPHEN-MINUS character token.
+                     this.state = TokenizerState.RAW_TEXT_ESCAPED_DASH_DASH;
+                     break;
+                  case LESS_THAN_SIGN:
+                     // Switch to the script data escaped less-than sign state.
+                     this.state = TokenizerState.RAW_TEXT_ESCAPED_LESS_THAN_SIGN;
+                     break;
+                  case NULL:
+                     // Parse error. Switch to the script data escaped state.
+                     // Emit a U+FFFD REPLACEMENT CHARACTER character token.
+                     // emitReplacementCharacter
+                     this.state = TokenizerState.RAW_TEXT_ESCAPED;
+                     break;
+                  default:
+                     // Switch to the script data escaped state.
+                     // Emit the current input character as a character token.
+                     this.state = TokenizerState.RAW_TEXT_ESCAPED;
+                     break;
+               }
+               break;
+            case TokenizerState.RAW_TEXT_ESCAPED_DASH_DASH:
+               // Consume the next input character.
+               switch (char) {
+                  case HYPHEN_MINUS:
+                     // Emit a U+002D HYPHEN-MINUS character token.
+                     break;
+                  case LESS_THAN_SIGN:
+                     // Switch to the script data escaped less-than sign state.
+                     this.state = TokenizerState.RAW_TEXT_ESCAPED_LESS_THAN_SIGN;
+                     break;
+                  case GREATER_THAN_SIGN:
+                     // Switch to the script data state.
+                     // Emit a U+003E GREATER-THAN SIGN character token.
+                     this.state = TokenizerState.RAW_TEXT;
+                     break;
+                  case NULL:
+                     // Parse error. Switch to the script data escaped state.
+                     // Emit a U+FFFD REPLACEMENT CHARACTER character token.
+                     // emitReplacementCharacter
+                     this.state = TokenizerState.RAW_TEXT_ESCAPED;
+                     break;
+                  default:
+                     // Switch to the script data escaped state.
+                     // Emit the current input character as a character token.
+                     this.state = TokenizerState.RAW_TEXT_ESCAPED;
+                     break;
+               }
+               break;
+            case TokenizerState.RAW_TEXT_ESCAPED_LESS_THAN_SIGN:
+               // Consume the next input character.
+               if (char >= 'A' && char <= 'Z') {
+                  // Set the temporary buffer to the empty string.
+                  // Append the lowercase version of the current input character
+                  // (add 0x0020 to the character's code point) to the temporary buffer.
+                  // Switch to the script data double escape start state.
+                  // Emit a U+003C LESS-THAN SIGN character token
+                  // and the current input character as a character token.
+                  this.state = TokenizerState.RAW_TEXT_DOUBLE_ESCAPE_START;
+                  break;
+               }
+               if (char >= 'a' && char <= 'z') {
+                  // Set the temporary buffer to the empty string.
+                  // Append the current input character to the temporary buffer.
+                  // Switch to the script data double escape start state.
+                  // Emit a U+003C LESS-THAN SIGN character token
+                  // and the current input character as a character token.
+                  this.state = TokenizerState.RAW_TEXT_DOUBLE_ESCAPE_START;
+                  break;
+               }
+               switch (char) {
+                  case SOLIDUS:
+                     // Set the temporary buffer to the empty string.
+                     // Switch to the script data escaped end tag open state.
+                     this.returnState = TokenizerState.RAW_TEXT_ESCAPED;
+                     this.state = TokenizerState.RAW_TEXT_ESCAPED_END_TAG_OPEN;
+                     break;
+                  default:
+                     // Emit a U+003C LESS-THAN SIGN character token
+                     // and reconsume the current input character in the script data escaped state.
+                     this.source.reconsume();
+                     this.state = TokenizerState.RAW_TEXT_ESCAPED;
+                     break;
+               }
+               break;
+            case TokenizerState.RAW_TEXT_ESCAPED_END_TAG_OPEN:
+               // Consume the next input character.
+               if (char >= 'A' && char <= 'Z') {
+                  // Create a new end tag token, and set its tag name
+                  // to the lowercase version of the current input character
+                  // (add 0x0020 to the character's code point).
+                  // Append the current input character to the temporary buffer.
+                  // Finally, switch to the script data escaped end tag name state.
+                  // (Don't emit the token yet; further details will be filled in before it is emitted.)
+                  this.state = TokenizerState.RAW_TEXT_ESCAPED_END_TAG_NAME;
+                  break;
+               }
+               else if (char >= 'a' && char <= 'z') {
+                  // Create a new end tag token, and set its tag name to the current input character.
+                  // Append the current input character to the temporary buffer.
+                  // Finally, switch to the script data escaped end tag name state.
+                  // (Don't emit the token yet; further details will be filled in before it is emitted.)
+                  this.state = TokenizerState.RAW_TEXT_ESCAPED_END_TAG_NAME;
+                  break;
+               }
+               else {
+                  // Emit a U+003C LESS-THAN SIGN character token, a U+002F SOLIDUS character token,
+                  // and reconsume the current input character in the script data escaped state.
+                  this.source.reconsume();
+                  this.state = TokenizerState.RAW_TEXT_ESCAPED;
+               }
+               break;
+            case TokenizerState.RAW_TEXT_ESCAPED_END_TAG_NAME:
+               // Consume the next input character.
+               if (char >= 'A' && char <= 'Z') {
+                  // Append the lowercase version of the current input character
+                  // (add 0x0020 to the character's code point) to the current tag token's tag name.
+                  // Append the current input character to the temporary buffer.
+                  break;
+               }
+               if (char >= 'a' && char <= 'z') {
+                  // Append the current input character to the current tag token's tag name.
+                  // Append the current input character to the temporary buffer.
+                  this.state = TokenizerState.RAW_TEXT_ESCAPED_END_TAG_NAME;
+                  break;
+               }
+               treatAsDefault = false;
+               switch (char) {
+                  case CHARACTER_TABULATION:
+                  case LINE_FEED:
+                  case FORM_FEED:
+                  case SPACE:
+                     // If the current end tag token is an appropriate end tag token,
+                     // then switch to the before attribute name state.
+                     // Otherwise, treat it as per the "anything else" entry below.
+                     // TODO: release state
+                     if (char.indexOf('random')) {
+                        this.state = TokenizerState.BEFORE_ATTRIBUTE_NAME;
+                        break;
+                     }
+                     treatAsDefault = true;
+                     break;
+                  case SOLIDUS:
+                     // If the current end tag token is an appropriate end tag token,
+                     // then switch to the self-closing start tag state.
+                     // Otherwise, treat it as per the "anything else" entry below.
+                     // TODO: release state
+                     if (char.indexOf('random')) {
+                        this.state = TokenizerState.SELF_CLOSING_START_TAG;
+                        break;
+                     }
+                     treatAsDefault = true;
+                     break;
+                  case GREATER_THAN_SIGN:
+                     // If the current end tag token is an appropriate end tag token,
+                     // then emit the current tag token and switch to the data state.
+                     // Otherwise, treat it as per the "anything else" entry below.
+                     // TODO: release state
+                     if (char.indexOf('random')) {
+                        this.state = TokenizerState.DATA;
+                        break;
+                     }
+                     treatAsDefault = true;
+                     break;
+                  default:
+                     treatAsDefault = true;
+                     break;
+               }
+               if (treatAsDefault) {
+                  // Emit a U+003C LESS-THAN SIGN character token, a U+002F SOLIDUS character token,
+                  // a character token for each of the characters in the temporary buffer
+                  // (in the order they were added to the buffer),
+                  // and reconsume the current input character in the script data escaped state.
+                  this.source.reconsume();
+                  this.state = TokenizerState.RAW_TEXT_ESCAPED;
+               }
+               break;
+            case TokenizerState.RAW_TEXT_DOUBLE_ESCAPE_START:
+               // Consume the next input character.
+               if (char >= 'A' && char <= 'Z') {
+                  // Append the lowercase version of the current input character
+                  // (add 0x0020 to the character's code point) to the temporary buffer.
+                  // Emit the current input character as a character token.
+                  break;
+               }
+               if (char >= 'a' && char <= 'z') {
+                  // Append the current input character to the temporary buffer.
+                  // Emit the current input character as a character token.
+                  break;
+               }
+               switch (char) {
+                  case CHARACTER_TABULATION:
+                  case LINE_FEED:
+                  case FORM_FEED:
+                  case SPACE:
+                  case SOLIDUS:
+                  case GREATER_THAN_SIGN:
+                     // If the temporary buffer is the string "script",
+                     // then switch to the script data double escaped state.
+                     // Otherwise, switch to the script data escaped state.
+                     // Emit the current input character as a character token.
+                     if (this.index < SCRIPT.length) {
+                        char = char.toUpperCase();
+                        if (char === SCRIPT[this.index]) {
+                           this.index++;
+                        } else {
+                           this.source.reconsume();
+                           this.state = TokenizerState.RAW_TEXT_ESCAPED;
+                        }
+                     } else {
+                        this.state = TokenizerState.RAW_TEXT_DOUBLE_ESCAPED;
+                        this.index = Number.MAX_VALUE;
+                     }
+                     break;
+                  default:
+                     // Reconsume the current input character in the script data escaped state.
+                     this.source.reconsume();
+                     this.state = TokenizerState.RAW_TEXT_ESCAPED;
+                     break;
+               }
+               break;
+            case TokenizerState.RAW_TEXT_DOUBLE_ESCAPED:
+               // Consume the next input character.
+               switch (char) {
+                  case HYPHEN_MINUS:
+                     // Switch to the script data double escaped dash state.
+                     // Emit a U+002D HYPHEN-MINUS character token.
+                     this.state = TokenizerState.RAW_TEXT_DOUBLE_ESCAPED_DASH;
+                     break;
+                  case LESS_THAN_SIGN:
+                     // Switch to the script data double escaped less-than sign state.
+                     // Emit a U+003C LESS-THAN SIGN character token.
+                     this.state = TokenizerState.RAW_TEXT_DOUBLE_ESCAPED_LESS_THAN_SIGN;
+                     break;
+                  case NULL:
+                     // Parse error. Emit a U+FFFD REPLACEMENT CHARACTER character token.
+                     // emitReplacementCharacter
+                     break;
+                  default:
+                     // Emit the current input character as a character token.
+                     break;
+               }
+               break;
+            case TokenizerState.RAW_TEXT_DOUBLE_ESCAPED_DASH:
+               // Consume the next input character.
+               switch (char) {
+                  case HYPHEN_MINUS:
+                     // Switch to the script data double escaped dash dash state.
+                     // Emit a U+002D HYPHEN-MINUS character token.
+                     this.state = TokenizerState.RAW_TEXT_DATA_DOUBLE_ESCAPED_DASH_DASH;
+                     break;
+                  case LESS_THAN_SIGN:
+                     // Switch to the script data double escaped less-than sign state.
+                     // Emit a U+003C LESS-THAN SIGN character token.
+                     this.state = TokenizerState.RAW_TEXT_DOUBLE_ESCAPED_LESS_THAN_SIGN;
+                     break;
+                  case NULL:
+                     // Parse error. Switch to the script data double escaped state.
+                     // Emit a U+FFFD REPLACEMENT CHARACTER character token.
+                     // emitReplacementCharacter
+                     this.state = TokenizerState.RAW_TEXT_DOUBLE_ESCAPED;
+                     break;
+                  default:
+                     // Switch to the script data double escaped state.
+                     // Emit the current input character as a character token.
+                     this.state = TokenizerState.RAW_TEXT_DOUBLE_ESCAPED;
+                     break;
+               }
+               break;
+            case TokenizerState.RAW_TEXT_DATA_DOUBLE_ESCAPED_DASH_DASH:
+               // Consume the next input character.
+               switch (char) {
+                  case HYPHEN_MINUS:
+                     // Emit a U+002D HYPHEN-MINUS character token.
+                     break;
+                  case LESS_THAN_SIGN:
+                     // Switch to the script data double escaped less-than sign state.
+                     // Emit a U+003C LESS-THAN SIGN character token.
+                     this.state = TokenizerState.RAW_TEXT_DOUBLE_ESCAPED_LESS_THAN_SIGN;
+                     break;
+                  case GREATER_THAN_SIGN:
+                     // Switch to the script data state. Emit a U+003E GREATER-THAN SIGN character token.
+                     this.state = TokenizerState.RAW_TEXT;
+                     break;
+                  case NULL:
+                     // Parse error. Switch to the script data double escaped state.
+                     // Emit a U+FFFD REPLACEMENT CHARACTER character token.
+                     // emitReplacementCharacter
+                     this.state = TokenizerState.RAW_TEXT_DOUBLE_ESCAPED;
+                     break;
+                  default:
+                     // Switch to the script data double escaped state.
+                     // Emit the current input character as a character token.
+                     this.state = TokenizerState.RAW_TEXT_DOUBLE_ESCAPED;
+                     break;
+               }
+               break;
+            case TokenizerState.RAW_TEXT_DOUBLE_ESCAPED_LESS_THAN_SIGN:
+               // Consume the next input character.
+               switch (char) {
+                  case SOLIDUS:
+                     // Set the temporary buffer to the empty string.
+                     // Switch to the script data double escape end state.
+                     // Emit a U+002F SOLIDUS character token.
+                     this.index = 0;
+                     this.state = TokenizerState.RAW_TEXT_DOUBLE_ESCAPE_END;
+                     break;
+                  default:
+                     // Reconsume the current input character in the script data double escaped state.
+                     this.source.reconsume();
+                     this.state = TokenizerState.RAW_TEXT_DOUBLE_ESCAPED;
+                     break;
+               }
+               break;
+            case TokenizerState.RAW_TEXT_DOUBLE_ESCAPE_END:
+               // Consume the next input character.
+               if (char >= 'A' && char <= 'Z') {
+                  // Append the lowercase version of the current input character
+                  // (add 0x0020 to the character's code point) to the temporary buffer.
+                  // Emit the current input character as a character token.
+                  break;
+               }
+               if (char >= 'a' && char <= 'z') {
+                  // Append the current input character to the temporary buffer.
+                  // Emit the current input character as a character token.
+                  break;
+               }
+               switch (char) {
+                  case CHARACTER_TABULATION:
+                  case LINE_FEED:
+                  case FORM_FEED:
+                  case SPACE:
+                  case SOLIDUS:
+                  case GREATER_THAN_SIGN:
+                     // If the temporary buffer is the string "script", then switch to the script data escaped state.
+                     // Otherwise, switch to the script data double escaped state.
+                     // Emit the current input character as a character token.
+                     if (this.index < SCRIPT.length) {
+                        char = char.toUpperCase();
+                        if (char === SCRIPT[this.index]) {
+                           this.index++;
+                        } else {
+                           this.source.reconsume();
+                           this.state = TokenizerState.RAW_TEXT_DOUBLE_ESCAPED;
+                        }
+                     } else {
+                        this.state = TokenizerState.RAW_TEXT_ESCAPED;
+                        this.index = Number.MAX_VALUE;
+                     }
+                     break;
+                  default:
+                     // Reconsume the current input character in the script data double escaped state.
+                     this.source.reconsume();
+                     this.state = TokenizerState.RAW_TEXT_DOUBLE_ESCAPED;
+                     break;
+               }
+               break;
+            case TokenizerState.ESCAPABLE_RAW_TEXT:
+               // Consume the next input character.
+               switch (char) {
+                  case LESS_THAN_SIGN:
+                     this.flushCharBuffer();
+                     this.returnState = TokenizerState.ESCAPABLE_RAW_TEXT;
+                     this.state = TokenizerState.ESCAPABLE_RAW_TEXT_LESS_THAN_SIGN;
+                     break;
+                  case NULL:
+                     // Parse error. Emit a U+FFFD REPLACEMENT CHARACTER character token.
+                     // emitReplacementCharacter
+                     break;
+                  default:
+                     // Emit the current input character as a character token.
+                     this.appendCharBuffer(char);
+                     break;
+               }
+               break;
+            case TokenizerState.ESCAPABLE_RAW_TEXT_LESS_THAN_SIGN:
+               switch (char) {
+                  case SOLIDUS:
+                     // Set the temporary buffer to the empty string.
+                     this.index = 0;
+                     this.cleanCharBuffer();
+                     this.state = TokenizerState.ESCAPABLE_RAW_TEXT_END_TAG_NAME;
+                     break;
+                  default:
+                     // Emit a U+003C LESS-THAN SIGN character token
+                     // and reconsume the current input character in the RCDATA state.
+                     this.appendCharBuffer(LESS_THAN_SIGN);
+                     this.state = this.returnState;
+                     this.source.reconsume();
+                     break;
+               }
+               break;
+            case TokenizerState.ESCAPABLE_RAW_TEXT_END_TAG_NAME:
+               // Consume the next input character.
+               if (this.endTagExpectation === null) {
+                  this.appendCharBuffer('</');
+                  this.source.reconsume();
+                  this.state = this.returnState;
+                  break;
+               } else if (this.index < this.endTagExpectation.length) {
+                  char = char.toLowerCase();
+                  if (char !== this.endTagExpectation[this.index]) {
+                     this.error('errHtml4LtSlashInRcdata');
+                     this.appendCharBuffer('</');
+                     this.flushCharBuffer();
+                     this.source.reconsume();
+                     break;
+                  }
+                  this.appendCharBuffer(char);
+                  this.index++;
+                  break;
+               } else {
+                  this.endTag = true;
+                  this.tagName = this.endTagExpectation;
+                  this.endTagExpectation = null;
+                  switch (char) {
+                     case LINE_FEED:
+                     case SPACE:
+                     case CHARACTER_TABULATION:
+                        /*
+                         * U+0009 CHARACTER TABULATION U+000A LINE
+                         * FEED (LF) U+000C FORM FEED (FF) U+0020
+                         * SPACE If the current end tag token is an
+                         * appropriate end tag token, then switch to
+                         * the before attribute name state.
+                         */
+                        this.cleanCharBuffer();
+                        this.state = TokenizerState.BEFORE_ATTRIBUTE_NAME;
+                        break;
+                     case '/':
+                        /*
+                         * U+002F SOLIDUS (/) If the current end tag
+                         * token is an appropriate end tag token,
+                         * then switch to the self-closing start tag
+                         * state.
+                         */
+                        this.cleanCharBuffer();
+                        this.state = TokenizerState.SELF_CLOSING_START_TAG;
+                        break;
+                     case '>':
+                        /*
+                         * U+003E GREATER-THAN SIGN (>) If the
+                         * current end tag token is an appropriate
+                         * end tag token, then emit the current tag
+                         * token and switch to the data state.
+                         */
+                        this.cleanCharBuffer();
+                        this.emitTagToken();
+                        this.state = TokenizerState.SELF_CLOSING_START_TAG;
+                        // TODO: shouldSuspend
+                        break;
+                     default:
+                        /*
+                         * Emit a U+003C LESS-THAN SIGN character
+                         * token, a U+002F SOLIDUS character token,
+                         * a character token for each of the
+                         * characters in the temporary buffer (in
+                         * the order they were added to the buffer),
+                         * and reconsume the current input character
+                         * in the RAWTEXT state.
+                         */
+                        this.error('errWarnLtSlashInRcdata');
+                        this.appendCharBuffer('</');
+                        this.flushCharBuffer();
+                        this.source.reconsume();
+                        break;
+                  }
+               }
+               break;
          }
       }
       this.finalize();
@@ -1690,10 +1654,7 @@ class Tokenizer {
    private addAttributeWithoutValue(): void {
       this.warn('noteAttributeWithoutValue');
       if (this.attributeName) {
-         this.attributes[this.attributeName] = {
-            location: null,
-            value: 'true'
-         } as IAttributeValue;
+         this.attributes[this.attributeName] = new AttributeValue('true', null);
       }
       this.attributeName = null;
       this.cleanCharBuffer();
@@ -1701,10 +1662,7 @@ class Tokenizer {
 
    private addAttributeWithValue(): void {
       if (this.attributeName) {
-         this.attributes[this.attributeName] = {
-            location: null,
-            value: this.charBuffer
-         } as IAttributeValue;
+         this.attributes[this.attributeName] = new AttributeValue(this.charBuffer, null);;
       }
       this.attributeName = null;
       this.cleanCharBuffer();
@@ -1728,18 +1686,18 @@ class Tokenizer {
       let state = this.state;
       finalizeLoop: while (true) {
          switch (state) {
-            case TokenizerState.SCRIPT_DATA_LESS_THAN_SIGN:
-            case TokenizerState.SCRIPT_DATA_ESCAPED_LESS_THAN_SIGN:
+            case TokenizerState.RAW_TEXT_LESS_THAN_SIGN:
+            case TokenizerState.RAW_TEXT_ESCAPED_LESS_THAN_SIGN:
                this.appendCharBuffer('<');
                break finalizeLoop;
             case TokenizerState.TAG_OPEN:
                this.error('errEofAfterLt');
                this.appendCharBuffer('<');
                break finalizeLoop;
-            case TokenizerState.RCDATA_RAWTEXT_LESS_THAN_SIGN:
+            case TokenizerState.ESCAPABLE_RAW_TEXT_LESS_THAN_SIGN:
                this.appendCharBuffer('<');
                break finalizeLoop;
-            case TokenizerState.NON_DATA_END_TAG_NAME:
+            case TokenizerState.ESCAPABLE_RAW_TEXT_END_TAG_NAME:
                this.appendCharBuffer('<>');
                this.flushCharBuffer();
                break finalizeLoop;
@@ -1827,7 +1785,7 @@ class Tokenizer {
 
 export {
    ITokenizerOptions,
-   IAttributeValue,
+   AttributeValue,
    IAttributes,
    IBuilder,
    IErrorHandler,

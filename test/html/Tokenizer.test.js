@@ -71,10 +71,8 @@ const handler = {
    }
 };
 
-// https://www.w3.org/TR/2011/WD-html5-20110525/syntax.html#elements-0
-
 describe('engine/html/Tokenizer', function () {
-   describe('DATA', function () {
+   describe('Data content model', function () {
       it('Open tag, selfClosing=false', function () {
          let reader = createReader('<tag>');
          stack = [{
@@ -218,21 +216,7 @@ describe('engine/html/Tokenizer', function () {
          tokenizer.tokenize(reader);
       });
    });
-   it('PLAINTEXT', function() {
-      // For elements: <plaintext>
-      let reader = createReader('<tag> 1 < a < 2 <tag>');
-      stack = [{
-         type: 'Text',
-         data: '<tag> 1 < a < 2 <tag>'
-      }, {
-         type: 'EOF'
-      }];
-      let tokenizer = new Tokenizer(handler);
-      tokenizer.start();
-      tokenizer.setState(TokenizerState.PLAINTEXT);
-      tokenizer.tokenize(reader);
-   });
-   it('RCDATA', function() {
+   it('Escapable content model', function() {
       // For elements: <textarea>, <title>
       let reader = createReader('< 1\n2\n3 ></textarea>');
       stack = [{
@@ -246,30 +230,10 @@ describe('engine/html/Tokenizer', function () {
       }];
       let tokenizer = new Tokenizer(handler);
       tokenizer.start();
-      tokenizer.setState(TokenizerState.RCDATA, 'textarea');
+      tokenizer.setState(TokenizerState.ESCAPABLE_RAW_TEXT, 'textarea');
       tokenizer.tokenize(reader);
    });
-   it('RAWTEXT', function() {
-      // For elements: <style>, <xmp>, <iframe>, <noembed>, <noframes>
-      let reader = createReader('.a < b { }</style>');
-      stack = [{
-         type: 'Text',
-         data: '.a '
-      }, {
-         type: 'Text',
-         data: '< b { }'
-      }, {
-         type: 'CloseTag',
-         name: 'style'
-      }, {
-         type: 'EOF'
-      }];
-      let tokenizer = new Tokenizer(handler);
-      tokenizer.start();
-      tokenizer.setState(TokenizerState.RAWTEXT, 'style');
-      tokenizer.tokenize(reader);
-   });
-   it('SCRIPT_DATA', function() {
+   it('Raw text content model', function() {
       // For elements: <script>
       let reader = createReader('for(var i=0;i<0;){++i;}</script>');
       stack = [{
@@ -286,7 +250,7 @@ describe('engine/html/Tokenizer', function () {
       }];
       let tokenizer = new Tokenizer(handler);
       tokenizer.start();
-      tokenizer.setState(TokenizerState.SCRIPT_DATA, 'script');
+      tokenizer.setState(TokenizerState.RAW_TEXT, 'script');
       tokenizer.tokenize(reader);
    });
 });
