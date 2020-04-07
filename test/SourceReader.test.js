@@ -18,6 +18,15 @@ describe('core/SourceReader', () => {
       assert.strictEqual(reader.consume(), 'b');
       assert.strictEqual(reader.consume(), EOF);
    });
+   it('.hasNext()', () => {
+      let reader = createReader('ab');
+      assert.isTrue(reader.hasNext());
+      assert.strictEqual(reader.consume(), 'a');
+      assert.isTrue(reader.hasNext());
+      assert.strictEqual(reader.consume(), 'b');
+      assert.isFalse(reader.hasNext());
+      assert.strictEqual(reader.consume(), EOF);
+   });
    it('.consume() preprocessed', () => {
       let reader = createReader('a\nb\n\rc\r\nd');
       assert.strictEqual(reader.consume(), 'a');

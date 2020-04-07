@@ -4,6 +4,9 @@ const { assert } = require('chai');
 
 const { Tokenizer } = require('engine/html/Tokenizer');
 const { TokenizerState } = require('engine/html/Tokenizer');
+const { Source } = require("engine/core/Source");
+const { SourceReader } =  require("engine/core/SourceReader");
+const { MetaInfo } =  require("engine/core/MetaInfo");
 
 function assertAttributes(standard, actual) {
    const keys = Object.keys(standard);
@@ -15,6 +18,12 @@ function assertAttributes(standard, actual) {
 }
 
 let stack;
+
+const meta = new MetaInfo('test/core/SourceReader.test.ts');
+
+function createReader(data) {
+   return new SourceReader(new Source(data, meta));
+}
 
 const handler = {
    onOpenTag: function (name, attr, selfClosing) {
@@ -67,7 +76,7 @@ const handler = {
 describe('engine/html/Tokenizer', function () {
    describe('DATA', function () {
       it('Open tag, selfClosing=false', function () {
-         const source = '<tag>';
+         let reader = createReader('<tag>');
          stack = [{
             type: 'OpenTag',
             name: 'tag',
@@ -77,10 +86,10 @@ describe('engine/html/Tokenizer', function () {
          }];
          let tokenizer = new Tokenizer(handler);
          tokenizer.start();
-         tokenizer.tokenize(source);
+         tokenizer.tokenize(reader);
       });
       it('Open tag, selfClosing=true', function () {
-         const source = '<tag />';
+         let reader = createReader('<tag />');
          stack = [{
             type: 'OpenTag',
             name: 'tag',
@@ -90,10 +99,10 @@ describe('engine/html/Tokenizer', function () {
          }];
          let tokenizer = new Tokenizer(handler);
          tokenizer.start();
-         tokenizer.tokenize(source);
+         tokenizer.tokenize(reader);
       });
       it('Attributes', function () {
-         const source = '<tag a=1 b=\'2\' c="3" d>';
+         let reader = createReader('<tag a=1 b=\'2\' c="3" d>');
          stack = [{
             type: 'OpenTag',
             name: 'tag',
@@ -109,10 +118,10 @@ describe('engine/html/Tokenizer', function () {
          }];
          let tokenizer = new Tokenizer(handler);
          tokenizer.start();
-         tokenizer.tokenize(source);
+         tokenizer.tokenize(reader);
       });
       it('Tags pair', function () {
-         const source = '<tag></tag>';
+         let reader = createReader('<tag></tag>');
          stack = [{
             type: 'OpenTag',
             name: 'tag',
@@ -125,19 +134,19 @@ describe('engine/html/Tokenizer', function () {
          }];
          let tokenizer = new Tokenizer(handler);
          tokenizer.start();
-         tokenizer.tokenize(source);
+         tokenizer.tokenize(reader);
       });
       it('Comment, allowComments=false', function () {
-         const source = '<!-- abc -->';
+         let reader = createReader('<!-- abc -->');
          stack = [{
             type: 'EOF'
          }];
          let tokenizer = new Tokenizer(handler);
          tokenizer.start();
-         tokenizer.tokenize(source);
+         tokenizer.tokenize(reader);
       });
       it('Comment, allowComments=true', function () {
-         const source = '<!-- abc -->';
+         let reader = createReader('<!-- abc -->');
          stack = [{
             type: 'Comment',
             data: ' abc '
@@ -146,10 +155,10 @@ describe('engine/html/Tokenizer', function () {
          }];
          let tokenizer = new Tokenizer(handler, { allowComments: true });
          tokenizer.start();
-         tokenizer.tokenize(source);
+         tokenizer.tokenize(reader);
       });
       it('Text', function () {
-         const source = '1 < 2';
+         let reader = createReader('1 < 2');
          stack = [{
             type: 'Text',
             data: '1 '
@@ -161,19 +170,19 @@ describe('engine/html/Tokenizer', function () {
          }];
          let tokenizer = new Tokenizer(handler);
          tokenizer.start();
-         tokenizer.tokenize(source);
+         tokenizer.tokenize(reader);
       });
       it('CDATA, allowCDATA=false', function () {
-         const source = '<![CDATA[a]]>';
+         let reader = createReader('<![CDATA[a]]>');
          stack = [{
             type: 'EOF'
          }];
          let tokenizer = new Tokenizer(handler);
          tokenizer.start();
-         tokenizer.tokenize(source);
+         tokenizer.tokenize(reader);
       });
       it('CDATA, allowCDATA=true', function () {
-         const source = '<![CDATA[ a ]] ]]>';
+         let reader = createReader('<![CDATA[ a ]] ]]>');
          stack = [{
             type: 'CDATA',
             data: ' a ]] '
@@ -182,10 +191,10 @@ describe('engine/html/Tokenizer', function () {
          }];
          let tokenizer = new Tokenizer(handler, { allowCDATA: true });
          tokenizer.start();
-         tokenizer.tokenize(source);
+         tokenizer.tokenize(reader);
       });
       it('Bogus comment', function () {
-         const source = '<!- -->';
+         let reader = createReader('<!- -->');
          stack = [{
             type: 'Comment',
             data: ' --'
@@ -194,10 +203,10 @@ describe('engine/html/Tokenizer', function () {
          }];
          let tokenizer = new Tokenizer(handler, { allowComments: true });
          tokenizer.start();
-         tokenizer.tokenize(source);
+         tokenizer.tokenize(reader);
       });
       it('Doctype', function() {
-         const source = '<!DOCTYPE html>';
+         let reader = createReader('<!DOCTYPE html>');
          stack = [{
             type: 'Doctype',
             data: 'html'
@@ -206,11 +215,11 @@ describe('engine/html/Tokenizer', function () {
          }];
          let tokenizer = new Tokenizer(handler);
          tokenizer.start();
-         tokenizer.tokenize(source);
+         tokenizer.tokenize(reader);
       });
    });
    it('PLAINTEXT', function() {
-      const source = '<tag> 1 < a < 2 <tag>';
+      let reader = createReader('<tag> 1 < a < 2 <tag>');
       stack = [{
          type: 'Text',
          data: '<tag> 1 < a < 2 <tag>'
@@ -220,10 +229,10 @@ describe('engine/html/Tokenizer', function () {
       let tokenizer = new Tokenizer(handler);
       tokenizer.start();
       tokenizer.setState(TokenizerState.PLAINTEXT);
-      tokenizer.tokenize(source);
+      tokenizer.tokenize(reader);
    });
    it('RCDATA', function() {
-      const source = '< 1\n2\n3 >';
+      let reader = createReader('< 1\n2\n3 >');
       stack = [{
          type: 'Text',
          data: '< 1\n2\n3 >'
@@ -233,10 +242,10 @@ describe('engine/html/Tokenizer', function () {
       let tokenizer = new Tokenizer(handler);
       tokenizer.start();
       tokenizer.setState(TokenizerState.RCDATA);
-      tokenizer.tokenize(source);
+      tokenizer.tokenize(reader);
    });
    it('RAWTEXT', function() {
-      const source = '.a < b { }';
+      let reader = createReader('.a < b { }');
       stack = [{
          type: 'Text',
          data: '.a '
@@ -249,6 +258,6 @@ describe('engine/html/Tokenizer', function () {
       let tokenizer = new Tokenizer(handler);
       tokenizer.start();
       tokenizer.setState(TokenizerState.RAWTEXT);
-      tokenizer.tokenize(source);
+      tokenizer.tokenize(reader);
    });
 });

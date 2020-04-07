@@ -8,6 +8,7 @@ const LINE_FEED: string = '\n';
 export interface ISourceReader {
    consume(): string | null;
    reconsume(): void;
+   hasNext(): boolean;
 }
 
 export interface ISourceNavigation {
@@ -54,7 +55,7 @@ export class SourceReader implements ISourceReader, ISourceNavigation {
    }
 
    reconsume(): void {
-      if (this.index > -1 && this.index < this.source.getSize()) {
+      if (this.index > -1 && this.index !== this.source.getSize()) {
          this.reconsumeFlag = true;
       }
    }
@@ -65,5 +66,12 @@ export class SourceReader implements ISourceReader, ISourceNavigation {
 
    getColumn(): number {
       return this.column;
+   }
+
+   hasNext(): boolean {
+      if (this.reconsumeFlag) {
+         return this.index < this.source.getSize();
+      }
+      return this.index + 1 < this.source.getSize();
    }
 }
