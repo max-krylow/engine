@@ -3,6 +3,7 @@
 import Location  from "../core/utils/Location";
 import { ISourceReader } from "../core/SourceReader";
 import { IAttributes, AttributeValue } from "./Attribute";
+import { IErrorHandler } from "../core/utils/ErrorHandler";
 
 const NULL: string = '\u0000';
 const AMPERSAND: string = '&';
@@ -41,11 +42,6 @@ interface IBuilder {
    onCDATA(data: string, location?: Location): void;
    onDoctype(data: string, location?: Location): void;
    onEOF(): void;
-}
-
-interface IErrorHandler {
-   warn(message: string, location?: Location): void;
-   error(message: string, location?: Location): void;
 }
 
 enum TokenizerState {
