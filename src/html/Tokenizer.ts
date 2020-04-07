@@ -41,7 +41,7 @@ interface IAttributes {
    [attribute: string]: IAttributeValue;
 }
 
-interface IHandler {
+interface IBuilder {
    onOpenTag(name: string, attributes: IAttributes, selfClosing: boolean, location?: Location): void;
    onCloseTag(name: string, location?: Location): void;
    onText(data: string, location?: Location): void;
@@ -68,8 +68,6 @@ enum TokenizerState {
    END_TAG_OPEN,
    TAG_NAME,
    SCRIPT_DATA_LESS_THAN_SIGN,
-   SCRIPT_DATA_END_TAG_OPEN,
-   SCRIPT_DATA_END_TAG_NAME,
    SCRIPT_DATA_ESCAPE_START,
    SCRIPT_DATA_ESCAPE_START_DASH,
    SCRIPT_DATA_ESCAPED,
@@ -112,13 +110,9 @@ enum TokenizerState {
 }
 
 class Tokenizer {
-   private tokenHandler: IHandler;
+   private tokenHandler: IBuilder;
    private errorHandler: IErrorHandler;
-
    private source: ISourceReader;
-   private column: number;
-   private line: number;
-   private lastLF: boolean;
 
    private state: TokenizerState;
    private returnState: TokenizerState;
@@ -126,11 +120,11 @@ class Tokenizer {
    private index: number;
 
    private endTagExpectation: string;
-   private endTag: boolean;
    private containsHyphen: boolean;
+
+   private endTag: boolean;
    private tagName: string;
    private selfClosing: boolean;
-
    private attributeName: string;
    private attributes: IAttributes;
 
@@ -139,7 +133,7 @@ class Tokenizer {
    private readonly allowCDATA: boolean;
    private readonly tagNameToLowerCase: boolean;
 
-   constructor(tokenHandler: IHandler, options?: ITokenizerOptions) {
+   constructor(tokenHandler: IBuilder, options?: ITokenizerOptions) {
       this.tokenHandler = tokenHandler;
       this.html4 = !!(options && options.html4);
       this.allowComments = !!(options && options.allowComments);
@@ -155,8 +149,10 @@ class Tokenizer {
       return this.errorHandler;
    }
 
-   public setState(state: TokenizerState): void {
+   public setState(state: TokenizerState, endTagExpectation?: string): void {
       this.state = state;
+      this.returnState = state;
+      this.endTagExpectation = typeof endTagExpectation === 'string' ? endTagExpectation : null;
    }
 
    public getState(): TokenizerState {
@@ -166,13 +162,11 @@ class Tokenizer {
    public start(): void {
       this.state = TokenizerState.DATA;
       this.returnState = TokenizerState.DATA;
-      this.line = 0;
-      this.column = 0;
       this.charBuffer = '';
       this.tagName = '';
       this.selfClosing = false;
-      this.lastLF = false;
       this.index = Number.MAX_VALUE;
+      this.endTagExpectation = null;
    }
 
    public tokenize(source: ISourceReader): void {
@@ -238,6 +232,7 @@ class Tokenizer {
                switch (char) {
                   case SOLIDUS:
                      // Set the temporary buffer to the empty string.
+                     this.index = 0;
                      this.cleanCharBuffer();
                      this.state = TokenizerState.NON_DATA_END_TAG_NAME;
                      break;
@@ -252,12 +247,14 @@ class Tokenizer {
                break;
             case TokenizerState.NON_DATA_END_TAG_NAME:
                // Consume the next input character.
-               if (this.endTagExpectation == null) {
+               if (this.endTagExpectation === null) {
                   this.appendCharBuffer('</');
                   this.source.reconsume();
+                  this.state = this.returnState;
                   break;
                } else if (this.index < this.endTagExpectation.length) {
-                  if (char != this.endTagExpectation[this.index]) {
+                  char = char.toLowerCase();
+                  if (char !== this.endTagExpectation[this.index]) {
                      this.error('errHtml4LtSlashInRcdata');
                      this.appendCharBuffer('</');
                      this.flushCharBuffer();
@@ -270,6 +267,7 @@ class Tokenizer {
                } else {
                   this.endTag = true;
                   this.tagName = this.endTagExpectation;
+                  this.endTagExpectation = null;
                   switch (char) {
                      case LINE_FEED:
                      case SPACE:
@@ -328,6 +326,7 @@ class Tokenizer {
                // Consume the next input character.
                switch (char) {
                   case LESS_THAN_SIGN:
+                     this.flushCharBuffer();
                      this.returnState = this.state;
                      this.state = TokenizerState.SCRIPT_DATA_LESS_THAN_SIGN;
                      break;
@@ -337,10 +336,10 @@ class Tokenizer {
                      break;
                   default:
                      // Emit the current input character as a character token.
+                     this.appendCharBuffer(char);
                      break;
                }
                break;
-            // @ts-ignore
             case TokenizerState.PLAINTEXT:
                // Consume the next input character.
                switch (char) {
@@ -489,110 +488,24 @@ class Tokenizer {
                   case SOLIDUS:
                      // Set the temporary buffer to the empty string.
                      // Switch to the script data end tag open state.
-                     this.state = TokenizerState.SCRIPT_DATA_END_TAG_OPEN;
+                     this.index = 0;
+                     this.cleanCharBuffer();
+                     this.state = TokenizerState.NON_DATA_END_TAG_NAME;
                      break;
                   case EXCLAMATION_MARK:
                      // Switch to the script data escape start state.
                      // Emit a U+003C LESS-THAN SIGN character token
                      // and a U+0021 EXCLAMATION MARK character token.
+                     this.appendCharBuffer('<');
                      this.state = TokenizerState.SCRIPT_DATA_ESCAPE_START;
                      break;
                   default:
                      // Emit a U+003C LESS-THAN SIGN character token
                      // and reconsume the current input character in the script data state.
                      this.source.reconsume();
+                     this.appendCharBuffer('<');
                      this.state = TokenizerState.SCRIPT_DATA;
                      break;
-               }
-               break;
-            case TokenizerState.SCRIPT_DATA_END_TAG_OPEN:
-               // Consume the next input character.
-               if (char >= 'A' && char <= 'Z') {
-                  // Create a new end tag token, and set its tag name to the lowercase version of
-                  // the current input character (add 0x0020 to the character's code point).
-                  // Append the current input character to the temporary buffer.
-                  // Finally, switch to the script data end tag name state. (Don't emit the token yet;
-                  // further details will be filled in before it is emitted.)
-                  this.state = TokenizerState.SCRIPT_DATA_END_TAG_NAME;
-                  break;
-               }
-               else if (char >= 'a' && char <= 'z') {
-                  // Create a new end tag token, and set its tag name to the current input character.
-                  // Append the current input character to the temporary buffer.
-                  // Finally, switch to the script data end tag name state. (Don't emit the token yet;
-                  // further details will be filled in before it is emitted.)
-                  this.state = TokenizerState.SCRIPT_DATA_END_TAG_NAME;
-                  break;
-               }
-               else {
-                  // Emit a U+003C LESS-THAN SIGN character token, a U+002F SOLIDUS character token,
-                  // and reconsume the current input character in the script data state.
-                  this.source.reconsume();
-                  this.state = TokenizerState.SCRIPT_DATA;
-               }
-               break;
-            case TokenizerState.SCRIPT_DATA_END_TAG_NAME:
-               // Consume the next input character.
-               if (char >= 'A' && char <= 'Z') {
-                  // Append the lowercase version of the current input character
-                  // (add 0x0020 to the character's code point) to the current tag token's tag name.
-                  // Append the current input character to the temporary buffer.
-                  break;
-               }
-               if (char >= 'a' && char <= 'z') {
-                  // Append the current input character to the current tag token's tag name.
-                  // Append the current input character to the temporary buffer.
-                  break;
-               }
-               treatAsDefault = false;
-               switch (char) {
-                  case CHARACTER_TABULATION:
-                  case LINE_FEED:
-                  case FORM_FEED:
-                  case SPACE:
-                     // If the current end tag token is an appropriate end tag token,
-                     // then switch to the before attribute name state.
-                     // Otherwise, treat it as per the "anything else" entry below.
-                     // TODO: release state
-                     if (char.indexOf('random')) {
-                        this.state = TokenizerState.BEFORE_ATTRIBUTE_NAME;
-                        break;
-                     }
-                     treatAsDefault = true;
-                     break;
-                  case SOLIDUS:
-                     // If the current end tag token is an appropriate end tag token,
-                     // then switch to the self-closing start tag state.
-                     // Otherwise, treat it as per the "anything else" entry below.
-                     // TODO: release state
-                     if (char.indexOf('random')) {
-                        this.state = TokenizerState.SELF_CLOSING_START_TAG;
-                        break;
-                     }
-                     treatAsDefault = true;
-                     break;
-                  case GREATER_THAN_SIGN:
-                     // If the current end tag token is an appropriate end tag token,
-                     // then emit the current tag token and switch to the data state.
-                     // Otherwise, treat it as per the "anything else" entry below.
-                     // TODO: release state
-                     if (char.indexOf('random')) {
-                        this.state = TokenizerState.DATA;
-                        break;
-                     }
-                     treatAsDefault = true;
-                     break;
-                  default:
-                     treatAsDefault = true;
-                     break;
-               }
-               if (treatAsDefault) {
-                  // Emit a U+003C LESS-THAN SIGN character token, a U+002F SOLIDUS character token,
-                  // a character token for each of the characters in the temporary buffer
-                  // (in the order they were added to the buffer),
-                  // and reconsume the current input character in the script data state.
-                  this.source.reconsume();
-                  this.state = TokenizerState.SCRIPT_DATA;
                }
                break;
             case TokenizerState.SCRIPT_DATA_ESCAPE_START:
@@ -1916,7 +1829,7 @@ export {
    ITokenizerOptions,
    IAttributeValue,
    IAttributes,
-   IHandler,
+   IBuilder,
    IErrorHandler,
    TokenizerState,
    Tokenizer

@@ -219,6 +219,7 @@ describe('engine/html/Tokenizer', function () {
       });
    });
    it('PLAINTEXT', function() {
+      // For elements: <plaintext>
       let reader = createReader('<tag> 1 < a < 2 <tag>');
       stack = [{
          type: 'Text',
@@ -232,20 +233,25 @@ describe('engine/html/Tokenizer', function () {
       tokenizer.tokenize(reader);
    });
    it('RCDATA', function() {
-      let reader = createReader('< 1\n2\n3 >');
+      // For elements: <textarea>, <title>
+      let reader = createReader('< 1\n2\n3 ></textarea>');
       stack = [{
          type: 'Text',
          data: '< 1\n2\n3 >'
+      }, {
+         type: 'CloseTag',
+         name: 'textarea'
       }, {
          type: 'EOF'
       }];
       let tokenizer = new Tokenizer(handler);
       tokenizer.start();
-      tokenizer.setState(TokenizerState.RCDATA);
+      tokenizer.setState(TokenizerState.RCDATA, 'textarea');
       tokenizer.tokenize(reader);
    });
    it('RAWTEXT', function() {
-      let reader = createReader('.a < b { }');
+      // For elements: <style>, <xmp>, <iframe>, <noembed>, <noframes>
+      let reader = createReader('.a < b { }</style>');
       stack = [{
          type: 'Text',
          data: '.a '
@@ -253,11 +259,34 @@ describe('engine/html/Tokenizer', function () {
          type: 'Text',
          data: '< b { }'
       }, {
+         type: 'CloseTag',
+         name: 'style'
+      }, {
          type: 'EOF'
       }];
       let tokenizer = new Tokenizer(handler);
       tokenizer.start();
-      tokenizer.setState(TokenizerState.RAWTEXT);
+      tokenizer.setState(TokenizerState.RAWTEXT, 'style');
+      tokenizer.tokenize(reader);
+   });
+   it('SCRIPT_DATA', function() {
+      // For elements: <script>
+      let reader = createReader('for(var i=0;i<0;){++i;}</script>');
+      stack = [{
+         type: 'Text',
+         data: 'for(var i=0;i'
+      }, {
+         type: 'Text',
+         data: '<0;){++i;}'
+      }, {
+         type: 'CloseTag',
+         name: 'script'
+      }, {
+         type: 'EOF'
+      }];
+      let tokenizer = new Tokenizer(handler);
+      tokenizer.start();
+      tokenizer.setState(TokenizerState.SCRIPT_DATA, 'script');
       tokenizer.tokenize(reader);
    });
 });
