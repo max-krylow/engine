@@ -11,7 +11,6 @@ import Symbols from "./base/Symbols";
 
 const CDATA: string = 'CDATA[';
 const DOCTYPE: string = 'OCTYPE';
-const SCRIPT: string = 'SCRIPT';
 
 /**
  *
@@ -83,10 +82,10 @@ export class Tokenizer implements ITokenizer {
     * @param state
     * @param endTagExpectation
     */
-   public setContentModel(state: TokenizerState, endTagExpectation?: string): void {
+   public setContentModel(state: TokenizerState, endTagExpectation: string): void {
       this.state = state;
       this.returnState = state;
-      this.endTagExpectation = typeof endTagExpectation === 'string' ? endTagExpectation : null;
+      this.endTagExpectation = endTagExpectation;
    }
 
    /**
@@ -1261,9 +1260,9 @@ export class Tokenizer implements ITokenizer {
                      // then switch to the script data double escaped state.
                      // Otherwise, switch to the script data escaped state.
                      // Emit the current input character as a character token.
-                     if (this.index < SCRIPT.length) {
+                     if (this.index < this.endTagExpectation.length) {
                         char = char.toUpperCase();
-                        if (char === SCRIPT[this.index]) {
+                        if (char === this.endTagExpectation[this.index]) {
                            this.index++;
                         } else {
                            this.source.reconsume();
@@ -1397,9 +1396,9 @@ export class Tokenizer implements ITokenizer {
                      // If the temporary buffer is the string "script", then switch to the script data escaped state.
                      // Otherwise, switch to the script data double escaped state.
                      // Emit the current input character as a character token.
-                     if (this.index < SCRIPT.length) {
+                     if (this.index < this.endTagExpectation.length) {
                         char = char.toUpperCase();
-                        if (char === SCRIPT[this.index]) {
+                        if (char === this.endTagExpectation[this.index]) {
                            this.index++;
                         } else {
                            this.source.reconsume();

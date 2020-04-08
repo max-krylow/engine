@@ -34,7 +34,7 @@ export interface INodeDescription {
    /**
     *
     */
-   readonly contentType?: ContentModel;
+   readonly contentModel?: ContentModel;
    /**
     *
     */
@@ -50,7 +50,7 @@ class NodeDescription implements INodeDescription {
    readonly closedByParent: boolean;
    readonly ignoreFirstLF: boolean;
    readonly isVoid: boolean;
-   readonly contentType: ContentModel;
+   readonly contentModel: ContentModel;
    readonly implicitNameSpace: string;
 
    /**
@@ -63,7 +63,7 @@ class NodeDescription implements INodeDescription {
       this.closedByParent = !!options.closedByParent;
       this.ignoreFirstLF = !!options.ignoreFirstLF;
       this.isVoid = !!options.isVoid;
-      this.contentType = options.contentType || ContentModel.DATA;
+      this.contentModel = options.contentModel || ContentModel.DATA;
       this.implicitNameSpace = options.implicitNameSpace || null;
    }
 
@@ -83,8 +83,40 @@ const DEFAULT_DEFINITION = new NodeDescription({});
 
 /**
  *
- * @param tagNodeName
  */
-export function getTagNodeDescription(tagNodeName: string): INodeDescription {
+interface INodeDescriptions {
+   [elementName: string]: INodeDescription;
+}
+
+/**
+ *
+ */
+const NODE_DESCRIPTION: INodeDescriptions = {
+   'br': new NodeDescription({
+      isVoid: true
+   }),
+   'script': new NodeDescription({
+      contentModel: ContentModel.RAW_TEXT
+   }),
+   'style': new NodeDescription({
+      contentModel: ContentModel.RAW_TEXT
+   }),
+   'title': new NodeDescription({
+      contentModel: ContentModel.ESCAPABLE_RAW_TEXT
+   }),
+   'textarea': new NodeDescription({
+      contentModel: ContentModel.ESCAPABLE_RAW_TEXT,
+      ignoreFirstLF: true
+   })
+};
+
+/**
+ *
+ * @param name
+ */
+export function getTagNodeDescription(name: string): INodeDescription {
+   if (NODE_DESCRIPTION[name]) {
+      return NODE_DESCRIPTION[name];
+   }
    return DEFAULT_DEFINITION;
 }

@@ -133,6 +133,11 @@ export class NodeWithChildren extends Node {
    }
 }
 
+export interface ITagNodeOptions {
+   selfClosing: boolean;
+   isVoid: boolean;
+}
+
 /**
  *
  */
@@ -158,14 +163,15 @@ export class TagNode extends NodeWithChildren {
     *
     * @param name
     * @param attribs
-    * @param selfClosing
+    * @param options
     * @param location
     */
-   constructor(name: string, attribs: IAttributes, selfClosing: boolean, location: Location) {
+   constructor(name: string, attribs: IAttributes, options: ITagNodeOptions, location: Location) {
       super(NodeType.Tag, [], location);
       this.name = name;
       this.attribs = attribs;
-      this.selfClosing = selfClosing;
+      this.selfClosing = options.selfClosing;
+      this.isVoid = options.isVoid;
    }
 
    /**
@@ -180,6 +186,9 @@ export class TagNode extends NodeWithChildren {
                attributes += `="${this.attribs[name].value}"`;
             }
          }
+      }
+      if (this.isVoid) {
+         return `<${this.name}${attributes}>`;
       }
       if (this.selfClosing) {
          return `<${this.name}${attributes} />`;

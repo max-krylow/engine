@@ -90,5 +90,5 @@ export interface ITokenizer {
     * @param contentModel
     * @param expectingEndTagName
     */
-   setContentModel(contentModel: ContentModel, expectingEndTagName?: string): void;
+   setContentModel(contentModel: ContentModel, expectingEndTagName: string): void;
 }

@@ -1,13 +1,14 @@
 /// <amd-module name="engine/html/TreeBuilder" />
 
 import Location from "../core/utils/Location";
-import { DataNode, Node, NodeType, NodeWithChildren, TagNode } from "./Node";
+import { DataNode, Node, NodeType, NodeWithChildren, TagNode, ITagNodeOptions } from "./Node";
 import { INodeDescription } from "./NodeDescription";
 
 import { ITokenHandler } from "./base/ITokenizer";
 import { IErrorHandler } from "../core/utils/ErrorHandler";
 import { ITokenizer } from "./base/ITokenizer";
 import { IAttributes } from "./Attribute";
+import ContentModel from "./base/ContentModel";
 
 /**
  *
@@ -75,10 +76,17 @@ class TreeBuilder implements ITokenHandler {
             this.error('tryToCloseVoidOrNotSelfClosingTag');
          }
       }
-      let node = new TagNode(name, attributes, selfClosing, location);
+      const options: ITagNodeOptions = {
+         selfClosing,
+         isVoid: description.isVoid
+      };
+      let node = new TagNode(name, attributes, options, location);
       this.appendNode(node);
-      if (!selfClosing) {
+      if ((!selfClosing && !description.isVoid)) {
          this.stack.push(node);
+      }
+      if (description.contentModel !== ContentModel.DATA) {
+         this.tokenizer.setContentModel(description.contentModel, name);
       }
    }
 
