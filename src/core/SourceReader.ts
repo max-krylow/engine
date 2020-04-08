@@ -1,6 +1,7 @@
 /// <amd-module name="engine/core/SourceReader" />
 
 import { ISource } from "./Source";
+import Position from "./utils/Position";
 
 const EOF: null = null;
 const LINE_FEED: string = '\n';
@@ -9,14 +10,10 @@ export interface ISourceReader {
    consume(): string | null;
    reconsume(): void;
    hasNext(): boolean;
+   getPosition(): Position;
 }
 
-export interface ISourceNavigation {
-   getLine(): number;
-   getColumn(): number;
-}
-
-export class SourceReader implements ISourceReader, ISourceNavigation {
+export class SourceReader implements ISourceReader {
    private readonly source: ISource;
    private index: number;
    private reconsumeFlag: boolean;
@@ -50,12 +47,8 @@ export class SourceReader implements ISourceReader, ISourceNavigation {
       }
    }
 
-   getLine(): number {
-      return this.line;
-   }
-
-   getColumn(): number {
-      return this.column;
+   getPosition(): Position {
+      return new Position(this.line, this.column, this.index);
    }
 
    hasNext(): boolean {

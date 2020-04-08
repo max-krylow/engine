@@ -1,8 +1,10 @@
 /* global require, describe, it */
 const { assert } = require("chai");
 const { Source } = require("engine/core/Source");
-const { SourceReader } =  require("engine/core/SourceReader");
-const { MetaInfo } =  require("engine/core/MetaInfo");
+const { SourceReader } = require("engine/core/SourceReader");
+const { MetaInfo } = require("engine/core/MetaInfo");
+const { default: Position } = require("engine/core/utils/Position");
+const { default: Location } = require("engine/core/utils/Location");
 
 const meta = new MetaInfo('test/core/SourceReader.test.ts');
 const EOF = null;
@@ -61,84 +63,89 @@ describe('core/SourceReader', () => {
       reader.reconsume();
       assert.strictEqual(reader.consume(), EOF);
    });
-   it('.getColumn()',  () => {
+   it('.getPosition().column',  () => {
       let reader = createReader('ab');
 
       assert.strictEqual(reader.consume(), 'a');
-      assert.strictEqual(reader.getColumn(), 0);
+      assert.strictEqual(reader.getPosition().column, 0);
 
       assert.strictEqual(reader.consume(), 'b');
-      assert.strictEqual(reader.getColumn(), 1);
+      assert.strictEqual(reader.getPosition().column, 1);
 
       assert.strictEqual(reader.consume(), EOF);
-      assert.strictEqual(reader.getColumn(), 2);
+      assert.strictEqual(reader.getPosition().column, 2);
    });
-   it('.getColumn() re-consumed',  () => {
+   it('.getPosition().column re-consumed',  () => {
       let reader = createReader('ab');
 
       assert.strictEqual(reader.consume(), 'a');
-      assert.strictEqual(reader.getColumn(), 0);
+      assert.strictEqual(reader.getPosition().column, 0);
 
       assert.strictEqual(reader.consume(), 'b');
-      assert.strictEqual(reader.getColumn(), 1);
+      assert.strictEqual(reader.getPosition().column, 1);
 
       reader.reconsume();
       assert.strictEqual(reader.consume(), 'b');
-      assert.strictEqual(reader.getColumn(), 1);
+      assert.strictEqual(reader.getPosition().column, 1);
 
       assert.strictEqual(reader.consume(), EOF);
-      assert.strictEqual(reader.getColumn(), 2);
+      assert.strictEqual(reader.getPosition().column, 2);
    });
-   it('.getColumn() after EOF',  () => {
+   it('.getPosition().column after EOF',  () => {
       let reader = createReader('a');
 
       assert.strictEqual(reader.consume(), 'a');
-      assert.strictEqual(reader.getColumn(), 0);
+      assert.strictEqual(reader.getPosition().column, 0);
 
       assert.strictEqual(reader.consume(), EOF);
-      assert.strictEqual(reader.getColumn(), 1);
+      assert.strictEqual(reader.getPosition().column, 1);
 
       assert.strictEqual(reader.consume(), EOF);
-      assert.strictEqual(reader.getColumn(), 1);
+      assert.strictEqual(reader.getPosition().column, 1);
    });
-   it('.getLine()',  () => {
+   it('.getPosition().line',  () => {
       let reader = createReader('a\nb\nc');
 
       assert.strictEqual(reader.consume(), 'a');
-      assert.strictEqual(reader.getLine(), 0);
+      assert.strictEqual(reader.getPosition().line, 0);
 
       assert.strictEqual(reader.consume(), '\n');
-      assert.strictEqual(reader.getLine(), 0);
+      assert.strictEqual(reader.getPosition().line, 0);
 
       assert.strictEqual(reader.consume(), 'b');
-      assert.strictEqual(reader.getLine(), 1);
+      assert.strictEqual(reader.getPosition().line, 1);
 
       assert.strictEqual(reader.consume(), '\n');
-      assert.strictEqual(reader.getLine(), 1);
+      assert.strictEqual(reader.getPosition().line, 1);
 
       assert.strictEqual(reader.consume(), 'c');
-      assert.strictEqual(reader.getLine(), 2);
+      assert.strictEqual(reader.getPosition().line, 2);
 
       assert.strictEqual(reader.consume(), EOF);
-      assert.strictEqual(reader.getLine(), 2);
+      assert.strictEqual(reader.getPosition().line, 2);
    });
-   it('.getLine() re-consumed',  () => {
+   it('.getPosition().line re-consumed',  () => {
       let reader = createReader('a\nb');
 
       assert.strictEqual(reader.consume(), 'a');
-      assert.strictEqual(reader.getLine(), 0);
+      assert.strictEqual(reader.getPosition().line, 0);
 
       assert.strictEqual(reader.consume(), '\n');
-      assert.strictEqual(reader.getLine(), 0);
+      assert.strictEqual(reader.getPosition().line, 0);
 
       reader.reconsume();
       assert.strictEqual(reader.consume(), '\n');
-      assert.strictEqual(reader.getLine(), 0);
+      assert.strictEqual(reader.getPosition().line, 0);
 
       assert.strictEqual(reader.consume(), 'b');
-      assert.strictEqual(reader.getLine(), 1);
+      assert.strictEqual(reader.getPosition().line, 1);
 
       assert.strictEqual(reader.consume(), EOF);
-      assert.strictEqual(reader.getLine(), 1);
+      assert.strictEqual(reader.getPosition().line, 1);
+   });
+   it('.getSpan()', function () {
+      const source = new Source('abcde', meta);
+      const location = new Location(new Position(0, 0, 2), new Position(0, 0, 3));
+      assert.strictEqual(source.getSpan(location), 'cd');
    });
 });

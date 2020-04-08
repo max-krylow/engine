@@ -4,6 +4,7 @@ import Location from "../core/utils/Location";
 import { IAttributes, IBuilder, IErrorHandler, ITokenizer } from "./Tokenizer";
 import { DataNode, Node, NodeType, NodeWithChildren, TagNode } from "./Node";
 import { INodeDescription } from "./Description";
+import Position from "../core/utils/Position";
 
 /**
  *
@@ -79,14 +80,14 @@ class TreeBuilder implements IBuilder {
     * @param selfClosing
     * @param location
     */
-   public onOpenTag(name: string, attributes: IAttributes, selfClosing: boolean, location?: Location): void {
+   public onOpenTag(name: string, attributes: IAttributes, selfClosing: boolean, location: Location): void {
       const description = this.nodeDescriptor(name);
       if (selfClosing) {
          if (!(description.allowSelfClosing || description.isVoid)) {
             this.error('tryToCloseVoidOrNotSelfClosingTag');
          }
       }
-      let node = new TagNode(name, attributes, selfClosing);
+      let node = new TagNode(name, attributes, selfClosing, location);
       this.appendNode(node);
       if (!selfClosing) {
          this.stack.push(node);
@@ -98,7 +99,7 @@ class TreeBuilder implements IBuilder {
     * @param name
     * @param location
     */
-   public onCloseTag(name: string, location?: Location): void {
+   public onCloseTag(name: string, location: Location): void {
       const description = this.nodeDescriptor(name);
       this.dataNode = null;
       if (description.isVoid) {
@@ -112,7 +113,7 @@ class TreeBuilder implements IBuilder {
     * @param data
     * @param location
     */
-   public onText(data: string, location?: Location): void {
+   public onText(data: string, location: Location): void {
       this.appendDataNode(NodeType.Text, data, location);
    }
 
@@ -121,7 +122,7 @@ class TreeBuilder implements IBuilder {
     * @param data
     * @param location
     */
-   public onComment(data: string, location?: Location): void {
+   public onComment(data: string, location: Location): void {
       this.appendDataNode(NodeType.Comment, data, location);
    }
 
@@ -130,8 +131,8 @@ class TreeBuilder implements IBuilder {
     * @param data
     * @param location
     */
-   public onCDATA(data: string, location?: Location): void {
-      let node = new DataNode(NodeType.CDATA, data);
+   public onCDATA(data: string, location: Location): void {
+      let node = new DataNode(NodeType.CDATA, data, location);
       this.appendNode(node);
    }
 
@@ -140,8 +141,8 @@ class TreeBuilder implements IBuilder {
     * @param data
     * @param location
     */
-   public onDoctype(data: string, location?: Location): void {
-      let node = new DataNode(NodeType.Doctype, data);
+   public onDoctype(data: string, location: Location): void {
+      let node = new DataNode(NodeType.Doctype, data, location);
       this.appendNode(node);
    }
 
@@ -184,12 +185,13 @@ class TreeBuilder implements IBuilder {
     * @param data
     * @param location
     */
-   private appendDataNode(type: NodeType, data: string, location?: Location): void {
+   private appendDataNode(type: NodeType, data: string, location: Location): void {
       if (this.dataNode && this.dataNode.type === type) {
          this.dataNode.data += data;
+         this.dataNode.location = new Location(this.dataNode.location.start, location.end);
          return;
       }
-      let node = new DataNode(type, data);
+      let node = new DataNode(type, data, location);
       this.appendNode(node);
       this.dataNode = node;
    }

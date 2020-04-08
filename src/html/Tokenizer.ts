@@ -4,6 +4,7 @@ import Location  from "../core/utils/Location";
 import { ISourceReader } from "../core/SourceReader";
 import { IAttributes, AttributeValue } from "./Attribute";
 import { IErrorHandler } from "../core/utils/ErrorHandler";
+import Position from "../core/utils/Position";
 
 const NULL: string = '\u0000';
 const AMPERSAND: string = '&';
@@ -36,12 +37,12 @@ interface ITokenizerOptions {
 
 interface IBuilder {
    onStart(tokenizer: ITokenizer): void;
-   onOpenTag(name: string, attributes: IAttributes, selfClosing: boolean, location?: Location): void;
-   onCloseTag(name: string, location?: Location): void;
-   onText(data: string, location?: Location): void;
-   onComment(data: string, location?: Location): void;
-   onCDATA(data: string, location?: Location): void;
-   onDoctype(data: string, location?: Location): void;
+   onOpenTag(name: string, attributes: IAttributes, selfClosing: boolean, location: Location): void;
+   onCloseTag(name: string, location: Location): void;
+   onText(data: string, location: Location): void;
+   onComment(data: string, location: Location): void;
+   onCDATA(data: string, location: Location): void;
+   onDoctype(data: string, location: Location): void;
    onEOF(): void;
 }
 
@@ -119,6 +120,8 @@ class Tokenizer implements ITokenizer {
    private returnState: TokenizerState;
    private charBuffer: string;
    private index: number;
+   private startPosition: Position;
+   private currentPosition: Position;
 
    private endTagExpectation: string;
    private containsHyphen: boolean;
@@ -168,6 +171,8 @@ class Tokenizer implements ITokenizer {
       this.selfClosing = false;
       this.index = Number.MAX_VALUE;
       this.endTagExpectation = null;
+      this.startPosition = new Position(0, 0 ,0);
+      this.currentPosition = null;
       this.tokenHandler.onStart(this);
    }
 
@@ -177,6 +182,7 @@ class Tokenizer implements ITokenizer {
       let treatAsDefault;
       while (this.source.hasNext()) {
          char = this.source.consume();
+         this.currentPosition = this.source.getPosition();
          switch (this.state) {
             case TokenizerState.DATA:
                // Consume the next input character.
@@ -1595,15 +1601,24 @@ class Tokenizer implements ITokenizer {
       this.finalize();
    }
 
+   private getCurrentLocation(): Location {
+      return new Location(this.startPosition, this.currentPosition);
+   }
+
+   private resetPosition(): void {
+      this.startPosition = this.currentPosition;
+   }
+
    private flushCharBuffer(): void {
       if (this.charBuffer.length > 0) {
-         this.tokenHandler.onText(this.charBuffer);
+         this.tokenHandler.onText(this.charBuffer, this.getCurrentLocation());
          this.cleanCharBuffer();
       }
    }
 
    private cleanCharBuffer(): void {
       this.charBuffer = '';
+      this.resetPosition();
    }
 
    private appendCharBuffer(char: string): void {
@@ -1629,19 +1644,20 @@ class Tokenizer implements ITokenizer {
 
    private emitTagToken(): void {
       if (this.endTag) {
-         this.tokenHandler.onCloseTag(this.tagName);
+         this.tokenHandler.onCloseTag(this.tagName, this.getCurrentLocation());
       } else {
-         this.tokenHandler.onOpenTag(this.tagName, this.attributes, this.selfClosing);
+         this.tokenHandler.onOpenTag(this.tagName, this.attributes, this.selfClosing, this.getCurrentLocation());
       }
       this.tagName = '';
       this.attributes = undefined;
       this.selfClosing = false;
+      this.resetPosition();
    }
 
    private emitComment(provisionalHyphens: number): void {
       const data = this.charBuffer.substr(0, this.charBuffer.length - provisionalHyphens);
       if (this.allowComments) {
-         this.tokenHandler.onComment(data);
+         this.tokenHandler.onComment(data, this.getCurrentLocation());
       }
       this.cleanCharBuffer();
    }
@@ -1680,12 +1696,12 @@ class Tokenizer implements ITokenizer {
    }
 
    private emitCDATA(): void {
-      this.tokenHandler.onCDATA(this.charBuffer);
+      this.tokenHandler.onCDATA(this.charBuffer, this.getCurrentLocation());
       this.cleanCharBuffer();
    }
 
    private emitDoctype(): void {
-      this.tokenHandler.onDoctype(this.charBuffer);
+      this.tokenHandler.onDoctype(this.charBuffer, this.getCurrentLocation());
       this.cleanCharBuffer();
    }
 

@@ -1,6 +1,7 @@
 /// <amd-module name="engine/html/Node" />
 
 import { IAttributes } from "./Attribute";
+import Location  from "../core/utils/Location";
 
 /**
  *
@@ -39,6 +40,10 @@ class Node {
    /**
     *
     */
+   location: Location;
+   /**
+    *
+    */
    parent: NodeWithChildren | null;
    /**
     *
@@ -52,9 +57,11 @@ class Node {
    /**
     *
     * @param type
+    * @param location
     */
-   constructor(type: NodeType) {
+   constructor(type: NodeType, location: Location) {
       this.type = type;
+      this.location = location;
       this.parent = null;
       this.prev = null;
       this.next = null;
@@ -81,9 +88,10 @@ class DataNode extends Node {
     *
     * @param type
     * @param data
+    * @param location
     */
-   constructor(type: NodeType, data: string) {
-      super(type);
+   constructor(type: NodeType, data: string, location: Location) {
+      super(type, location);
       this.data = data;
    }
 
@@ -117,9 +125,10 @@ class NodeWithChildren extends Node {
     *
     * @param type
     * @param children
+    * @param location
     */
-   constructor(type: NodeType, children: Node[]) {
-      super(type);
+   constructor(type: NodeType, children: Node[], location: Location) {
+      super(type, location);
       this.children = children;
    }
 }
@@ -150,9 +159,10 @@ class TagNode extends NodeWithChildren {
     * @param name
     * @param attribs
     * @param selfClosing
+    * @param location
     */
-   constructor(name: string, attribs: IAttributes, selfClosing: boolean) {
-      super(NodeType.Tag, []);
+   constructor(name: string, attribs: IAttributes, selfClosing: boolean, location: Location) {
+      super(NodeType.Tag, [], location);
       this.name = name;
       this.attribs = attribs;
       this.selfClosing = selfClosing;

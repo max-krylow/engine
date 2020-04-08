@@ -2,6 +2,7 @@
 
 import { assertIndex } from "./debug/Assertions";
 import { IMetaInfo } from "./MetaInfo";
+import Location from "./utils/Location";
 
 const LINE_FEED = '\n';
 const NULL_REPLACEMENT = '\ufffd';
@@ -17,6 +18,7 @@ export interface ISource {
    getChar(index: number): string;
    getSize(): number;
    getMeta(): IMetaInfo;
+   getSpan(location: Location): string;
 }
 
 export class Source implements ISource {
@@ -39,5 +41,9 @@ export class Source implements ISource {
 
    getMeta(): IMetaInfo {
       return this.metaInfo;
+   }
+
+   getSpan(location: Location): string {
+      return this.data.slice(location.start.index, location.end.index + 1);
    }
 }

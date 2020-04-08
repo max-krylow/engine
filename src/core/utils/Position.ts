@@ -12,14 +12,20 @@ export default class Position {
     *
     */
    public readonly column: number;
+   /**
+    *
+    */
+   public readonly index: number;
 
    /**
     *
     * @param line
     * @param column
+    * @param index
     */
-   constructor(line: number, column: number) {
+   constructor(line: number, column: number, index: number) {
       this.line = line;
       this.column = column;
+      this.index = index;
    }
 }

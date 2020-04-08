@@ -14,6 +14,10 @@ export default class Location {
     *
     */
    public readonly end: Position;
+   /**
+    *
+    */
+   public readonly index: number;
 
    /**
     *

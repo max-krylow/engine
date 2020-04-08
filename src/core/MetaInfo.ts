@@ -5,7 +5,7 @@ export interface IMetaInfo {
 }
 
 export class MetaInfo implements IMetaInfo {
-   public readonly fileName: string;
+   readonly fileName: string;
 
    constructor(fileName: string) {
       this.fileName = fileName;
