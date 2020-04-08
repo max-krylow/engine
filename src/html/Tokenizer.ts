@@ -9,17 +9,35 @@ import TokenizerState from "./TokenizerState";
 import { ITokenizer, ITokenHandler } from "./base/ITokenizer";
 import Symbols from "./base/Symbols";
 
-const CDATA_LSQB: string = 'CDATA[';
-const OCTYPE: string = 'OCTYPE';
+const CDATA: string = 'CDATA[';
+const DOCTYPE: string = 'OCTYPE';
 const SCRIPT: string = 'SCRIPT';
 
+/**
+ *
+ */
 export interface ITokenizerOptions {
+   /**
+    *
+    */
    html4: boolean;
+   /**
+    *
+    */
    allowComments: boolean;
+   /**
+    *
+    */
    allowCDATA: boolean;
+   /**
+    *
+    */
    tagNameToLowerCase: boolean;
 }
 
+/**
+ *
+ */
 export class Tokenizer implements ITokenizer {
    private tokenHandler: ITokenHandler;
    private errorHandler: IErrorHandler;
@@ -46,7 +64,13 @@ export class Tokenizer implements ITokenizer {
    private readonly allowCDATA: boolean;
    private readonly tagNameToLowerCase: boolean;
 
-   constructor(tokenHandler: ITokenHandler, options?: ITokenizerOptions) {
+   /**
+    *
+    * @param tokenHandler
+    * @param options
+    * @param errorHandler
+    */
+   constructor(tokenHandler: ITokenHandler, options?: ITokenizerOptions, errorHandler?: IErrorHandler) {
       this.tokenHandler = tokenHandler;
       this.html4 = !!(options && options.html4);
       this.allowComments = !!(options && options.allowComments);
@@ -54,20 +78,20 @@ export class Tokenizer implements ITokenizer {
       this.tagNameToLowerCase = !!(options && options.tagNameToLowerCase);
    }
 
-   public setErrorHandler(errorHandler: IErrorHandler): void {
-      this.errorHandler = errorHandler;
-   }
-
-   public getErrorHandler(): IErrorHandler {
-      return this.errorHandler;
-   }
-
+   /**
+    *
+    * @param state
+    * @param endTagExpectation
+    */
    public setContentModel(state: TokenizerState, endTagExpectation?: string): void {
       this.state = state;
       this.returnState = state;
       this.endTagExpectation = typeof endTagExpectation === 'string' ? endTagExpectation : null;
    }
 
+   /**
+    * Initialize without starting tokenize.
+    */
    public start(): void {
       this.state = TokenizerState.DATA;
       this.returnState = TokenizerState.DATA;
@@ -81,6 +105,10 @@ export class Tokenizer implements ITokenizer {
       this.tokenHandler.onStart(this);
    }
 
+   /**
+    * Start tokenize process.
+    * @param source
+    */
    public tokenize(source: ISourceReader): void {
       this.source = source;
       let char;
@@ -663,9 +691,9 @@ export class Tokenizer implements ITokenizer {
                this.state = TokenizerState.BOGUS_COMMENT;
                break;
             case TokenizerState.MARKUP_DECLARATION_OCTYPE:
-               if (this.index < OCTYPE.length) {
+               if (this.index < DOCTYPE.length) {
                   char = char.toUpperCase();
-                  if (char === OCTYPE[this.index]) {
+                  if (char === DOCTYPE[this.index]) {
                      this.index++;
                   } else {
                      this.error('errBogusComment');
@@ -856,9 +884,9 @@ export class Tokenizer implements ITokenizer {
                }
                break;
             case TokenizerState.CDATA_START:
-               if (this.index < CDATA_LSQB.length) {
+               if (this.index < CDATA.length) {
                   char = char.toUpperCase();
-                  if (char === CDATA_LSQB[this.index]) {
+                  if (char === CDATA[this.index]) {
                      this.index++;
                   } else {
                      this.error('errBogusComment');

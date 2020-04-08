@@ -1,4 +1,4 @@
-/// <amd-module name="engine/html/Description" />
+/// <amd-module name="engine/html/NodeDescription" />
 
 /**
  * @link https://www.w3.org/TR/2011/WD-html5-20110525/content-models.html
@@ -83,9 +83,8 @@ const DEFAULT_DEFINITION = new NodeDescription({});
 
 /**
  *
- * @param elementName
+ * @param tagNodeName
  */
-export function getNodeDescription(elementName: string): INodeDescription {
+export function getTagNodeDescription(tagNodeName: string): INodeDescription {
    return DEFAULT_DEFINITION;
 }
-

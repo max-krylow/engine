@@ -2,7 +2,7 @@
 
 import Location from "../core/utils/Location";
 import { DataNode, Node, NodeType, NodeWithChildren, TagNode } from "./Node";
-import { INodeDescription } from "./Description";
+import { INodeDescription } from "./NodeDescription";
 
 import { ITokenHandler } from "./base/ITokenizer";
 import { IErrorHandler } from "../core/utils/ErrorHandler";
@@ -44,29 +44,15 @@ class TreeBuilder implements ITokenHandler {
    private tokenizer: ITokenizer = null;
 
    /**
-    *
+    * Inialize new instance.
     */
-   constructor(nodeDescriptor: TNodeDescriptor) {
+   constructor(nodeDescriptor: TNodeDescriptor, errorHandler?: IErrorHandler) {
       this.nodeDescriptor = nodeDescriptor;
-   }
-
-   /**
-    *
-    * @param errorHandler
-    */
-   public setErrorHandler(errorHandler: IErrorHandler): void {
       this.errorHandler = errorHandler;
    }
 
    /**
-    *
-    */
-   public getErrorHandler(): IErrorHandler {
-      return this.errorHandler;
-   }
-
-   /**
-    *
+    * Handle start token.
     * @param tokenizer
     */
    public onStart(tokenizer: ITokenizer): void {
@@ -76,7 +62,7 @@ class TreeBuilder implements ITokenHandler {
    }
 
    /**
-    *
+    * Handle open tag token.
     * @param name
     * @param attributes
     * @param selfClosing
@@ -97,7 +83,7 @@ class TreeBuilder implements ITokenHandler {
    }
 
    /**
-    *
+    * Handle close tag token.
     * @param name
     * @param location
     */
@@ -111,7 +97,7 @@ class TreeBuilder implements ITokenHandler {
    }
 
    /**
-    *
+    * Handle text token.
     * @param data
     * @param location
     */
@@ -120,7 +106,7 @@ class TreeBuilder implements ITokenHandler {
    }
 
    /**
-    *
+    * Handle comment token.
     * @param data
     * @param location
     */
@@ -129,7 +115,7 @@ class TreeBuilder implements ITokenHandler {
    }
 
    /**
-    *
+    * Handle cdata token.
     * @param data
     * @param location
     */
@@ -139,7 +125,7 @@ class TreeBuilder implements ITokenHandler {
    }
 
    /**
-    *
+    * Handle doctype token.
     * @param data
     * @param location
     */
@@ -149,21 +135,21 @@ class TreeBuilder implements ITokenHandler {
    }
 
    /**
-    *
+    * Handle eof token.
     */
    public onEOF(): void {
       this.flushStack();
    }
 
    /**
-    *
+    * Get resulting tree.
     */
    public getTree(): Node[] {
       return this.tree;
    }
 
    /**
-    *
+    * Append new tag node.
     * @param node
     */
    private appendNode(node: Node): void {
@@ -182,7 +168,7 @@ class TreeBuilder implements ITokenHandler {
    }
 
    /**
-    *
+    * Append new data node.
     * @param type
     * @param data
     * @param location
@@ -199,7 +185,7 @@ class TreeBuilder implements ITokenHandler {
    }
 
    /**
-    *
+    * Handle error.
     * @param message
     */
    private error(message: string): void {
@@ -209,17 +195,7 @@ class TreeBuilder implements ITokenHandler {
    }
 
    /**
-    *
-    * @param message
-    */
-   private warn(message: string): void {
-      if (this.errorHandler && typeof this.errorHandler.warn === 'function') {
-         this.errorHandler.warn(message);
-      }
-   }
-
-   /**
-    *
+    * Pop nodes from stack of open nodes.
     * @param name
     */
    private popNode(name: string): void {
@@ -239,7 +215,7 @@ class TreeBuilder implements ITokenHandler {
    }
 
    /**
-    *
+    * Flush stack of open nodes.
     */
    private flushStack(): void {
       for (let index = this.stack.length - 1; index >= 0; --index) {

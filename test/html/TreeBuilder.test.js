@@ -15,9 +15,8 @@ const dummyDescriptor = function() { return {}; };
 
 function createTree(html, options) {
    let reader = new SourceReader(new Source(html, meta));
-   let builder = new TreeBuilder(dummyDescriptor);
-   builder.setErrorHandler(ERROR_HANDLER);
-   let tokenizer = new Tokenizer(builder, options);
+   let builder = new TreeBuilder(dummyDescriptor, ERROR_HANDLER);
+   let tokenizer = new Tokenizer(builder, options, ERROR_HANDLER);
    tokenizer.start();
    tokenizer.tokenize(reader);
    return builder.getTree();
