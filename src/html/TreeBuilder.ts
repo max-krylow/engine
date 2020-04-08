@@ -73,7 +73,7 @@ class TreeBuilder implements ITokenHandler {
       const description = this.nodeDescriptor(name);
       if (selfClosing) {
          if (!(description.allowSelfClosing || description.isVoid)) {
-            this.error('tryToCloseVoidOrNotSelfClosingTag');
+            this.error(`Tag ${name} cannot be self-closing or void`);
          }
       }
       const options: ITagNodeOptions = {
@@ -99,7 +99,7 @@ class TreeBuilder implements ITokenHandler {
       const description = this.nodeDescriptor(name);
       this.dataNode = null;
       if (description.isVoid) {
-         this.error('tryToCloseVoidTag');
+         this.error(`End tag ${name}`);
       }
       this.popNode(name);
    }
@@ -215,11 +215,11 @@ class TreeBuilder implements ITokenHandler {
             return;
          }
          if (!this.nodeDescriptor(currentNodeName).closedByParent) {
-            this.error('unexpectedClosingTagNames');
+            this.error(`Stray end tag ${name}`);
             return;
          }
       }
-      this.error('wantedCloseTag');
+      this.error(`Stray end tag ${name}`);
    }
 
    /**
@@ -230,7 +230,7 @@ class TreeBuilder implements ITokenHandler {
          const node = this.stack[index];
          const currentNodeName = (node as TagNode).name;
          if (!this.nodeDescriptor(currentNodeName).closedByParent) {
-            this.error('gotUnclosedTags');
+            this.error(`Unclosed element ${currentNodeName}`);
          }
       }
    }

@@ -75,20 +75,22 @@ export interface ITokenHandler {
  */
 export interface ITokenizer {
    /**
-    *
+    * Prepare data before tokenize process without starting.
     */
    start(): void;
 
    /**
-    *
-    * @param source
+    * Start tokenize process of input source.
+    * @param source {ISourceReader} The object that implements the interface ISourceReader
+    * and contains data for tokenize process.
     */
    tokenize(source: ISourceReader): void;
 
    /**
-    *
-    * @param contentModel
-    * @param expectingEndTagName
+    * Force set content model during the tokenize process.
+    * @param contentModel {ContentModel} Content model.
+    * @param expectingEndTagName {string} The name of tag which indicates that
+    * the tokenizer should go out of this content model state in its previous state.
     */
    setContentModel(contentModel: ContentModel, expectingEndTagName: string): void;
 }

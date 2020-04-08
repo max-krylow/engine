@@ -137,6 +137,7 @@ export class Tokenizer implements ITokenizer {
       this.allowComments = !!(options && options.allowComments);
       this.allowCDATA = !!(options && options.allowCDATA);
       this.tagNameToLowerCase = !!(options && options.tagNameToLowerCase);
+      this.errorHandler = errorHandler;
    }
 
    /**
@@ -228,20 +229,20 @@ export class Tokenizer implements ITokenizer {
                      break;
                   case Symbols.QUESTION_MARK:
                      // Parse error. Switch to the bogus comment state.
-                     this.error('errProcessingInstruction');
+                     this.error(`Saw ${this.charBuffer + char}. Probable cause: Attempt to use an XML processing instruction in HTML. XML processing instructions are not supported in HTML`);
                      this.cleanCharBuffer();
                      this.appendCharBuffer(char);
                      this.state = TokenizerState.BOGUS_COMMENT;
                      break;
                   case Symbols.GREATER_THAN_SIGN:
-                     this.error('errLtGt');
+                     this.error(`Saw ${this.charBuffer + char}. Probable causes: Unescaped < (escape as &lt;) or mistyped start tag`);
                      this.appendCharBuffer('<>');
                      this.state = TokenizerState.DATA;
                      break;
                   default:
                      // Parse error. Emit a U+003C LESS-THAN SIGN character token and
                      // reconsume the current input character in the data state.
-                     this.error('errBadCharAfterLt');
+                     this.error(`Bad character "${char}" after <. Probable cause: Unescaped <. Try escaping it as &lt;`);
                      this.source.reconsume();
                      this.appendCharBuffer(Symbols.LESS_THAN_SIGN);
                      this.state = TokenizerState.DATA;
@@ -276,12 +277,12 @@ export class Tokenizer implements ITokenizer {
                switch (char) {
                   case Symbols.GREATER_THAN_SIGN:
                      // Parse error. Switch to the data state.
-                     this.error('errLtSlashGt');
+                     this.error(`Saw ${this.charBuffer}. Probable causes: Unescaped < (escape as &lt;) or mistyped end tag`);
                      this.state = TokenizerState.DATA;
                      break;
                   default:
                      // Parse error. Switch to the bogus comment state.
-                     this.error('errGarbageAfterLtSlash');
+                     this.error(`Garbage after ${this.charBuffer + char}`);
                      this.cleanCharBuffer();
                      this.appendCharBuffer(char);
                      this.containsHyphen = false;
@@ -361,7 +362,7 @@ export class Tokenizer implements ITokenizer {
                   case Symbols.LESS_THAN_SIGN:
                   case Symbols.EQUALS_SIGN:
                      // Parse error. Treat it as per the "anything else" entry below.
-                     this.error('errBadCharBeforeAttributeNameOrNull');
+                     this.error(`Saw ${char} when expecting an attribute name`);
                   // fallthrough
                   default:
                      // Start a new attribute in the current tag token.
@@ -414,7 +415,7 @@ export class Tokenizer implements ITokenizer {
                   case Symbols.APOSTROPHE:
                   case Symbols.LESS_THAN_SIGN:
                      // Parse error. Treat it as per the "anything else" entry below.
-                     this.error('errQuoteOrLtInAttributeNameOrNull');
+                     this.error(`Quote ${char} in attribute name`);
                   // fallthrough
                   default:
                      // Append the current input character to the current attribute's name.
@@ -472,7 +473,7 @@ export class Tokenizer implements ITokenizer {
                   case Symbols.APOSTROPHE:
                   case Symbols.LESS_THAN_SIGN:
                      // Parse error. Treat it as per the "anything else" entry below.
-                     this.error('errQuoteOrLtInAttributeNameOrNull');
+                     this.error(`${char} in attribute name`);
                   // fallthrough
                   default:
                      // Start a new attribute in the current tag token.
@@ -518,7 +519,7 @@ export class Tokenizer implements ITokenizer {
                      break;
                   case Symbols.GREATER_THAN_SIGN:
                      // Parse error. Switch to the data state. Emit the current tag token.
-                     this.error('errAttributeValueMissing');
+                     this.error('Attribute value missing');
                      this.addAttributeWithoutValue();
                      this.emitTagToken();
                      // TODO: shouldSuspend
@@ -528,12 +529,11 @@ export class Tokenizer implements ITokenizer {
                   case Symbols.EQUALS_SIGN:
                   case Symbols.GRAVE_ACCENT:
                      // Parse error. Treat it as per the "anything else" entry below.
-                     this.error('errLtOrEqualsOrGraveInUnquotedAttributeOrNull');
+                     this.error(`${char} at the start of an unquoted attribute value`);
                   // fallthrough
                   default:
                      // Append the current input character to the current attribute's value.
                      // Switch to the attribute value (unquoted) state.
-                     this.error('errHtml4NonNameInUnquotedAttribute');
                      this.cleanCharBuffer();
                      this.appendCharBuffer(char);
                      this.state = TokenizerState.ATTRIBUTE_VALUE_UNQUOTED;
@@ -601,11 +601,10 @@ export class Tokenizer implements ITokenizer {
                   case Symbols.EQUALS_SIGN:
                   case Symbols.GRAVE_ACCENT:
                      // Parse error. Treat it as per the "anything else" entry below.
-                     this.error('errUnquotedAttributeValOrNull');
+                     this.error(`${char} at the start of an unquoted attribute value`);
                   // fallthrough
                   default:
                      // Append the current input character to the current attribute's value.
-                     this.error('errHtml4NonNameInUnquotedAttribute');
                      this.appendCharBuffer(char);
                      break;
                }
@@ -630,7 +629,7 @@ export class Tokenizer implements ITokenizer {
                      break;
                   default:
                      // Parse error. Reconsume the character in the before attribute name state.
-                     this.error('errNoSpaceBetweenAttributes');
+                     this.error('No space between attributes');
                      this.source.reconsume();
                      this.state = TokenizerState.BEFORE_ATTRIBUTE_NAME;
                      break;
@@ -642,7 +641,6 @@ export class Tokenizer implements ITokenizer {
                   case Symbols.GREATER_THAN_SIGN:
                      // Set the self-closing flag of the current tag token.
                      // Switch to the data state. Emit the current tag token.
-                     this.error('errHtml4XmlVoidSyntax');
                      this.selfClosing = true;
                      this.emitTagToken();
                      // TODO: shouldSuspend
@@ -650,7 +648,7 @@ export class Tokenizer implements ITokenizer {
                      break;
                   default:
                      // Parse error. Reconsume the character in the before attribute name state.
-                     this.error('errSlashNotFollowedByGt');
+                     this.error('A slash was not immediately followed by >');
                      this.source.reconsume();
                      this.state = TokenizerState.BEFORE_ATTRIBUTE_NAME;
                      break;
@@ -735,7 +733,7 @@ export class Tokenizer implements ITokenizer {
                      }
                   // fallthrough
                   default:
-                     this.error('errBogusComment');
+                     this.error('Bogus comment');
                      this.cleanCharBuffer();
                      this.source.reconsume();
                      this.state = TokenizerState.BOGUS_COMMENT;
@@ -747,7 +745,7 @@ export class Tokenizer implements ITokenizer {
                   this.state = TokenizerState.COMMENT_START;
                   break;
                }
-               this.error('errBogusComment');
+               this.error('Bogus comment');
                this.source.reconsume();
                this.state = TokenizerState.BOGUS_COMMENT;
                break;
@@ -757,7 +755,7 @@ export class Tokenizer implements ITokenizer {
                   if (char === DOCTYPE[this.index]) {
                      this.index++;
                   } else {
-                     this.error('errBogusComment');
+                     this.error('Bogus comment');
                      this.source.reconsume();
                      this.state = TokenizerState.BOGUS_COMMENT;
                   }
@@ -781,7 +779,7 @@ export class Tokenizer implements ITokenizer {
                      break;
                   case Symbols.GREATER_THAN_SIGN:
                      // Parse error. Switch to the data state. Emit the comment token.
-                     this.error('errPrematureEndOfComment');
+                     this.error('Premature end of comment. Use --> to end a comment properly');
                      this.emitComment(0);
                      this.state = TokenizerState.DATA;
                      break;
@@ -877,20 +875,17 @@ export class Tokenizer implements ITokenizer {
                      break;
                   case Symbols.EXCLAMATION_MARK:
                      // Parse error. Switch to the comment end bang state.
-                     this.error('errHyphenHyphenBang');
                      this.appendCharBuffer(char);
                      this.state = TokenizerState.COMMENT_END_BANG;
                      break;
                   case Symbols.HYPHEN_MINUS:
                      // Parse error. Append a U+002D HYPHEN-MINUS character (-) to the comment token's data.
-                     this.error('errConsecutiveHyphens');
                      this.appendCharBuffer(char);
                      break;
                   default:
                      // Parse error. Append two U+002D HYPHEN-MINUS characters (-)
                      // and the current input character to the comment token's data.
                      // Switch to the comment state.
-                     this.error('errConsecutiveHyphens');
                      this.appendCharBuffer('--');
                      this.appendCharBuffer(char);
                      this.source.reconsume();
@@ -950,7 +945,7 @@ export class Tokenizer implements ITokenizer {
                   if (char === CDATA[this.index]) {
                      this.index++;
                   } else {
-                     this.error('errBogusComment');
+                     this.error('Bogus comment');
                      this.source.reconsume();
                      this.state = TokenizerState.BOGUS_COMMENT;
                   }
@@ -1523,7 +1518,6 @@ export class Tokenizer implements ITokenizer {
                } else if (this.index < this.endTagExpectation.length) {
                   char = char.toLowerCase();
                   if (char !== this.endTagExpectation[this.index]) {
-                     this.error('errHtml4LtSlashInRcdata');
                      this.appendCharBuffer('</');
                      this.flushCharBuffer();
                      this.source.reconsume();
@@ -1582,7 +1576,6 @@ export class Tokenizer implements ITokenizer {
                          * and reconsume the current input character
                          * in the RAWTEXT state.
                          */
-                        this.error('errWarnLtSlashInRcdata');
                         this.appendCharBuffer('</');
                         this.flushCharBuffer();
                         this.source.reconsume();
@@ -1663,7 +1656,7 @@ export class Tokenizer implements ITokenizer {
          this.attributes = { };
       }
       if (this.attributes[this.attributeName]) {
-         this.error('errDuplicateAttribute');
+         this.error(`Duplicate attribute "${this.attributeName}"`);
          this.attributeName = null;
       }
    }
@@ -1708,7 +1701,7 @@ export class Tokenizer implements ITokenizer {
                this.appendCharBuffer('<');
                break finalizeLoop;
             case TokenizerState.TAG_OPEN:
-               this.error('errEofAfterLt');
+               this.error('End of file after less-than-sign');
                this.appendCharBuffer('<');
                break finalizeLoop;
             case TokenizerState.ESCAPABLE_RAW_TEXT_LESS_THAN_SIGN:
@@ -1719,28 +1712,28 @@ export class Tokenizer implements ITokenizer {
                this.flushCharBuffer();
                break finalizeLoop;
             case TokenizerState.END_TAG_OPEN:
-               this.error('errEofAfterLt');
+               this.error('End of file after less-than-sign');
                this.appendCharBuffer('<>');
                break finalizeLoop;
             case TokenizerState.TAG_NAME:
-               this.error('errEofInTagName');
+               this.error('End of file seen when looking for tag name. Ignoring tag');
                break finalizeLoop;
             case TokenizerState.BEFORE_ATTRIBUTE_NAME:
             case TokenizerState.AFTER_ATTRIBUTE_VALUE_QUOTED:
             case TokenizerState.SELF_CLOSING_START_TAG:
-               this.error('errEofWithoutGt');
+               this.error('Saw end of file without the previous tag ending with greater-than-sign. Ignoring tag');
                break finalizeLoop;
             case TokenizerState.ATTRIBUTE_NAME:
-               this.error('errEofInAttributeName');
+               this.error('End of file occurred in an attribute name. Ignoring tag');
                break;
             case TokenizerState.AFTER_ATTRIBUTE_NAME:
             case TokenizerState.BEFORE_ATTRIBUTE_VALUE:
-               this.error('errEofWithoutGt');
+               this.error('End of file reached when before an attribute value. Ignoring tag');
                break finalizeLoop;
             case TokenizerState.ATTRIBUTE_VALUE_DOUBLE_QUOTED:
             case TokenizerState.ATTRIBUTE_VALUE_SINGLE_QUOTED:
             case TokenizerState.ATTRIBUTE_VALUE_UNQUOTED:
-               this.error('errEofInAttributeValue');
+               this.error('End of file reached when inside an attribute value. Ignoring tag');
                break finalizeLoop;
             case TokenizerState.BOGUS_COMMENT:
                this.emitComment(0);
@@ -1750,38 +1743,38 @@ export class Tokenizer implements ITokenizer {
                break finalizeLoop;
             case TokenizerState.MARKUP_DECLARATION_OPEN:
             case TokenizerState.MARKUP_DECLARATION_HYPHEN:
-               this.error('errBogusComment');
+               this.error('Bogus comment');
                this.emitComment(0);
                break finalizeLoop;
             case TokenizerState.MARKUP_DECLARATION_OCTYPE:
                if (this.index < 6) {
-                  this.error('errBogusComment');
+                  this.error('Bogus comment');
                   this.emitComment(0);
                } else {
-                  this.error('errEofInDoctype');
+                  this.error('End of file inside doctype');
                   this.emitDoctype();
                }
                break finalizeLoop;
             case TokenizerState.COMMENT_START:
             case TokenizerState.COMMENT:
-               this.error('errEofInComment');
+               this.error('End of file inside comment.');
                this.emitComment(0);
                break finalizeLoop;
             case TokenizerState.COMMENT_END:
-               this.error('errEofInComment');
+               this.error('End of file inside comment.');
                this.emitComment(2);
                break finalizeLoop;
             case TokenizerState.COMMENT_END_DASH:
             case TokenizerState.COMMENT_START_DASH:
-               this.error('errEofInComment');
+               this.error('End of file inside comment');
                this.emitComment(1);
                break finalizeLoop;
             case TokenizerState.COMMENT_END_BANG:
-               this.error('errEofInComment');
+               this.error('End of file inside comment.');
                this.emitComment(3);
                break finalizeLoop;
             case TokenizerState.DOCTYPE:
-               this.error('errEofInDoctype');
+               this.error('End of file inside doctype');
                this.emitDoctype();
                break finalizeLoop;
             case TokenizerState.CDATA_RSQB:
