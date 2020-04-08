@@ -6,7 +6,7 @@ import Location  from "../core/utils/Location";
 /**
  *
  */
-enum NodeType {
+export enum NodeType {
    /**
     *
     */
@@ -32,7 +32,7 @@ enum NodeType {
 /**
  *
  */
-class Node {
+export class Node {
    /**
     *
     */
@@ -78,7 +78,7 @@ class Node {
 /**
  *
  */
-class DataNode extends Node {
+export class DataNode extends Node {
    /**
     *
     */
@@ -115,7 +115,7 @@ class DataNode extends Node {
 /**
  *
  */
-class NodeWithChildren extends Node {
+export class NodeWithChildren extends Node {
    /**
     *
     */
@@ -136,7 +136,7 @@ class NodeWithChildren extends Node {
 /**
  *
  */
-class TagNode extends NodeWithChildren {
+export class TagNode extends NodeWithChildren {
    /**
     *
     */
@@ -194,10 +194,3 @@ class TagNode extends NodeWithChildren {
    }
 }
 
-export {
-   Node,
-   NodeWithChildren,
-   NodeType,
-   DataNode,
-   TagNode
-};

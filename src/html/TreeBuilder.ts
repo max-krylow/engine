@@ -1,10 +1,13 @@
 /// <amd-module name="engine/html/TreeBuilder" />
 
 import Location from "../core/utils/Location";
-import { IAttributes, IBuilder, IErrorHandler, ITokenizer } from "./Tokenizer";
 import { DataNode, Node, NodeType, NodeWithChildren, TagNode } from "./Node";
 import { INodeDescription } from "./Description";
-import Position from "../core/utils/Position";
+
+import { ITokenHandler } from "./base/ITokenizer";
+import { IErrorHandler } from "../core/utils/ErrorHandler";
+import { ITokenizer } from "./base/ITokenizer";
+import { IAttributes } from "./Attribute";
 
 /**
  *
@@ -14,7 +17,7 @@ declare type TNodeDescriptor = (name: string) => INodeDescription;
 /**
  *
  */
-class TreeBuilder implements IBuilder {
+class TreeBuilder implements ITokenHandler {
    /**
     *
     */
@@ -70,7 +73,6 @@ class TreeBuilder implements IBuilder {
       this.tree = [];
       this.stack = [];
       this.tokenizer = tokenizer;
-      this.tokenizer.setErrorHandler(this.errorHandler);
    }
 
    /**

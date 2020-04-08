@@ -5,21 +5,12 @@
  * @link https://www.w3.org/TR/2011/WD-html5-20110525/syntax.html
  */
 
-import { TokenizerState } from "./Tokenizer";
+import ContentModel from "./base/ContentModel";
 
 /**
  *
  */
-enum ContentType {
-   DATA = TokenizerState.DATA,
-   RAW_TEXT = TokenizerState.RAW_TEXT,
-   ESCAPABLE_RAW_TEXT= TokenizerState.ESCAPABLE_RAW_TEXT
-}
-
-/**
- *
- */
-interface INodeDescription {
+export interface INodeDescription {
    /**
     *
     */
@@ -43,7 +34,7 @@ interface INodeDescription {
    /**
     *
     */
-   readonly contentType?: ContentType;
+   readonly contentType?: ContentModel;
    /**
     *
     */
@@ -59,7 +50,7 @@ class NodeDescription implements INodeDescription {
    readonly closedByParent: boolean;
    readonly ignoreFirstLF: boolean;
    readonly isVoid: boolean;
-   readonly contentType: ContentType;
+   readonly contentType: ContentModel;
    readonly implicitNameSpace: string;
 
    /**
@@ -72,7 +63,7 @@ class NodeDescription implements INodeDescription {
       this.closedByParent = !!options.closedByParent;
       this.ignoreFirstLF = !!options.ignoreFirstLF;
       this.isVoid = !!options.isVoid;
-      this.contentType = options.contentType || ContentType.DATA;
+      this.contentType = options.contentType || ContentModel.DATA;
       this.implicitNameSpace = options.implicitNameSpace || null;
    }
 
@@ -94,11 +85,7 @@ const DEFAULT_DEFINITION = new NodeDescription({});
  *
  * @param elementName
  */
-function getNodeDescription(elementName: string): INodeDescription {
+export function getNodeDescription(elementName: string): INodeDescription {
    return DEFAULT_DEFINITION;
 }
 
-export {
-   INodeDescription,
-   getNodeDescription
-};

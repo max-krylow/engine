@@ -3,7 +3,7 @@
 const { assert } = require('chai');
 
 const { Tokenizer } = require('engine/html/Tokenizer');
-const { TokenizerState } = require('engine/html/Tokenizer');
+const { default: ContentModel } = require('engine/html/base/ContentModel');
 const { Source } = require("engine/core/Source");
 const { SourceReader } =  require("engine/core/SourceReader");
 const { MetaInfo } =  require("engine/core/MetaInfo");
@@ -245,7 +245,7 @@ describe('engine/html/Tokenizer', function () {
       let tokenizer = new Tokenizer(handler);
       tokenizer.start();
       tokenizer.setErrorHandler(ERROR_HANDLER);
-      tokenizer.setState(TokenizerState.ESCAPABLE_RAW_TEXT, 'textarea');
+      tokenizer.setContentModel(ContentModel.ESCAPABLE_RAW_TEXT, 'textarea');
       tokenizer.tokenize(reader);
    });
    it('Raw text content model', function() {
@@ -266,7 +266,7 @@ describe('engine/html/Tokenizer', function () {
       let tokenizer = new Tokenizer(handler);
       tokenizer.start();
       tokenizer.setErrorHandler(ERROR_HANDLER);
-      tokenizer.setState(TokenizerState.RAW_TEXT, 'script');
+      tokenizer.setContentModel(ContentModel.RAW_TEXT, 'script');
       tokenizer.tokenize(reader);
    });
 });

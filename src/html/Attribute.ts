@@ -5,7 +5,7 @@ import Location from "../core/utils/Location";
 /**
  *
  */
-class AttributeValue {
+export class AttributeValue {
    /**
     *
     */
@@ -24,14 +24,10 @@ class AttributeValue {
 /**
  *
  */
-interface IAttributes {
+export interface IAttributes {
    /**
     *
     */
    [attribute: string]: AttributeValue;
 }
 
-export {
-   AttributeValue,
-   IAttributes
-};
