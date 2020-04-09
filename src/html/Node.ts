@@ -1,10 +1,9 @@
 /// <amd-module name="engine/html/Node" />
 
 import { IAttributes } from "./Attributes";
-import Location  from "../core/utils/Location";
+import { SourceLocation } from "./base/SourceReader";
 
 /**
- *
  * @file src/html/Node.ts
  */
 
@@ -45,7 +44,7 @@ export class Node {
    /**
     *
     */
-   location: Location;
+   location: SourceLocation;
    /**
     *
     */
@@ -61,10 +60,10 @@ export class Node {
 
    /**
     *
-    * @param type
-    * @param location
+    * @param type {NodeType}
+    * @param location {SourceLocation}
     */
-   constructor(type: NodeType, location: Location) {
+   constructor(type: NodeType, location: SourceLocation) {
       this.type = type;
       this.location = location;
       this.parent = null;
@@ -93,9 +92,9 @@ export class DataNode extends Node {
     *
     * @param type
     * @param data
-    * @param location
+    * @param location {SourceLocation}
     */
-   constructor(type: NodeType, data: string, location: Location) {
+   constructor(type: NodeType, data: string, location: SourceLocation) {
       super(type, location);
       this.data = data;
    }
@@ -130,9 +129,9 @@ export class NodeWithChildren extends Node {
     *
     * @param type
     * @param children
-    * @param location
+    * @param location {SourceLocation}
     */
-   constructor(type: NodeType, children: Node[], location: Location) {
+   constructor(type: NodeType, children: Node[], location: SourceLocation) {
       super(type, location);
       this.children = children;
    }
@@ -178,9 +177,9 @@ export class TagNode extends NodeWithChildren {
     * @param name
     * @param attribs
     * @param options
-    * @param location
+    * @param location {SourceLocation}
     */
-   constructor(name: string, attribs: IAttributes, options: ITagNodeOptions, location: Location) {
+   constructor(name: string, attribs: IAttributes, options: ITagNodeOptions, location: SourceLocation) {
       super(NodeType.Tag, [], location);
       this.name = name;
       this.attribs = attribs;

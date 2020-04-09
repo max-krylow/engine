@@ -1,19 +1,16 @@
 /* global require, describe, it */
 
 const { assert } = require('chai');
-
-const { TreeBuilder } = require('engine/html/TreeBuilder');
+const { default: TreeBuilder } = require('engine/html/TreeBuilder');
 const { Tokenizer } = require('engine/html/Tokenizer');
-const { Source } = require("engine/core/Source");
-const { SourceReader } =  require("engine/core/SourceReader");
-const { MetaInfo } =  require("engine/core/MetaInfo");
-
+const { SourceFile } = require("engine/html/base/SourceFile");
+const { SourceReader } = require("engine/html/base/SourceReader");
 const { ERROR_HANDLER } = require('../ErrorHandler');
 
 const dummyDescriptor = function() { return { }; };
 
 function createTree(html, options) {
-   let reader = new SourceReader(new Source(html));
+   let reader = new SourceReader(new SourceFile(html));
    let builder = new TreeBuilder(dummyDescriptor, ERROR_HANDLER);
    let tokenizer = new Tokenizer(builder, options, ERROR_HANDLER);
    tokenizer.start();

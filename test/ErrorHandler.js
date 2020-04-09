@@ -1,4 +1,4 @@
-const { ErrorHandler } = require('engine/core/utils/ErrorHandler');
+const { ErrorHandler } = require('engine/utils/ErrorHandler');
 
 const CONSOLE_LOGGER = {
    debug: console.debug.bind(console),

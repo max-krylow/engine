@@ -1,7 +1,7 @@
-/// <amd-module name="engine/core/utils/ErrorHandler" />
+/// <amd-module name="engine/utils/ErrorHandler" />
 
 /**
- * @file src/core/utils/ErrorHandler.ts
+ * @file src/utils/ErrorHandler.ts
  */
 
 import { ILogger } from "./ILogger";
@@ -141,4 +141,3 @@ export class ErrorHandler implements IErrorHandler {
       this.logger.error(message);
    }
 }
-

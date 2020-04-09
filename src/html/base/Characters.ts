@@ -1,7 +1,7 @@
-/// <amd-module name="engine/html/base/Symbols" />
+/// <amd-module name="engine/html/base/Characters" />
 
 /**
- * @file src/html/base/Symbols.ts
+ * @file src/html/base/Characters.ts
  */
 
 /**
@@ -9,7 +9,7 @@
  *
  * @link https://www.w3.org/TR/2011/WD-html5-20110525/tokenization.html#tokenization
  */
-export default class Symbols {
+export default class Characters {
    /**
     * U+0000 Null representation character.
     */

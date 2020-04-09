@@ -1,17 +1,15 @@
 /// <amd-module name="engine/html/TreeBuilder" />
 
-import Location from "../core/utils/Location";
 import { DataNode, Node, NodeType, NodeWithChildren, TagNode, ITagNodeOptions } from "./Node";
 import { NodeDescription } from "./NodeDescription";
-
+import { SourceLocation } from "./base/SourceReader";
 import { ITokenHandler } from "./base/ITokenizer";
-import { IErrorHandler } from "../core/utils/ErrorHandler";
+import { IErrorHandler } from "../utils/ErrorHandler";
 import { ITokenizer } from "./base/ITokenizer";
 import { IAttributes } from "./Attributes";
 import { ContentModel } from "./base/ContentModel";
 
 /**
- *
  * @file src/html/TreeBuilder.ts
  */
 
@@ -23,7 +21,7 @@ declare type TNodeDescriptor = (name: string) => NodeDescription;
 /**
  *
  */
-class TreeBuilder implements ITokenHandler {
+export default class TreeBuilder implements ITokenHandler {
    /**
     *
     */
@@ -74,7 +72,7 @@ class TreeBuilder implements ITokenHandler {
     * @param selfClosing
     * @param location
     */
-   public onOpenTag(name: string, attributes: IAttributes, selfClosing: boolean, location: Location): void {
+   public onOpenTag(name: string, attributes: IAttributes, selfClosing: boolean, location: SourceLocation): void {
       const description = this.nodeDescriptor(name);
       if (selfClosing) {
          if (!(description.allowSelfClosing || description.isVoid)) {
@@ -100,7 +98,7 @@ class TreeBuilder implements ITokenHandler {
     * @param name
     * @param location
     */
-   public onCloseTag(name: string, location: Location): void {
+   public onCloseTag(name: string, location: SourceLocation): void {
       const description = this.nodeDescriptor(name);
       this.dataNode = undefined;
       if (description.isVoid) {
@@ -114,7 +112,7 @@ class TreeBuilder implements ITokenHandler {
     * @param data
     * @param location
     */
-   public onText(data: string, location: Location): void {
+   public onText(data: string, location: SourceLocation): void {
       this.appendDataNode(NodeType.Text, data, location);
    }
 
@@ -123,7 +121,7 @@ class TreeBuilder implements ITokenHandler {
     * @param data
     * @param location
     */
-   public onComment(data: string, location: Location): void {
+   public onComment(data: string, location: SourceLocation): void {
       this.appendDataNode(NodeType.Comment, data, location);
    }
 
@@ -132,7 +130,7 @@ class TreeBuilder implements ITokenHandler {
     * @param data
     * @param location
     */
-   public onCDATA(data: string, location: Location): void {
+   public onCDATA(data: string, location: SourceLocation): void {
       let node = new DataNode(NodeType.CDATA, data, location);
       this.appendNode(node);
    }
@@ -142,7 +140,7 @@ class TreeBuilder implements ITokenHandler {
     * @param data
     * @param location
     */
-   public onDoctype(data: string, location: Location): void {
+   public onDoctype(data: string, location: SourceLocation): void {
       let node = new DataNode(NodeType.Doctype, data, location);
       this.appendNode(node);
    }
@@ -186,10 +184,10 @@ class TreeBuilder implements ITokenHandler {
     * @param data
     * @param location
     */
-   private appendDataNode(type: NodeType, data: string, location: Location): void {
+   private appendDataNode(type: NodeType, data: string, location: SourceLocation): void {
       if (this.dataNode && this.dataNode.type === type) {
          this.dataNode.data += data;
-         this.dataNode.location = new Location(this.dataNode.location.start, location.end);
+         this.dataNode.location = new SourceLocation(this.dataNode.location.start, location.end);
          return;
       }
       let node = new DataNode(type, data, location);
@@ -240,7 +238,3 @@ class TreeBuilder implements ITokenHandler {
       }
    }
 }
-
-export {
-   TreeBuilder
-};

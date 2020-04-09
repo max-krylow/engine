@@ -5,14 +5,11 @@
  * @link https://www.w3.org/TR/2011/WD-html5-20110525/tokenization.html#tokenization
  * @link https://www.w3.org/TR/2011/WD-html5-20110525/content-models.html
  */
-
-import Location  from "../core/utils/Location";
-import { ISourceReader } from "../core/SourceReader";
+import { SourceLocation, SourcePosition, ISourceReader } from "./base/SourceReader";
 import { IAttributes, AttributeName, AttributeValue } from "./Attributes";
-import { IErrorHandler } from "../core/utils/ErrorHandler";
-import Position from "../core/utils/Position";
+import { IErrorHandler } from "../utils/ErrorHandler";
 import { ITokenizer, ITokenHandler } from "./base/ITokenizer";
-import Symbols from "./base/Symbols";
+import Characters from "./base/Characters";
 import { ContentModel } from "./base/ContentModel";
 
 const CDATA: string = 'CDATA[';
@@ -126,9 +123,9 @@ export class Tokenizer implements ITokenizer {
    private state: TokenizerState = TokenizerState.DATA;
    private returnState: TokenizerState = TokenizerState.DATA;
    private charBuffer: string = '';
-   private index: number = 0;
-   private startPosition: Position | undefined;
-   private currentPosition: Position | undefined;
+   private index: number = Number.MAX_VALUE;
+   private startPosition: SourcePosition | undefined;
+   private currentPosition: SourcePosition | undefined;
    private endTagExpectation: string = '';
 
    private endTag: boolean = false;
@@ -175,7 +172,7 @@ export class Tokenizer implements ITokenizer {
       this.selfClosing = false;
       this.index = Number.MAX_VALUE;
       this.endTagExpectation = '';
-      this.startPosition = new Position(0, 0);
+      this.startPosition = new SourcePosition(0, 0);
       this.currentPosition = undefined;
       this.tokenHandler.onStart(this);
    }
@@ -195,11 +192,11 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.DATA:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.LESS_THAN_SIGN:
+                  case Characters.LESS_THAN_SIGN:
                      this.flushCharBuffer();
                      this.state = TokenizerState.TAG_OPEN;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Emit the current input character as a character token.
                      break;
                   default:
@@ -232,20 +229,20 @@ export class Tokenizer implements ITokenizer {
                   break;
                }
                switch (char) {
-                  case Symbols.EXCLAMATION_MARK:
+                  case Characters.EXCLAMATION_MARK:
                      this.state = TokenizerState.MARKUP_DECLARATION_OPEN;
                      break;
-                  case Symbols.SOLIDUS:
+                  case Characters.SOLIDUS:
                      this.state = TokenizerState.END_TAG_OPEN;
                      break;
-                  case Symbols.QUESTION_MARK:
+                  case Characters.QUESTION_MARK:
                      // Parse error. Switch to the bogus comment state.
                      this.error(`Saw ${this.charBuffer + char}. Probable cause: Attempt to use an XML processing instruction in HTML. XML processing instructions are not supported in HTML`);
                      this.cleanCharBuffer();
                      this.appendCharBuffer(char);
                      this.state = TokenizerState.BOGUS_COMMENT;
                      break;
-                  case Symbols.GREATER_THAN_SIGN:
+                  case Characters.GREATER_THAN_SIGN:
                      this.error(`Saw ${this.charBuffer + char}. Probable causes: Unescaped < (escape as &lt;) or mistyped start tag`);
                      this.appendCharBuffer('<>');
                      this.state = TokenizerState.DATA;
@@ -255,7 +252,7 @@ export class Tokenizer implements ITokenizer {
                      // reconsume the current input character in the data state.
                      this.error(`Bad character "${char}" after <. Probable cause: Unescaped <. Try escaping it as &lt;`);
                      this.source.reconsume();
-                     this.appendCharBuffer(Symbols.LESS_THAN_SIGN);
+                     this.appendCharBuffer(Characters.LESS_THAN_SIGN);
                      this.state = TokenizerState.DATA;
                      break;
                }
@@ -284,7 +281,7 @@ export class Tokenizer implements ITokenizer {
                   break;
                }
                switch (char) {
-                  case Symbols.GREATER_THAN_SIGN:
+                  case Characters.GREATER_THAN_SIGN:
                      // Parse error. Switch to the data state.
                      this.error(`Saw ${this.charBuffer}. Probable causes: Unescaped < (escape as &lt;) or mistyped end tag`);
                      this.state = TokenizerState.DATA;
@@ -308,18 +305,18 @@ export class Tokenizer implements ITokenizer {
                   break;
                }
                switch (char) {
-                  case Symbols.CHARACTER_TABULATION:
-                  case Symbols.LINE_FEED:
-                  case Symbols.FORM_FEED:
-                  case Symbols.SPACE:
+                  case Characters.CHARACTER_TABULATION:
+                  case Characters.LINE_FEED:
+                  case Characters.FORM_FEED:
+                  case Characters.SPACE:
                      this.charBufferToTagName();
                      this.state = TokenizerState.BEFORE_ATTRIBUTE_NAME;
                      break;
-                  case Symbols.SOLIDUS:
+                  case Characters.SOLIDUS:
                      this.charBufferToTagName();
                      this.state = TokenizerState.SELF_CLOSING_START_TAG;
                      break;
-                  case Symbols.GREATER_THAN_SIGN:
+                  case Characters.GREATER_THAN_SIGN:
                      // Emit the current tag token.
                      this.charBufferToTagName();
                      this.emitTagToken();
@@ -343,21 +340,21 @@ export class Tokenizer implements ITokenizer {
                   break;
                }
                switch (char) {
-                  case Symbols.CHARACTER_TABULATION:
-                  case Symbols.LINE_FEED:
-                  case Symbols.FORM_FEED:
-                  case Symbols.SPACE:
+                  case Characters.CHARACTER_TABULATION:
+                  case Characters.LINE_FEED:
+                  case Characters.FORM_FEED:
+                  case Characters.SPACE:
                      // Ignore the character.
                      break;
-                  case Symbols.SOLIDUS:
+                  case Characters.SOLIDUS:
                      this.state = TokenizerState.SELF_CLOSING_START_TAG;
                      break;
-                  case Symbols.GREATER_THAN_SIGN:
+                  case Characters.GREATER_THAN_SIGN:
                      // Switch to the data state. Emit the current tag token.
                      this.emitTagToken();
                      this.state = TokenizerState.DATA;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Start a new attribute in the current tag token.
                      // Set that attribute's name to a U+FFFD REPLACEMENT CHARACTER character,
                      // and its value to the empty string.
@@ -365,10 +362,10 @@ export class Tokenizer implements ITokenizer {
                      // emitReplacementCharacter
                      this.state = TokenizerState.ATTRIBUTE_NAME;
                      break;
-                  case Symbols.QUOTATION_MARK:
-                  case Symbols.APOSTROPHE:
-                  case Symbols.LESS_THAN_SIGN:
-                  case Symbols.EQUALS_SIGN:
+                  case Characters.QUOTATION_MARK:
+                  case Characters.APOSTROPHE:
+                  case Characters.LESS_THAN_SIGN:
+                  case Characters.EQUALS_SIGN:
                      // Parse error. Treat it as per the "anything else" entry below.
                      this.error(`Saw ${char} when expecting an attribute name`);
                   // fallthrough
@@ -392,23 +389,23 @@ export class Tokenizer implements ITokenizer {
                   break;
                }
                switch (char) {
-                  case Symbols.CHARACTER_TABULATION:
-                  case Symbols.LINE_FEED:
-                  case Symbols.FORM_FEED:
-                  case Symbols.SPACE:
+                  case Characters.CHARACTER_TABULATION:
+                  case Characters.LINE_FEED:
+                  case Characters.FORM_FEED:
+                  case Characters.SPACE:
                      this.attributeNameComplete();
                      this.state = TokenizerState.AFTER_ATTRIBUTE_NAME;
                      break;
-                  case Symbols.SOLIDUS:
+                  case Characters.SOLIDUS:
                      this.attributeNameComplete();
                      this.addAttributeWithoutValue();
                      this.state = TokenizerState.SELF_CLOSING_START_TAG;
                      break;
-                  case Symbols.EQUALS_SIGN:
+                  case Characters.EQUALS_SIGN:
                      this.attributeNameComplete();
                      this.state = TokenizerState.BEFORE_ATTRIBUTE_VALUE;
                      break;
-                  case Symbols.GREATER_THAN_SIGN:
+                  case Characters.GREATER_THAN_SIGN:
                      // Emit the current tag token.
                      this.attributeNameComplete();
                      this.addAttributeWithoutValue();
@@ -416,12 +413,12 @@ export class Tokenizer implements ITokenizer {
                      // TODO: shouldSuspend
                      this.state = TokenizerState.DATA;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Append a U+FFFD REPLACEMENT CHARACTER character to the current attribute's name.
                      break;
-                  case Symbols.QUOTATION_MARK:
-                  case Symbols.APOSTROPHE:
-                  case Symbols.LESS_THAN_SIGN:
+                  case Characters.QUOTATION_MARK:
+                  case Characters.APOSTROPHE:
+                  case Characters.LESS_THAN_SIGN:
                      // Parse error. Treat it as per the "anything else" entry below.
                      this.error(`Quote ${char} in attribute name`);
                   // fallthrough
@@ -449,27 +446,27 @@ export class Tokenizer implements ITokenizer {
                   break;
                }
                switch (char) {
-                  case Symbols.CHARACTER_TABULATION:
-                  case Symbols.LINE_FEED:
-                  case Symbols.FORM_FEED:
-                  case Symbols.SPACE:
+                  case Characters.CHARACTER_TABULATION:
+                  case Characters.LINE_FEED:
+                  case Characters.FORM_FEED:
+                  case Characters.SPACE:
                      // Ignore the character.
                      break;
-                  case Symbols.SOLIDUS:
+                  case Characters.SOLIDUS:
                      this.addAttributeWithoutValue();
                      this.state = TokenizerState.SELF_CLOSING_START_TAG;
                      break;
-                  case Symbols.EQUALS_SIGN:
+                  case Characters.EQUALS_SIGN:
                      this.state = TokenizerState.BEFORE_ATTRIBUTE_VALUE;
                      break;
-                  case Symbols.GREATER_THAN_SIGN:
+                  case Characters.GREATER_THAN_SIGN:
                      // Emit the current tag token.
                      this.addAttributeWithoutValue();
                      this.emitTagToken();
                      // TODO: shouldSuspend
                      this.state = TokenizerState.DATA;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Start a new attribute in the current tag token.
                      // Set that attribute's name to a U+FFFD REPLACEMENT CHARACTER character,
                      // and its value to the empty string.
@@ -477,9 +474,9 @@ export class Tokenizer implements ITokenizer {
                      // emitReplacementCharacter
                      this.state = TokenizerState.ATTRIBUTE_NAME;
                      break;
-                  case Symbols.QUOTATION_MARK:
-                  case Symbols.APOSTROPHE:
-                  case Symbols.LESS_THAN_SIGN:
+                  case Characters.QUOTATION_MARK:
+                  case Characters.APOSTROPHE:
+                  case Characters.LESS_THAN_SIGN:
                      // Parse error. Treat it as per the "anything else" entry below.
                      this.error(`${char} in attribute name`);
                   // fallthrough
@@ -498,34 +495,34 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.BEFORE_ATTRIBUTE_VALUE:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.CHARACTER_TABULATION:
-                  case Symbols.LINE_FEED:
-                  case Symbols.FORM_FEED:
-                  case Symbols.SPACE:
+                  case Characters.CHARACTER_TABULATION:
+                  case Characters.LINE_FEED:
+                  case Characters.FORM_FEED:
+                  case Characters.SPACE:
                      // Ignore the character.
                      break;
-                  case Symbols.QUOTATION_MARK:
+                  case Characters.QUOTATION_MARK:
                      this.cleanCharBuffer();
                      this.state = TokenizerState.ATTRIBUTE_VALUE_DOUBLE_QUOTED;
                      break;
-                  case Symbols.AMPERSAND:
+                  case Characters.AMPERSAND:
                      // Reconsume this current input character.
                      this.cleanCharBuffer();
                      this.state = TokenizerState.ATTRIBUTE_VALUE_UNQUOTED;
                      this.warn('noteUnquotedAttributeValue');
                      this.source.reconsume();
                      break;
-                  case Symbols.APOSTROPHE:
+                  case Characters.APOSTROPHE:
                      this.cleanCharBuffer();
                      this.state = TokenizerState.ATTRIBUTE_VALUE_SINGLE_QUOTED;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Append a U+FFFD REPLACEMENT CHARACTER character to the current attribute's value.
                      // Switch to the attribute value (unquoted) state.
                      // emitReplacementCharacter
                      this.state = TokenizerState.ATTRIBUTE_VALUE_UNQUOTED;
                      break;
-                  case Symbols.GREATER_THAN_SIGN:
+                  case Characters.GREATER_THAN_SIGN:
                      // Parse error. Switch to the data state. Emit the current tag token.
                      this.error('Attribute value missing');
                      this.addAttributeWithoutValue();
@@ -533,9 +530,9 @@ export class Tokenizer implements ITokenizer {
                      // TODO: shouldSuspend
                      this.state = TokenizerState.DATA;
                      break;
-                  case Symbols.LESS_THAN_SIGN:
-                  case Symbols.EQUALS_SIGN:
-                  case Symbols.GRAVE_ACCENT:
+                  case Characters.LESS_THAN_SIGN:
+                  case Characters.EQUALS_SIGN:
+                  case Characters.GRAVE_ACCENT:
                      // Parse error. Treat it as per the "anything else" entry below.
                      this.error(`${char} at the start of an unquoted attribute value`);
                   // fallthrough
@@ -552,11 +549,11 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.ATTRIBUTE_VALUE_DOUBLE_QUOTED:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.QUOTATION_MARK:
+                  case Characters.QUOTATION_MARK:
                      this.addAttributeWithValue();
                      this.state = TokenizerState.AFTER_ATTRIBUTE_VALUE_QUOTED;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Append a U+FFFD REPLACEMENT CHARACTER character to the current attribute's value.
                      // emitReplacementCharacter
                      break;
@@ -569,11 +566,11 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.ATTRIBUTE_VALUE_SINGLE_QUOTED:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.APOSTROPHE:
+                  case Characters.APOSTROPHE:
                      this.addAttributeWithValue();
                      this.state = TokenizerState.AFTER_ATTRIBUTE_VALUE_QUOTED;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Append a U+FFFD REPLACEMENT CHARACTER character to the current attribute's value.
                      // emitReplacementCharacter
                      break;
@@ -586,28 +583,28 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.ATTRIBUTE_VALUE_UNQUOTED:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.CHARACTER_TABULATION:
-                  case Symbols.LINE_FEED:
-                  case Symbols.FORM_FEED:
-                  case Symbols.SPACE:
+                  case Characters.CHARACTER_TABULATION:
+                  case Characters.LINE_FEED:
+                  case Characters.FORM_FEED:
+                  case Characters.SPACE:
                      this.addAttributeWithValue();
                      this.state = TokenizerState.BEFORE_ATTRIBUTE_NAME;
                      break;
-                  case Symbols.GREATER_THAN_SIGN:
+                  case Characters.GREATER_THAN_SIGN:
                      // Switch to the data state. Emit the current tag token.
                      this.addAttributeWithValue();
                      this.emitTagToken();
                      this.state = TokenizerState.DATA;
                      // TODO: shouldSuspend
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Append a U+FFFD REPLACEMENT CHARACTER character to the current attribute's value.
                      break;
-                  case Symbols.QUOTATION_MARK:
-                  case Symbols.APOSTROPHE:
-                  case Symbols.LESS_THAN_SIGN:
-                  case Symbols.EQUALS_SIGN:
-                  case Symbols.GRAVE_ACCENT:
+                  case Characters.QUOTATION_MARK:
+                  case Characters.APOSTROPHE:
+                  case Characters.LESS_THAN_SIGN:
+                  case Characters.EQUALS_SIGN:
+                  case Characters.GRAVE_ACCENT:
                      // Parse error. Treat it as per the "anything else" entry below.
                      this.error(`${char} at the start of an unquoted attribute value`);
                   // fallthrough
@@ -620,16 +617,16 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.AFTER_ATTRIBUTE_VALUE_QUOTED:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.CHARACTER_TABULATION:
-                  case Symbols.LINE_FEED:
-                  case Symbols.FORM_FEED:
-                  case Symbols.SPACE:
+                  case Characters.CHARACTER_TABULATION:
+                  case Characters.LINE_FEED:
+                  case Characters.FORM_FEED:
+                  case Characters.SPACE:
                      this.state = TokenizerState.BEFORE_ATTRIBUTE_NAME;
                      break;
-                  case Symbols.SOLIDUS:
+                  case Characters.SOLIDUS:
                      this.state = TokenizerState.SELF_CLOSING_START_TAG;
                      break;
-                  case Symbols.GREATER_THAN_SIGN:
+                  case Characters.GREATER_THAN_SIGN:
                      // Emit the current tag token.
                      this.emitTagToken();
                      // TODO: shouldSuspend
@@ -646,7 +643,7 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.SELF_CLOSING_START_TAG:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.GREATER_THAN_SIGN:
+                  case Characters.GREATER_THAN_SIGN:
                      // Set the self-closing flag of the current tag token.
                      // Switch to the data state. Emit the current tag token.
                      this.selfClosing = true;
@@ -674,15 +671,15 @@ export class Tokenizer implements ITokenizer {
                // Switch to the data state.
                // If the end of the file was reached, reconsume the EOF character.
                switch (char) {
-                  case Symbols.GREATER_THAN_SIGN:
+                  case Characters.GREATER_THAN_SIGN:
                      this.emitComment(0);
                      this.state = TokenizerState.DATA;
                      break;
-                  case Symbols.HYPHEN_MINUS:
+                  case Characters.HYPHEN_MINUS:
                      this.appendCharBuffer(char);
                      this.state = TokenizerState.BOGUS_COMMENT_HYPHEN;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Append a U+FFFD REPLACEMENT CHARACTER character to the current attribute's value.
                      break;
                   default:
@@ -692,15 +689,15 @@ export class Tokenizer implements ITokenizer {
                break;
             case TokenizerState.BOGUS_COMMENT_HYPHEN:
                switch (char) {
-                  case Symbols.GREATER_THAN_SIGN:
+                  case Characters.GREATER_THAN_SIGN:
                      this.emitComment(0);
                      this.state = TokenizerState.DATA;
                      break;
-                  case Symbols.HYPHEN_MINUS:
+                  case Characters.HYPHEN_MINUS:
                      this.appendCharBuffer(char);
                      this.state = TokenizerState.BOGUS_COMMENT_HYPHEN;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Append a U+FFFD REPLACEMENT CHARACTER character to the current attribute's value.
                      break;
                   default:
@@ -722,7 +719,7 @@ export class Tokenizer implements ITokenizer {
                // Otherwise, this is a parse error. Switch to the bogus comment state.
                // The next character that is consumed, if any, is the first character that will be in the comment.
                switch (char) {
-                  case Symbols.HYPHEN_MINUS:
+                  case Characters.HYPHEN_MINUS:
                      this.cleanCharBuffer();
                      this.state = TokenizerState.MARKUP_DECLARATION_HYPHEN;
                      break;
@@ -732,7 +729,7 @@ export class Tokenizer implements ITokenizer {
                      this.state = TokenizerState.MARKUP_DECLARATION_OCTYPE;
                      this.index = 0;
                      break;
-                  case Symbols.LEFT_SQUARE_BRACKET:
+                  case Characters.LEFT_SQUARE_BRACKET:
                      if (this.isCDATAAllowed()) {
                         this.cleanCharBuffer();
                         this.state = TokenizerState.CDATA_START;
@@ -749,7 +746,7 @@ export class Tokenizer implements ITokenizer {
                }
                break;
             case TokenizerState.MARKUP_DECLARATION_HYPHEN:
-               if (char === Symbols.HYPHEN_MINUS) {
+               if (char === Characters.HYPHEN_MINUS) {
                   this.state = TokenizerState.COMMENT_START;
                   break;
                }
@@ -775,17 +772,17 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.COMMENT_START:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.HYPHEN_MINUS:
+                  case Characters.HYPHEN_MINUS:
                      this.appendCharBuffer(char);
                      this.state = TokenizerState.COMMENT_START_DASH;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Append a U+FFFD REPLACEMENT CHARACTER character to the comment token's data.
                      // Switch to the comment state.
                      // emitReplacementCharacter
                      this.state = TokenizerState.COMMENT;
                      break;
-                  case Symbols.GREATER_THAN_SIGN:
+                  case Characters.GREATER_THAN_SIGN:
                      // Parse error. Switch to the data state. Emit the comment token.
                      this.error('Premature end of comment. Use --> to end a comment properly');
                      this.emitComment(0);
@@ -801,18 +798,18 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.COMMENT_START_DASH:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.HYPHEN_MINUS:
+                  case Characters.HYPHEN_MINUS:
                      this.appendCharBuffer(char);
                      this.state = TokenizerState.COMMENT_END;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Append a U+002D HYPHEN-MINUS character (-)
                      // and a U+FFFD REPLACEMENT CHARACTER character to the comment token's data.
                      // Switch to the comment state.
                      this.state = TokenizerState.COMMENT;
                      // emitReplacementCharacter
                      break;
-                  case Symbols.GREATER_THAN_SIGN:
+                  case Characters.GREATER_THAN_SIGN:
                      // Parse error. Switch to the data state. Emit the comment token.
                      this.error('errPrematureEndOfComment');
                      this.emitComment(1);
@@ -830,11 +827,11 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.COMMENT:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.HYPHEN_MINUS:
+                  case Characters.HYPHEN_MINUS:
                      this.appendCharBuffer(char);
                      this.state = TokenizerState.COMMENT_END_DASH;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Append a U+FFFD REPLACEMENT CHARACTER character to the comment token's data.
                      // emitReplacementCharacter
                      break;
@@ -847,11 +844,11 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.COMMENT_END_DASH:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.HYPHEN_MINUS:
+                  case Characters.HYPHEN_MINUS:
                      this.appendCharBuffer(char);
                      this.state = TokenizerState.COMMENT_END;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Append a U+002D HYPHEN-MINUS character (-)
                      // and a U+FFFD REPLACEMENT CHARACTER character to the comment token's data.
                      // Switch to the comment state.
@@ -870,23 +867,23 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.COMMENT_END:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.GREATER_THAN_SIGN:
+                  case Characters.GREATER_THAN_SIGN:
                      // Emit the comment token.
                      this.emitComment(2);
                      this.state = TokenizerState.DATA;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Append two U+002D HYPHEN-MINUS characters (-)
                      // and a U+FFFD REPLACEMENT CHARACTER character to the comment token's data.
                      // Switch to the comment state.
                      this.state = TokenizerState.COMMENT;
                      break;
-                  case Symbols.EXCLAMATION_MARK:
+                  case Characters.EXCLAMATION_MARK:
                      // Parse error. Switch to the comment end bang state.
                      this.appendCharBuffer(char);
                      this.state = TokenizerState.COMMENT_END_BANG;
                      break;
-                  case Symbols.HYPHEN_MINUS:
+                  case Characters.HYPHEN_MINUS:
                      // Parse error. Append a U+002D HYPHEN-MINUS character (-) to the comment token's data.
                      this.appendCharBuffer(char);
                      break;
@@ -904,19 +901,19 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.COMMENT_END_BANG:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.HYPHEN_MINUS:
+                  case Characters.HYPHEN_MINUS:
                      // Append two U+002D HYPHEN-MINUS characters (-)
                      // and a U+0021 EXCLAMATION MARK character (!) to the comment token's data.
                      // Switch to the comment end dash state.
                      this.appendCharBuffer(char);
                      this.state = TokenizerState.COMMENT_END_DASH;
                      break;
-                  case Symbols.GREATER_THAN_SIGN:
+                  case Characters.GREATER_THAN_SIGN:
                      // Emit the comment token.
                      this.emitComment(3);
                      this.state = TokenizerState.DATA;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Append two U+002D HYPHEN-MINUS characters (-),
                      // a U+0021 EXCLAMATION MARK character (!),
                      // and a U+FFFD REPLACEMENT CHARACTER character to the comment token's data.
@@ -936,7 +933,7 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.DOCTYPE:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.GREATER_THAN_SIGN:
+                  case Characters.GREATER_THAN_SIGN:
                      // Switch to the data state. Emit the current DOCTYPE token.
                      this.emitDoctype();
                      this.state = TokenizerState.DATA;
@@ -974,10 +971,10 @@ export class Tokenizer implements ITokenizer {
                // Switch to the data state.
                // If the end of the file was reached, reconsume the EOF character.
                switch (char) {
-                  case Symbols.RIGHT_SQUARE_BRACKET:
+                  case Characters.RIGHT_SQUARE_BRACKET:
                      this.state = TokenizerState.CDATA_RSQB;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Append a U+FFFD REPLACEMENT CHARACTER character
                      // to the current DOCTYPE token's system identifier.
                      // emitReplacementCharacter
@@ -989,36 +986,36 @@ export class Tokenizer implements ITokenizer {
                break;
             case TokenizerState.CDATA_RSQB:
                switch (char) {
-                  case Symbols.RIGHT_SQUARE_BRACKET:
+                  case Characters.RIGHT_SQUARE_BRACKET:
                      this.state = TokenizerState.CDATA_RSQB_RSQB;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Append a U+FFFD REPLACEMENT CHARACTER character
                      // to the current DOCTYPE token's system identifier.
                      // emitReplacementCharacter
                      break;
                   default:
                      this.source.reconsume();
-                     this.appendCharBuffer(Symbols.RIGHT_SQUARE_BRACKET);
+                     this.appendCharBuffer(Characters.RIGHT_SQUARE_BRACKET);
                      this.state = TokenizerState.CDATA_SECTION;
                      break;
                }
                break;
             case TokenizerState.CDATA_RSQB_RSQB:
                switch (char) {
-                  case Symbols.GREATER_THAN_SIGN:
+                  case Characters.GREATER_THAN_SIGN:
                      this.emitCDATA();
                      this.state = TokenizerState.DATA;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Append a U+FFFD REPLACEMENT CHARACTER character
                      // to the current DOCTYPE token's system identifier.
                      // emitReplacementCharacter
                      break;
                   default:
                      this.source.reconsume();
-                     this.appendCharBuffer(Symbols.RIGHT_SQUARE_BRACKET);
-                     this.appendCharBuffer(Symbols.RIGHT_SQUARE_BRACKET);
+                     this.appendCharBuffer(Characters.RIGHT_SQUARE_BRACKET);
+                     this.appendCharBuffer(Characters.RIGHT_SQUARE_BRACKET);
                      this.state = TokenizerState.CDATA_SECTION;
                      break;
                }
@@ -1026,12 +1023,12 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.RAW_TEXT:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.LESS_THAN_SIGN:
+                  case Characters.LESS_THAN_SIGN:
                      this.flushCharBuffer();
                      this.returnState = this.state;
                      this.state = TokenizerState.RAW_TEXT_LESS_THAN_SIGN;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Emit a U+FFFD REPLACEMENT CHARACTER character token.
                      // emitReplacementCharacter
                      break;
@@ -1044,14 +1041,14 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.RAW_TEXT_LESS_THAN_SIGN:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.SOLIDUS:
+                  case Characters.SOLIDUS:
                      // Set the temporary buffer to the empty string.
                      // Switch to the script data end tag open state.
                      this.index = 0;
                      this.cleanCharBuffer();
                      this.state = TokenizerState.ESCAPABLE_RAW_TEXT_END_TAG_NAME;
                      break;
-                  case Symbols.EXCLAMATION_MARK:
+                  case Characters.EXCLAMATION_MARK:
                      // Switch to the script data escape start state.
                      // Emit a U+003C LESS-THAN SIGN character token
                      // and a U+0021 EXCLAMATION MARK character token.
@@ -1070,7 +1067,7 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.RAW_TEXT_ESCAPE_START:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.HYPHEN_MINUS:
+                  case Characters.HYPHEN_MINUS:
                      // Switch to the script data escape start dash state.
                      // Emit a U+002D HYPHEN-MINUS character token.
                      this.state = TokenizerState.RAW_TEXT_ESCAPE_START_DASH;
@@ -1085,7 +1082,7 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.RAW_TEXT_ESCAPE_START_DASH:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.HYPHEN_MINUS:
+                  case Characters.HYPHEN_MINUS:
                      // Switch to the script data escaped dash dash state.
                      // Emit a U+002D HYPHEN-MINUS character token.
                      this.state = TokenizerState.RAW_TEXT_ESCAPED_DASH_DASH;
@@ -1100,15 +1097,15 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.RAW_TEXT_ESCAPED:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.HYPHEN_MINUS:
+                  case Characters.HYPHEN_MINUS:
                      // Switch to the script data escaped dash state.
                      // Emit a U+002D HYPHEN-MINUS character token.
                      this.state = TokenizerState.RAW_TEXT_ESCAPED_DASH;
                      break;
-                  case Symbols.LESS_THAN_SIGN:
+                  case Characters.LESS_THAN_SIGN:
                      this.state = TokenizerState.RAW_TEXT_DOUBLE_ESCAPED_LESS_THAN_SIGN;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Switch to the script data escaped state.
                      // Emit a U+FFFD REPLACEMENT CHARACTER character token.
                      // emitReplacementCharacter
@@ -1124,15 +1121,15 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.RAW_TEXT_ESCAPED_DASH:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.HYPHEN_MINUS:
+                  case Characters.HYPHEN_MINUS:
                      // Emit a U+002D HYPHEN-MINUS character token.
                      this.state = TokenizerState.RAW_TEXT_ESCAPED_DASH_DASH;
                      break;
-                  case Symbols.LESS_THAN_SIGN:
+                  case Characters.LESS_THAN_SIGN:
                      // Switch to the script data escaped less-than sign state.
                      this.state = TokenizerState.RAW_TEXT_ESCAPED_LESS_THAN_SIGN;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Switch to the script data escaped state.
                      // Emit a U+FFFD REPLACEMENT CHARACTER character token.
                      // emitReplacementCharacter
@@ -1148,19 +1145,19 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.RAW_TEXT_ESCAPED_DASH_DASH:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.HYPHEN_MINUS:
+                  case Characters.HYPHEN_MINUS:
                      // Emit a U+002D HYPHEN-MINUS character token.
                      break;
-                  case Symbols.LESS_THAN_SIGN:
+                  case Characters.LESS_THAN_SIGN:
                      // Switch to the script data escaped less-than sign state.
                      this.state = TokenizerState.RAW_TEXT_ESCAPED_LESS_THAN_SIGN;
                      break;
-                  case Symbols.GREATER_THAN_SIGN:
+                  case Characters.GREATER_THAN_SIGN:
                      // Switch to the script data state.
                      // Emit a U+003E GREATER-THAN SIGN character token.
                      this.state = TokenizerState.RAW_TEXT;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Switch to the script data escaped state.
                      // Emit a U+FFFD REPLACEMENT CHARACTER character token.
                      // emitReplacementCharacter
@@ -1195,7 +1192,7 @@ export class Tokenizer implements ITokenizer {
                   break;
                }
                switch (char) {
-                  case Symbols.SOLIDUS:
+                  case Characters.SOLIDUS:
                      // Set the temporary buffer to the empty string.
                      // Switch to the script data escaped end tag open state.
                      this.returnState = TokenizerState.RAW_TEXT_ESCAPED;
@@ -1252,10 +1249,10 @@ export class Tokenizer implements ITokenizer {
                }
                treatAsDefault = false;
                switch (char) {
-                  case Symbols.CHARACTER_TABULATION:
-                  case Symbols.LINE_FEED:
-                  case Symbols.FORM_FEED:
-                  case Symbols.SPACE:
+                  case Characters.CHARACTER_TABULATION:
+                  case Characters.LINE_FEED:
+                  case Characters.FORM_FEED:
+                  case Characters.SPACE:
                      // If the current end tag token is an appropriate end tag token,
                      // then switch to the before attribute name state.
                      // Otherwise, treat it as per the "anything else" entry below.
@@ -1266,7 +1263,7 @@ export class Tokenizer implements ITokenizer {
                      }
                      treatAsDefault = true;
                      break;
-                  case Symbols.SOLIDUS:
+                  case Characters.SOLIDUS:
                      // If the current end tag token is an appropriate end tag token,
                      // then switch to the self-closing start tag state.
                      // Otherwise, treat it as per the "anything else" entry below.
@@ -1277,7 +1274,7 @@ export class Tokenizer implements ITokenizer {
                      }
                      treatAsDefault = true;
                      break;
-                  case Symbols.GREATER_THAN_SIGN:
+                  case Characters.GREATER_THAN_SIGN:
                      // If the current end tag token is an appropriate end tag token,
                      // then emit the current tag token and switch to the data state.
                      // Otherwise, treat it as per the "anything else" entry below.
@@ -1315,12 +1312,12 @@ export class Tokenizer implements ITokenizer {
                   break;
                }
                switch (char) {
-                  case Symbols.CHARACTER_TABULATION:
-                  case Symbols.LINE_FEED:
-                  case Symbols.FORM_FEED:
-                  case Symbols.SPACE:
-                  case Symbols.SOLIDUS:
-                  case Symbols.GREATER_THAN_SIGN:
+                  case Characters.CHARACTER_TABULATION:
+                  case Characters.LINE_FEED:
+                  case Characters.FORM_FEED:
+                  case Characters.SPACE:
+                  case Characters.SOLIDUS:
+                  case Characters.GREATER_THAN_SIGN:
                      // If the temporary buffer is the string "script",
                      // then switch to the script data double escaped state.
                      // Otherwise, switch to the script data escaped state.
@@ -1348,17 +1345,17 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.RAW_TEXT_DOUBLE_ESCAPED:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.HYPHEN_MINUS:
+                  case Characters.HYPHEN_MINUS:
                      // Switch to the script data double escaped dash state.
                      // Emit a U+002D HYPHEN-MINUS character token.
                      this.state = TokenizerState.RAW_TEXT_DOUBLE_ESCAPED_DASH;
                      break;
-                  case Symbols.LESS_THAN_SIGN:
+                  case Characters.LESS_THAN_SIGN:
                      // Switch to the script data double escaped less-than sign state.
                      // Emit a U+003C LESS-THAN SIGN character token.
                      this.state = TokenizerState.RAW_TEXT_DOUBLE_ESCAPED_LESS_THAN_SIGN;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Emit a U+FFFD REPLACEMENT CHARACTER character token.
                      // emitReplacementCharacter
                      break;
@@ -1370,17 +1367,17 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.RAW_TEXT_DOUBLE_ESCAPED_DASH:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.HYPHEN_MINUS:
+                  case Characters.HYPHEN_MINUS:
                      // Switch to the script data double escaped dash dash state.
                      // Emit a U+002D HYPHEN-MINUS character token.
                      this.state = TokenizerState.RAW_TEXT_DATA_DOUBLE_ESCAPED_DASH_DASH;
                      break;
-                  case Symbols.LESS_THAN_SIGN:
+                  case Characters.LESS_THAN_SIGN:
                      // Switch to the script data double escaped less-than sign state.
                      // Emit a U+003C LESS-THAN SIGN character token.
                      this.state = TokenizerState.RAW_TEXT_DOUBLE_ESCAPED_LESS_THAN_SIGN;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Switch to the script data double escaped state.
                      // Emit a U+FFFD REPLACEMENT CHARACTER character token.
                      // emitReplacementCharacter
@@ -1396,19 +1393,19 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.RAW_TEXT_DATA_DOUBLE_ESCAPED_DASH_DASH:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.HYPHEN_MINUS:
+                  case Characters.HYPHEN_MINUS:
                      // Emit a U+002D HYPHEN-MINUS character token.
                      break;
-                  case Symbols.LESS_THAN_SIGN:
+                  case Characters.LESS_THAN_SIGN:
                      // Switch to the script data double escaped less-than sign state.
                      // Emit a U+003C LESS-THAN SIGN character token.
                      this.state = TokenizerState.RAW_TEXT_DOUBLE_ESCAPED_LESS_THAN_SIGN;
                      break;
-                  case Symbols.GREATER_THAN_SIGN:
+                  case Characters.GREATER_THAN_SIGN:
                      // Switch to the script data state. Emit a U+003E GREATER-THAN SIGN character token.
                      this.state = TokenizerState.RAW_TEXT;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Switch to the script data double escaped state.
                      // Emit a U+FFFD REPLACEMENT CHARACTER character token.
                      // emitReplacementCharacter
@@ -1424,7 +1421,7 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.RAW_TEXT_DOUBLE_ESCAPED_LESS_THAN_SIGN:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.SOLIDUS:
+                  case Characters.SOLIDUS:
                      // Set the temporary buffer to the empty string.
                      // Switch to the script data double escape end state.
                      // Emit a U+002F SOLIDUS character token.
@@ -1452,12 +1449,12 @@ export class Tokenizer implements ITokenizer {
                   break;
                }
                switch (char) {
-                  case Symbols.CHARACTER_TABULATION:
-                  case Symbols.LINE_FEED:
-                  case Symbols.FORM_FEED:
-                  case Symbols.SPACE:
-                  case Symbols.SOLIDUS:
-                  case Symbols.GREATER_THAN_SIGN:
+                  case Characters.CHARACTER_TABULATION:
+                  case Characters.LINE_FEED:
+                  case Characters.FORM_FEED:
+                  case Characters.SPACE:
+                  case Characters.SOLIDUS:
+                  case Characters.GREATER_THAN_SIGN:
                      // If the temporary buffer is the string "script", then switch to the script data escaped state.
                      // Otherwise, switch to the script data double escaped state.
                      // Emit the current input character as a character token.
@@ -1484,12 +1481,12 @@ export class Tokenizer implements ITokenizer {
             case TokenizerState.ESCAPABLE_RAW_TEXT:
                // Consume the next input character.
                switch (char) {
-                  case Symbols.LESS_THAN_SIGN:
+                  case Characters.LESS_THAN_SIGN:
                      this.flushCharBuffer();
                      this.returnState = TokenizerState.ESCAPABLE_RAW_TEXT;
                      this.state = TokenizerState.ESCAPABLE_RAW_TEXT_LESS_THAN_SIGN;
                      break;
-                  case Symbols.NULL:
+                  case Characters.NULL:
                      // Parse error. Emit a U+FFFD REPLACEMENT CHARACTER character token.
                      // emitReplacementCharacter
                      break;
@@ -1501,7 +1498,7 @@ export class Tokenizer implements ITokenizer {
                break;
             case TokenizerState.ESCAPABLE_RAW_TEXT_LESS_THAN_SIGN:
                switch (char) {
-                  case Symbols.SOLIDUS:
+                  case Characters.SOLIDUS:
                      // Set the temporary buffer to the empty string.
                      this.index = 0;
                      this.cleanCharBuffer();
@@ -1510,7 +1507,7 @@ export class Tokenizer implements ITokenizer {
                   default:
                      // Emit a U+003C LESS-THAN SIGN character token
                      // and reconsume the current input character in the RCDATA state.
-                     this.appendCharBuffer(Symbols.LESS_THAN_SIGN);
+                     this.appendCharBuffer(Characters.LESS_THAN_SIGN);
                      this.state = this.returnState;
                      this.source.reconsume();
                      break;
@@ -1539,9 +1536,9 @@ export class Tokenizer implements ITokenizer {
                   this.tagName = this.endTagExpectation;
                   this.endTagExpectation = '';
                   switch (char) {
-                     case Symbols.LINE_FEED:
-                     case Symbols.SPACE:
-                     case Symbols.CHARACTER_TABULATION:
+                     case Characters.LINE_FEED:
+                     case Characters.SPACE:
+                     case Characters.CHARACTER_TABULATION:
                         /*
                          * U+0009 CHARACTER TABULATION U+000A LINE
                          * FEED (LF) U+000C FORM FEED (FF) U+0020
@@ -1596,8 +1593,8 @@ export class Tokenizer implements ITokenizer {
       this.finalize();
    }
 
-   private getCurrentLocation(): Location {
-      return new Location(this.startPosition as Position, this.currentPosition as Position);
+   private getCurrentLocation(): SourceLocation {
+      return new SourceLocation(this.startPosition as SourcePosition, this.currentPosition as SourcePosition);
    }
 
    private resetPosition(): void {

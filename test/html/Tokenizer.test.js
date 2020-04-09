@@ -1,12 +1,10 @@
 /* global require, describe, it */
 
 const { assert } = require('chai');
-
+const { SourceFile } = require("engine/html/base/SourceFile");
+const { SourceReader } = require("engine/html/base/SourceReader");
 const { Tokenizer } = require('engine/html/Tokenizer');
 const { ContentModel } = require('engine/html/base/ContentModel');
-const { Source } = require("engine/core/Source");
-const { SourceReader } =  require("engine/core/SourceReader");
-
 const { ERROR_HANDLER } = require('../ErrorHandler');
 const TOKENIZER_OPTIONS = { };
 
@@ -19,11 +17,11 @@ function assertAttributes(standard, actual) {
    }
 }
 
-let stack;
-
 function createReader(data) {
-   return new SourceReader(new Source(data));
+   return new SourceReader(new SourceFile(data));
 }
+
+let stack;
 
 const handler = {
    onStart: function() { },

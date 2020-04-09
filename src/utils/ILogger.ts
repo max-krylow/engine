@@ -1,7 +1,7 @@
-/// <amd-module name="engine/core/utils/ILogger" />
+/// <amd-module name="engine/utils/ILogger" />
 
 /**
- * @file src/core/utils/ILogger.ts
+ * @file src/utils/ILogger.ts
  */
 
 /**

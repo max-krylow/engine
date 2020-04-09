@@ -1,14 +1,11 @@
 /* global require, describe, it */
 const { assert } = require("chai");
-const { Source } = require("engine/core/Source");
-const { SourceReader } = require("engine/core/SourceReader");
-const { default: Position } = require("engine/core/utils/Position");
-const { default: Location } = require("engine/core/utils/Location");
-
+const { SourceFile } = require("engine/html/base/SourceFile");
+const { SourceReader } = require("engine/html/base/SourceReader");
 const EOF = null;
 
 function createReader(data) {
-   return new SourceReader(new Source(data));
+   return new SourceReader(new SourceFile(data));
 }
 
 describe('core/SourceReader', () => {

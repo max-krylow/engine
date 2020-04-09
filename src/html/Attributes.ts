@@ -4,8 +4,7 @@
  * @file src/html/Attributes.ts
  */
 
-import Location from "../core/utils/Location";
-
+import { SourceLocation } from "./base/SourceReader";
 
 /**
  *
@@ -47,7 +46,7 @@ export class AttributeValue {
    /**
     *
     */
-   public readonly location: Location;
+   public readonly location: SourceLocation;
 
    /**
     * Initialize new instance of attribute value.
@@ -55,7 +54,7 @@ export class AttributeValue {
     * @param value {string | null} Attribute value: string, or null in case of boolean attribute.
     * @param location Attribute value location.
     */
-   constructor(name: AttributeName, value: string | null, location: Location) {
+   constructor(name: AttributeName, value: string | null, location: SourceLocation) {
       this.name = name;
       this.value = value;
       this.location = location;

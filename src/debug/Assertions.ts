@@ -1,8 +1,8 @@
-/// <amd-module name="engine/core/debug/Assertions" />
+/// <amd-module name="engine/debug/Assertions" />
 
 /**
  *
- * @file src/core/debug/Assertions.ts
+ * @file src/debug/Assertions.ts
  */
 
 /**

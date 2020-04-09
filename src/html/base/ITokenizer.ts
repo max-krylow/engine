@@ -2,8 +2,7 @@
 
 import { ContentModel } from "./ContentModel";
 import { IAttributes } from "../Attributes";
-import Location from "../../core/utils/Location";
-import { ISourceReader } from "../../core/SourceReader";
+import { SourceLocation, ISourceReader } from "./SourceReader";
 
 /**
  * @file src/html/base/ITokenizer.ts
@@ -24,44 +23,44 @@ export interface ITokenHandler {
     * @param name {string} Tag name.
     * @param attributes {IAttributes} Tag attributes.
     * @param selfClosing {boolean} Flag whether tag is self-closing.
-    * @param location {Location} Start and end positions of the tag.
+    * @param location {SourceLocation} Start and end positions of the tag.
     */
-   onOpenTag(name: string, attributes: IAttributes, selfClosing: boolean, location: Location): void;
+   onOpenTag(name: string, attributes: IAttributes, selfClosing: boolean, location: SourceLocation): void;
 
    /**
     * Emit close tag token.
     * @param name {string} Tag name.
-    * @param location {Location} Start and end positions of the tag.
+    * @param location {SourceLocation} Start and end positions of the tag.
     */
-   onCloseTag(name: string, location: Location): void;
+   onCloseTag(name: string, location: SourceLocation): void;
 
    /**
     * Emit text token.
     * @param data {string} Text data.
-    * @param location {Location} Start and end positions of the text.
+    * @param location {SourceLocation} Start and end positions of the text.
     */
-   onText(data: string, location: Location): void;
+   onText(data: string, location: SourceLocation): void;
 
    /**
     * Emit comment token.
     * @param data {string} Comment data.
-    * @param location {Location} Start and end positions of the comment.
+    * @param location {SourceLocation} Start and end positions of the comment.
     */
-   onComment(data: string, location: Location): void;
+   onComment(data: string, location: SourceLocation): void;
 
    /**
     * Emit CDATA token.
     * @param data {string} Text data placed inside CDATA section.
-    * @param location {Location} Start and end positions of the CDATA section.
+    * @param location {SourceLocation} Start and end positions of the CDATA section.
     */
-   onCDATA(data: string, location: Location): void;
+   onCDATA(data: string, location: SourceLocation): void;
 
    /**
     * Emit doctype token.
     * @param data {string} Text data placed inside doctype declaration.
-    * @param location {Location} Start and end positions of the doctype declaration.
+    * @param location {SourceLocation} Start and end positions of the doctype declaration.
     */
-   onDoctype(data: string, location: Location): void;
+   onDoctype(data: string, location: SourceLocation): void;
 
    /**
     * Emit end of file token.
