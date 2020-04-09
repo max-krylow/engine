@@ -7,7 +7,6 @@ import { ISourceReader } from "../../core/SourceReader";
 
 /**
  * @file src/html/base/ITokenizer.ts
- * @link https://www.w3.org/TR/2011/WD-html5-20110525/tokenization.html#tokenization
  */
 
 /**
@@ -72,6 +71,8 @@ export interface ITokenHandler {
 
 /**
  * Interface for tokenizer.
+ *
+ * @link https://www.w3.org/TR/2011/WD-html5-20110525/tokenization.html#tokenization
  */
 export interface ITokenizer {
    /**

@@ -2,7 +2,6 @@
 
 /**
  * @file src/html/base/ContentModel.ts
- * @link https://www.w3.org/TR/2011/WD-html5-20110525/content-models.html
  */
 
 /**
@@ -14,6 +13,8 @@
  * of the string "</" (U+003C LESS-THAN SIGN, U+002F SOLIDUS) followed by characters that case-insensitively
  * match the tag name of the element followed by one of U+0009 CHARACTER TABULATION (tab), U+000A LINE FEED (LF),
  * U+000C FORM FEED (FF), U+000D CARRIAGE RETURN (CR), U+0020 SPACE, U+003E GREATER-THAN SIGN (>), or U+002F SOLIDUS (/).
+ *
+ * @link https://www.w3.org/TR/2011/WD-html5-20110525/content-models.html
  */
 export enum ContentModel {
    /**

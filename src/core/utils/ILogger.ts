@@ -1,7 +1,6 @@
 /// <amd-module name="engine/core/utils/ILogger" />
 
 /**
- *
  * @file src/core/utils/ILogger.ts
  */
 
@@ -28,36 +27,36 @@ export enum LoggerLevel {
 }
 
 /**
- *
+ * Represents methods for logger.
  */
 export interface ILogger {
    /**
-    *
-    * @param message
+    * Log debug message.
+    * @param message {string} Message text.
     */
    debug(message: string): void;
 
    /**
-    *
-    * @param message
+    * Log information message.
+    * @param message {string} Message text.
     */
    info(message: string): void;
 
    /**
-    *
-    * @param message
+    * Log warning message.
+    * @param message {string} Message text.
     */
    warn(message: string): void;
 
    /**
-    *
-    * @param message
+    * Log error message.
+    * @param message {string} Message text.
     */
    error(message: string): void;
 
    /**
-    *
-    * @param level
+    * Disable all logging below the given level.
+    * @param level {LoggerLevel} Logging level.
     */
    setLevel(level: LoggerLevel): void;
 }

@@ -1,7 +1,6 @@
 /// <amd-module name="engine/core/utils/ErrorHandler" />
 
 /**
- *
  * @file src/core/utils/ErrorHandler.ts
  */
 
@@ -65,13 +64,14 @@ export interface IErrorHandler {
  */
 export class ErrorHandler implements IErrorHandler {
    /**
-    *
+    * Concrete logger.
+    * @private
     */
    private readonly logger: ILogger;
 
    /**
     *
-    * @param logger
+    * @param logger {ILogger} Concrete logger that implements ILogger interface.
     */
    constructor(logger: ILogger) {
       this.logger = logger;

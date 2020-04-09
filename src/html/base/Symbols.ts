@@ -2,11 +2,12 @@
 
 /**
  * @file src/html/base/Symbols.ts
- * @link https://www.w3.org/TR/2011/WD-html5-20110525/tokenization.html#tokenization
  */
 
 /**
- * String constants.
+ * String constants that predominantly used in tokenizer.
+ *
+ * @link https://www.w3.org/TR/2011/WD-html5-20110525/tokenization.html#tokenization
  */
 export default class Symbols {
    /**
