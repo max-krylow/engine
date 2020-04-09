@@ -8,7 +8,7 @@
 
 import Location  from "../core/utils/Location";
 import { ISourceReader } from "../core/SourceReader";
-import { IAttributes, AttributeValue } from "./Attribute";
+import { IAttributes, AttributeName, AttributeValue } from "./Attributes";
 import { IErrorHandler } from "../core/utils/ErrorHandler";
 import Position from "../core/utils/Position";
 import { ITokenizer, ITokenHandler } from "./base/ITokenizer";
@@ -136,7 +136,7 @@ export class Tokenizer implements ITokenizer {
    private endTag: boolean;
    private tagName: string;
    private selfClosing: boolean;
-   private attributeName: string;
+   private attributeName: AttributeName;
    private attributes: IAttributes;
 
    private readonly html4: boolean;
@@ -1669,13 +1669,13 @@ export class Tokenizer implements ITokenizer {
    }
 
    private attributeNameComplete(): void {
-      this.attributeName = this.charBuffer;
+      this.attributeName = new AttributeName(this.charBuffer);
       this.cleanCharBuffer();
       if (!this.attributes) {
          this.attributes = { };
       }
-      if (this.attributes[this.attributeName]) {
-         this.error(`Duplicate attribute "${this.attributeName}"`);
+      if (this.attributes[this.attributeName.name]) {
+         this.error(`Duplicate attribute "${this.attributeName.name}"`);
          this.attributeName = null;
       }
    }
@@ -1683,7 +1683,7 @@ export class Tokenizer implements ITokenizer {
    private addAttributeWithoutValue(): void {
       this.warn('noteAttributeWithoutValue');
       if (this.attributeName) {
-         this.attributes[this.attributeName] = new AttributeValue('true', null);
+         this.attributes[this.attributeName.name] = new AttributeValue(this.attributeName, null, null);
       }
       this.attributeName = null;
       this.cleanCharBuffer();
@@ -1691,7 +1691,7 @@ export class Tokenizer implements ITokenizer {
 
    private addAttributeWithValue(): void {
       if (this.attributeName) {
-         this.attributes[this.attributeName] = new AttributeValue(this.charBuffer, null);;
+         this.attributes[this.attributeName.name] = new AttributeValue(this.attributeName, this.charBuffer, null);
       }
       this.attributeName = null;
       this.cleanCharBuffer();

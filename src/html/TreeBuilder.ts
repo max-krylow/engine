@@ -7,7 +7,7 @@ import { INodeDescription } from "./NodeDescription";
 import { ITokenHandler } from "./base/ITokenizer";
 import { IErrorHandler } from "../core/utils/ErrorHandler";
 import { ITokenizer } from "./base/ITokenizer";
-import { IAttributes } from "./Attribute";
+import { IAttributes } from "./Attributes";
 import { ContentModel } from "./base/ContentModel";
 
 /**

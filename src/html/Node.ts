@@ -1,6 +1,6 @@
 /// <amd-module name="engine/html/Node" />
 
-import { IAttributes } from "./Attribute";
+import { IAttributes } from "./Attributes";
 import Location  from "../core/utils/Location";
 
 /**
@@ -195,10 +195,7 @@ export class TagNode extends NodeWithChildren {
       let attributes = '';
       for (let name in this.attribs) {
          if (this.attribs.hasOwnProperty(name)) {
-            attributes += ` ${name}`;
-            if (this.attribs[name].value) {
-               attributes += `="${this.attribs[name].value}"`;
-            }
+            attributes += ` ${this.attribs[name]}`;
          }
       }
       if (this.isVoid) {
