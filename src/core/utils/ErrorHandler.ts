@@ -1,29 +1,53 @@
 /// <amd-module name="engine/core/utils/ErrorHandler" />
 
+import { ILogger } from "./ILogger";
+
 /**
  *
  */
-interface IErrorHandler {
+export interface IErrorHandler {
    /**
     *
     * @param message
     */
    debug(message: string): void;
+
    /**
     *
     * @param message
     */
    info(message: string): void;
+
+   /**
+    *
+    * @param message
+    */
+   notice(message: string): void;
+
    /**
     *
     * @param message
     */
    warn(message: string): void;
+
    /**
     *
     * @param message
     */
    error(message: string): void;
+
+   /**
+    *
+    * @param message
+    */
+   critical(message: string): void;
+
+   /**
+    *
+    * @param message
+    */
+   alert(message: string): void;
+
    /**
     *
     * @param message
@@ -34,85 +58,18 @@ interface IErrorHandler {
 /**
  *
  */
-interface IMessagesEmitter {
-   /**
-    *
-    * @param message
-    */
-   debug(message: string): void;
-   /**
-    *
-    * @param message
-    */
-   info(message: string): void;
-   /**
-    *
-    * @param message
-    */
-   warn(message: string): void;
-   /**
-    *
-    * @param message
-    */
-   error(message: string): void;
-   /**
-    *
-    * @param message
-    */
-   fatal(message: string): void;
-}
-
-/**
- *
- */
-enum ErrorHandlerLevel {
+export class ErrorHandler implements IErrorHandler {
    /**
     *
     */
-   NONE = 0,
-   /**
-    *
-    */
-   DEBUG = 1,
-   /**
-    *
-    */
-   INFO = 2,
-   /**
-    *
-    */
-   WARN = 3,
-   /**
-    *
-    */
-   ERROR = 4,
-   /**
-    *
-    */
-   FATAL = 5
-}
-
-/**
- *
- */
-class ErrorHandler implements IErrorHandler {
-   /**
-    *
-    */
-   private readonly emitter: IMessagesEmitter;
-   /**
-    *
-    */
-   private readonly level: ErrorHandlerLevel;
+   private readonly logger: ILogger;
 
    /**
     *
-    * @param level
-    * @param emitter
+    * @param logger
     */
-   constructor(emitter: IMessagesEmitter, level: ErrorHandlerLevel) {
-      this.emitter = emitter;
-      this.level = level;
+   constructor(logger: ILogger) {
+      this.logger = logger;
    }
 
    /**
@@ -120,9 +77,7 @@ class ErrorHandler implements IErrorHandler {
     * @param message
     */
    debug(message: string): void {
-      if (this.level >= ErrorHandlerLevel.DEBUG) {
-         this.emitter.debug(message);
-      }
+      this.logger.debug(message);
    }
 
    /**
@@ -130,9 +85,15 @@ class ErrorHandler implements IErrorHandler {
     * @param message
     */
    info(message: string): void {
-      if (this.level >= ErrorHandlerLevel.INFO) {
-         this.emitter.debug(message);
-      }
+      this.logger.info(message);
+   }
+
+   /**
+    *
+    * @param message
+    */
+   notice(message: string): void {
+      this.logger.info(message);
    }
 
    /**
@@ -140,9 +101,7 @@ class ErrorHandler implements IErrorHandler {
     * @param message
     */
    warn(message: string): void {
-      if (this.level >= ErrorHandlerLevel.WARN) {
-         this.emitter.debug(message);
-      }
+      this.logger.warn(message);
    }
 
    /**
@@ -150,9 +109,23 @@ class ErrorHandler implements IErrorHandler {
     * @param message
     */
    error(message: string): void {
-      if (this.level >= ErrorHandlerLevel.ERROR) {
-         this.emitter.debug(message);
-      }
+      this.logger.error(message);
+   }
+
+   /**
+    *
+    * @param message
+    */
+   critical(message: string): void {
+      this.logger.error(message);
+   }
+
+   /**
+    *
+    * @param message
+    */
+   alert(message: string): void {
+      this.logger.error(message);
    }
 
    /**
@@ -160,15 +133,7 @@ class ErrorHandler implements IErrorHandler {
     * @param message
     */
    fatal(message: string): void {
-      if (this.level >= ErrorHandlerLevel.FATAL) {
-         this.emitter.debug(message);
-      }
+      this.logger.error(message);
    }
 }
 
-export {
-   IErrorHandler,
-   IMessagesEmitter,
-   ErrorHandlerLevel,
-   ErrorHandler
-};
