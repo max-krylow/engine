@@ -6,10 +6,8 @@ const { TreeBuilder } = require('engine/html/TreeBuilder');
 const { Tokenizer } = require('engine/html/Tokenizer');
 const { Source } = require("engine/core/Source");
 const { SourceReader } =  require("engine/core/SourceReader");
-const { MetaInfo } =  require("engine/core/MetaInfo");
 const { getTagNodeDescription } = require('engine/html/NodeDescription');
 
-const meta = new MetaInfo('test/html/TreeBuilder.test.js');
 
 const errorHandler = {
    debug: console.log.bind(console),
@@ -20,7 +18,7 @@ const errorHandler = {
 };
 
 function createTree(html, options) {
-   let reader = new SourceReader(new Source(html, meta));
+   let reader = new SourceReader(new Source(html));
    let builder = new TreeBuilder(getTagNodeDescription, errorHandler);
    let tokenizer = new Tokenizer(builder, options, errorHandler);
    tokenizer.start();

@@ -2,6 +2,7 @@
 
 import { ISource } from "./Source";
 import Position from "./utils/Position";
+import Symbols from "../html/base/Symbols";
 
 /**
  *
@@ -12,26 +13,58 @@ import Position from "./utils/Position";
  *
  */
 const EOF: null = null;
+
 /**
  *
  */
-const LINE_FEED: string = '\n';
-
 export interface ISourceReader {
    consume(): string | null;
    reconsume(): void;
+
+   /**
+    *
+    */
    hasNext(): boolean;
+
+   /**
+    *
+    */
    getPosition(): Position;
 }
 
+/**
+ *
+ */
 export class SourceReader implements ISourceReader {
+   /**
+    *
+    */
    private readonly source: ISource;
+   /**
+    *
+    */
    private index: number;
+   /**
+    *
+    */
    private reconsumeFlag: boolean;
+   /**
+    *
+    */
    private line: number;
+   /**
+    *
+    */
    private column: number;
+   /**
+    *
+    */
    private lastLF: boolean;
 
+   /**
+    *
+    * @param source
+    */
    constructor(source: ISource) {
       this.source = source;
       this.index = -1;
@@ -41,6 +74,9 @@ export class SourceReader implements ISourceReader {
       this.lastLF = false;
    }
 
+   /**
+    *
+    */
    consume(): string | null {
       if (this.reconsumeFlag) {
          this.reconsumeFlag = false;
@@ -52,16 +88,25 @@ export class SourceReader implements ISourceReader {
       return char;
    }
 
+   /**
+    *
+    */
    reconsume(): void {
       if (this.index > -1 && this.index !== this.source.getSize()) {
          this.reconsumeFlag = true;
       }
    }
 
+   /**
+    *
+    */
    getPosition(): Position {
-      return new Position(this.line, this.column, this.index);
+      return new Position(this.line, this.column);
    }
 
+   /**
+    *
+    */
    hasNext(): boolean {
       if (this.reconsumeFlag) {
          return this.index < this.source.getSize();
@@ -69,17 +114,24 @@ export class SourceReader implements ISourceReader {
       return this.index + 1 < this.source.getSize();
    }
 
+   /**
+    *
+    * @param char
+    */
    private updateNavigation(char: string): void {
       if (this.lastLF) {
          this.lastLF = false;
          this.column = 0;
          ++this.line;
       }
-      if (char === LINE_FEED) {
+      if (char === Symbols.LINE_FEED) {
          this.lastLF = true;
       }
    }
 
+   /**
+    *
+    */
    private moveNext(): void {
       if (this.index < this.source.getSize()) {
          ++this.index;
@@ -87,6 +139,9 @@ export class SourceReader implements ISourceReader {
       }
    }
 
+   /**
+    *
+    */
    private getChar(): string | null {
       if (this.index < this.source.getSize()) {
          return this.source.getChar(this.index);

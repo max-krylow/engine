@@ -6,7 +6,6 @@ const { Tokenizer } = require('engine/html/Tokenizer');
 const { ContentModel } = require('engine/html/base/ContentModel');
 const { Source } = require("engine/core/Source");
 const { SourceReader } =  require("engine/core/SourceReader");
-const { MetaInfo } =  require("engine/core/MetaInfo");
 
 const { ERROR_HANDLER } = require('../ErrorHandler');
 const TOKENIZER_OPTIONS = { };
@@ -22,10 +21,8 @@ function assertAttributes(standard, actual) {
 
 let stack;
 
-const meta = new MetaInfo('test/core/SourceReader.test.ts');
-
 function createReader(data) {
-   return new SourceReader(new Source(data, meta));
+   return new SourceReader(new Source(data));
 }
 
 const handler = {

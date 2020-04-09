@@ -27,4 +27,5 @@ export default class Symbols {
    public static readonly HYPHEN_MINUS: string = '-';
    public static readonly LEFT_SQUARE_BRACKET: string = '[';
    public static readonly RIGHT_SQUARE_BRACKET: string = ']';
+   public static readonly NULL_REPLACEMENT: string = '\ufffd';
 }

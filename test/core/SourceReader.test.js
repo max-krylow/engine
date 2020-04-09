@@ -2,15 +2,13 @@
 const { assert } = require("chai");
 const { Source } = require("engine/core/Source");
 const { SourceReader } = require("engine/core/SourceReader");
-const { MetaInfo } = require("engine/core/MetaInfo");
 const { default: Position } = require("engine/core/utils/Position");
 const { default: Location } = require("engine/core/utils/Location");
 
-const meta = new MetaInfo('test/core/SourceReader.test.ts');
 const EOF = null;
 
 function createReader(data) {
-   return new SourceReader(new Source(data, meta));
+   return new SourceReader(new Source(data));
 }
 
 describe('core/SourceReader', () => {
@@ -142,10 +140,5 @@ describe('core/SourceReader', () => {
 
       assert.strictEqual(reader.consume(), EOF);
       assert.strictEqual(reader.getPosition().line, 1);
-   });
-   it('.getSpan()', function () {
-      const source = new Source('abcde', meta);
-      const location = new Location(new Position(0, 0, 2), new Position(0, 0, 3));
-      assert.strictEqual(source.getSpan(location), 'cd');
    });
 });

@@ -10,11 +10,10 @@ const { MetaInfo } =  require("engine/core/MetaInfo");
 
 const { ERROR_HANDLER } = require('../ErrorHandler');
 
-const meta = new MetaInfo('test/html/TreeBuilder.test.js');
-const dummyDescriptor = function() { return {}; };
+const dummyDescriptor = function() { return { }; };
 
 function createTree(html, options) {
-   let reader = new SourceReader(new Source(html, meta));
+   let reader = new SourceReader(new Source(html));
    let builder = new TreeBuilder(dummyDescriptor, ERROR_HANDLER);
    let tokenizer = new Tokenizer(builder, options, ERROR_HANDLER);
    tokenizer.start();

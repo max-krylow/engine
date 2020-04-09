@@ -181,7 +181,7 @@ export class Tokenizer implements ITokenizer {
       this.selfClosing = false;
       this.index = Number.MAX_VALUE;
       this.endTagExpectation = null;
-      this.startPosition = new Position(0, 0 ,0);
+      this.startPosition = new Position(0, 0);
       this.currentPosition = null;
       this.tokenHandler.onStart(this);
    }
