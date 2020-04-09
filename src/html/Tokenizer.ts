@@ -13,7 +13,7 @@ import { IErrorHandler } from "../core/utils/ErrorHandler";
 import Position from "../core/utils/Position";
 import { ITokenizer, ITokenHandler } from "./base/ITokenizer";
 import Symbols from "./base/Symbols";
-import ContentModel from "./base/ContentModel";
+import { ContentModel } from "./base/ContentModel";
 
 const CDATA: string = 'CDATA[';
 const DOCTYPE: string = 'OCTYPE';
@@ -43,57 +43,76 @@ export interface ITokenizerOptions {
 /**
  * Html tokenizer states.
  */
-class TokenizerState extends ContentModel {
-   /// Data content model
-   public static readonly TAG_OPEN: number = 4;
-   public static readonly END_TAG_OPEN: number = 5;
-   public static readonly TAG_NAME: number = 6;
-   public static readonly BEFORE_ATTRIBUTE_NAME: number = 7;
-   public static readonly ATTRIBUTE_NAME: number = 8;
-   public static readonly AFTER_ATTRIBUTE_NAME: number = 9;
-   public static readonly BEFORE_ATTRIBUTE_VALUE: number = 10;
-   public static readonly ATTRIBUTE_VALUE_DOUBLE_QUOTED: number = 11;
-   public static readonly ATTRIBUTE_VALUE_SINGLE_QUOTED: number = 12;
-   public static readonly ATTRIBUTE_VALUE_UNQUOTED: number = 13;
-   public static readonly AFTER_ATTRIBUTE_VALUE_QUOTED: number = 14;
-   public static readonly SELF_CLOSING_START_TAG: number = 15;
-   public static readonly BOGUS_COMMENT: number = 16;
-   public static readonly BOGUS_COMMENT_HYPHEN: number = 17;
-   public static readonly MARKUP_DECLARATION_OPEN: number = 18;
-   public static readonly MARKUP_DECLARATION_HYPHEN: number = 19;
-   public static readonly MARKUP_DECLARATION_OCTYPE: number = 20;
-   public static readonly CDATA_START: number = 21;
-   public static readonly COMMENT_START: number = 22;
-   public static readonly COMMENT_START_DASH: number = 23;
-   public static readonly COMMENT: number = 24;
-   public static readonly COMMENT_END_DASH: number = 25;
-   public static readonly COMMENT_END: number = 26;
-   public static readonly COMMENT_END_BANG: number = 27;
-   public static readonly DOCTYPE: number = 28;
-   public static readonly CDATA_SECTION: number = 29;
-   public static readonly CDATA_RSQB: number = 30;
-   public static readonly CDATA_RSQB_RSQB: number = 31;
+enum TokenizerState {
+   // Data content model
+   DATA,
+   TAG_OPEN,
+   END_TAG_OPEN,
+   TAG_NAME,
+   BEFORE_ATTRIBUTE_NAME,
+   ATTRIBUTE_NAME,
+   AFTER_ATTRIBUTE_NAME,
+   BEFORE_ATTRIBUTE_VALUE,
+   ATTRIBUTE_VALUE_DOUBLE_QUOTED,
+   ATTRIBUTE_VALUE_SINGLE_QUOTED,
+   ATTRIBUTE_VALUE_UNQUOTED,
+   AFTER_ATTRIBUTE_VALUE_QUOTED,
+   SELF_CLOSING_START_TAG,
+   BOGUS_COMMENT,
+   BOGUS_COMMENT_HYPHEN,
+   MARKUP_DECLARATION_OPEN,
+   MARKUP_DECLARATION_HYPHEN,
+   MARKUP_DECLARATION_OCTYPE,
+   CDATA_START,
+   COMMENT_START,
+   COMMENT_START_DASH,
+   COMMENT,
+   COMMENT_END_DASH,
+   COMMENT_END,
+   COMMENT_END_BANG,
+   DOCTYPE,
+   CDATA_SECTION,
+   CDATA_RSQB,
+   CDATA_RSQB_RSQB,
 
-   /// Raw text content model
-   public static readonly RAW_TEXT_LESS_THAN_SIGN: number = 32;
-   public static readonly RAW_TEXT_ESCAPE_START: number = 33;
-   public static readonly RAW_TEXT_ESCAPE_START_DASH: number = 34;
-   public static readonly RAW_TEXT_ESCAPED: number = 35;
-   public static readonly RAW_TEXT_ESCAPED_DASH: number = 36;
-   public static readonly RAW_TEXT_ESCAPED_DASH_DASH: number = 37;
-   public static readonly RAW_TEXT_ESCAPED_LESS_THAN_SIGN: number = 38;
-   public static readonly RAW_TEXT_ESCAPED_END_TAG_OPEN: number = 39;
-   public static readonly RAW_TEXT_ESCAPED_END_TAG_NAME: number = 40;
-   public static readonly RAW_TEXT_DOUBLE_ESCAPE_START: number = 41;
-   public static readonly RAW_TEXT_DOUBLE_ESCAPED: number = 42;
-   public static readonly RAW_TEXT_DOUBLE_ESCAPED_DASH: number = 43;
-   public static readonly RAW_TEXT_DATA_DOUBLE_ESCAPED_DASH_DASH: number = 44;
-   public static readonly RAW_TEXT_DOUBLE_ESCAPED_LESS_THAN_SIGN: number = 45;
-   public static readonly RAW_TEXT_DOUBLE_ESCAPE_END: number = 46;
+   // Raw text content model
+   RAW_TEXT,
+   RAW_TEXT_LESS_THAN_SIGN,
+   RAW_TEXT_ESCAPE_START,
+   RAW_TEXT_ESCAPE_START_DASH,
+   RAW_TEXT_ESCAPED,
+   RAW_TEXT_ESCAPED_DASH,
+   RAW_TEXT_ESCAPED_DASH_DASH,
+   RAW_TEXT_ESCAPED_LESS_THAN_SIGN,
+   RAW_TEXT_ESCAPED_END_TAG_OPEN,
+   RAW_TEXT_ESCAPED_END_TAG_NAME,
+   RAW_TEXT_DOUBLE_ESCAPE_START,
+   RAW_TEXT_DOUBLE_ESCAPED,
+   RAW_TEXT_DOUBLE_ESCAPED_DASH,
+   RAW_TEXT_DATA_DOUBLE_ESCAPED_DASH_DASH,
+   RAW_TEXT_DOUBLE_ESCAPED_LESS_THAN_SIGN,
+   RAW_TEXT_DOUBLE_ESCAPE_END,
 
-   /// Escapable content model
-   public static readonly ESCAPABLE_RAW_TEXT_LESS_THAN_SIGN: number = 47;
-   public static readonly ESCAPABLE_RAW_TEXT_END_TAG_NAME: number = 48;
+   // Escapable content model
+   ESCAPABLE_RAW_TEXT,
+   ESCAPABLE_RAW_TEXT_LESS_THAN_SIGN,
+   ESCAPABLE_RAW_TEXT_END_TAG_NAME
+}
+
+/**
+ *
+ * @param contentModel
+ */
+function getStateByContentModel(contentModel: ContentModel): TokenizerState {
+   switch (contentModel) {
+      case ContentModel.RAW_TEXT:
+         return TokenizerState.RAW_TEXT;
+      case ContentModel.ESCAPABLE_RAW_TEXT:
+         return TokenizerState.ESCAPABLE_RAW_TEXT;
+      default:
+         return TokenizerState.DATA;
+
+   }
 }
 
 /**
@@ -142,12 +161,12 @@ export class Tokenizer implements ITokenizer {
 
    /**
     *
-    * @param state
+    * @param contentModel
     * @param endTagExpectation
     */
-   public setContentModel(state: TokenizerState, endTagExpectation: string): void {
-      this.state = state;
-      this.returnState = state;
+   public setContentModel(contentModel: ContentModel, endTagExpectation: string): void {
+      this.returnState = this.state;
+      this.state = getStateByContentModel(contentModel);
       this.endTagExpectation = endTagExpectation;
    }
 

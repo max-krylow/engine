@@ -8,17 +8,17 @@
 /**
  * HTML Element content model.
  */
-export default abstract class ContentModel {
+export enum ContentModel {
    /**
     * Parsable data.
     */
-   public static readonly DATA: number = 1;
+   DATA,
    /**
     * Raw un-escapable text.
     */
-   public static readonly RAW_TEXT: number = 2;
+   RAW_TEXT,
    /**
     * Raw escapable text.
     */
-   public static readonly ESCAPABLE_RAW_TEXT: number = 3;
+   ESCAPABLE_RAW_TEXT
 }

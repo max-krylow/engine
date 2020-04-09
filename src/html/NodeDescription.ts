@@ -5,7 +5,7 @@
  * @link https://www.w3.org/TR/2011/WD-html5-20110525/syntax.html
  */
 
-import ContentModel from "./base/ContentModel";
+import { ContentModel } from "./base/ContentModel";
 
 /**
  *

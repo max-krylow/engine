@@ -1,6 +1,6 @@
 /// <amd-module name="engine/html/base/ITokenizer" />
 
-import ContentModel from "./ContentModel";
+import { ContentModel } from "./ContentModel";
 import { IAttributes } from "../Attribute";
 import Location from "../../core/utils/Location";
 import { ISourceReader } from "../../core/SourceReader";

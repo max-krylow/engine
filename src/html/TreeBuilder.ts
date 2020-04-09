@@ -8,7 +8,7 @@ import { ITokenHandler } from "./base/ITokenizer";
 import { IErrorHandler } from "../core/utils/ErrorHandler";
 import { ITokenizer } from "./base/ITokenizer";
 import { IAttributes } from "./Attribute";
-import ContentModel from "./base/ContentModel";
+import { ContentModel } from "./base/ContentModel";
 
 /**
  *

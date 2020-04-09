@@ -3,7 +3,7 @@
 const { assert } = require('chai');
 
 const { Tokenizer } = require('engine/html/Tokenizer');
-const { default: ContentModel } = require('engine/html/base/ContentModel');
+const { ContentModel } = require('engine/html/base/ContentModel');
 const { Source } = require("engine/core/Source");
 const { SourceReader } =  require("engine/core/SourceReader");
 const { MetaInfo } =  require("engine/core/MetaInfo");
