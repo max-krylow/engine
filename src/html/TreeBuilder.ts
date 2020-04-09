@@ -2,7 +2,7 @@
 
 import Location from "../core/utils/Location";
 import { DataNode, Node, NodeType, NodeWithChildren, TagNode, ITagNodeOptions } from "./Node";
-import { INodeDescription } from "./NodeDescription";
+import { NodeDescription } from "./NodeDescription";
 
 import { ITokenHandler } from "./base/ITokenizer";
 import { IErrorHandler } from "../core/utils/ErrorHandler";
@@ -18,7 +18,7 @@ import { ContentModel } from "./base/ContentModel";
 /**
  *
  */
-declare type TNodeDescriptor = (name: string) => INodeDescription;
+declare type TNodeDescriptor = (name: string) => NodeDescription;
 
 /**
  *
@@ -31,26 +31,26 @@ class TreeBuilder implements ITokenHandler {
    /**
     *
     */
-   private tree: Node[] = null;
+   private readonly errorHandler: IErrorHandler | undefined;
    /**
     *
     */
-   private stack: Node[] = null;
+   private tree: Node[] = [];
    /**
     *
     */
-   private dataNode: DataNode = null;
+   private stack: Node[] = [];
    /**
     *
     */
-   private errorHandler: IErrorHandler = null;
+   private dataNode: DataNode | undefined;
    /**
     *
     */
-   private tokenizer: ITokenizer = null;
+   private tokenizer: ITokenizer | undefined;
 
    /**
-    * Inialize new instance.
+    * Initialize new instance.
     */
    constructor(nodeDescriptor: TNodeDescriptor, errorHandler?: IErrorHandler) {
       this.nodeDescriptor = nodeDescriptor;
@@ -90,7 +90,7 @@ class TreeBuilder implements ITokenHandler {
       if ((!selfClosing && !description.isVoid)) {
          this.stack.push(node);
       }
-      if (description.contentModel !== ContentModel.DATA) {
+      if (this.tokenizer && description.contentModel !== ContentModel.DATA) {
          this.tokenizer.setContentModel(description.contentModel, name);
       }
    }
@@ -102,7 +102,7 @@ class TreeBuilder implements ITokenHandler {
     */
    public onCloseTag(name: string, location: Location): void {
       const description = this.nodeDescriptor(name);
-      this.dataNode = null;
+      this.dataNode = undefined;
       if (description.isVoid) {
          this.error(`End tag ${name}`);
       }
@@ -177,7 +177,7 @@ class TreeBuilder implements ITokenHandler {
       if (parent) {
          node.parent = parent as NodeWithChildren;
       }
-      this.dataNode = null;
+      this.dataNode = undefined;
    }
 
    /**

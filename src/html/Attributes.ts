@@ -6,74 +6,6 @@
 
 import Location from "../core/utils/Location";
 
-/**
- *
- */
-export enum AttributeFlag {
-   /**
-    *
-    */
-   NONE = 0,
-   /**
-    *
-    */
-   ATTRIBUTE = 1,
-   /**
-    *
-    */
-   BIND = 2,
-   /**
-    *
-    */
-   EVENT_HANDLER = 4
-}
-
-/**
- *
- */
-const ATTRIBUTE_PREFIX: string = 'attr:';
-/**
- *
- */
-const BIND_PREFIX: string = 'bind:';
-/**
- *
- */
-const EVENT_HANDLER_PREFIX: string = 'on:';
-
-/**
- *
- * @param name
- */
-function getFlagByAttributeName(name: string): AttributeFlag {
-   if (name.startsWith(ATTRIBUTE_PREFIX)) {
-      return AttributeFlag.ATTRIBUTE;
-   }
-   if (name.startsWith(BIND_PREFIX)) {
-      return AttributeFlag.BIND;
-   }
-   if (name.startsWith(EVENT_HANDLER_PREFIX)) {
-      return AttributeFlag.EVENT_HANDLER;
-   }
-   return AttributeFlag.NONE;
-}
-
-/**
- *
- * @param flag
- */
-function getAttributePrefixByFlag(flag: AttributeFlag): string {
-   switch (flag) {
-      case AttributeFlag.ATTRIBUTE:
-         return ATTRIBUTE_PREFIX;
-      case AttributeFlag.BIND:
-         return BIND_PREFIX;
-      case AttributeFlag.EVENT_HANDLER:
-         return EVENT_HANDLER_PREFIX;
-      default:
-         return '';
-   }
-}
 
 /**
  *
@@ -83,10 +15,6 @@ export class AttributeName {
     *
     */
    readonly name: string;
-   /**
-    *
-    */
-   readonly flag: AttributeFlag;
 
    /**
     * Initialize new instance of attribute name.
@@ -94,14 +22,13 @@ export class AttributeName {
     */
    constructor(name: string) {
       this.name = name;
-      this.flag = getFlagByAttributeName(name);
    }
 
    /**
     * Get string representation of attribute name.
     */
    toString(): string {
-      return getAttributePrefixByFlag(this.flag) + this.name;
+      return this.name;
    }
 }
 
@@ -116,7 +43,7 @@ export class AttributeValue {
    /**
     *
     */
-   public readonly value: string;
+   public readonly value: string | null;
    /**
     *
     */

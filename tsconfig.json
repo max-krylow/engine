@@ -5,6 +5,8 @@
     "sourceMap": false,
     "outDir": "build",
     "allowSyntheticDefaultImports": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
     "allowJs": false,
     "checkJs": false,
     "declaration": false,
@@ -15,18 +17,20 @@
     "noEmitHelpers": true,
     "moduleResolution": "node",
     "noEmitOnError": true,
-    "noFallthroughCasesInSwitch": false, // true
+    "noFallthroughCasesInSwitch": false,
     "noImplicitAny": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,
-    "noUnusedLocals": false, // true
-    "strictNullChecks": false, // true
+    "noUnusedLocals": true,
+    "strict": true,
+    "strictNullChecks": true,
     "pretty": true,
     "removeComments": true,
     "baseUrl": ".src/",
     "paths": {
       "engine": [""]
-    }
+    },
+    "resolveJsonModule": true
   },
   "exclude": [
     "node_modules"

@@ -39,20 +39,20 @@ export interface INodeDescription {
    /**
     *
     */
-   readonly implicitNameSpace?: string;
+   readonly implicitNameSpace?: string | undefined;
 }
 
 /**
  *
  */
-class NodeDescription implements INodeDescription {
-   readonly allowSelfClosing: boolean;
+export class NodeDescription implements INodeDescription {
    readonly closedByChildren: string[];
    readonly closedByParent: boolean;
-   readonly ignoreFirstLF: boolean;
    readonly isVoid: boolean;
+   readonly allowSelfClosing: boolean;
+   readonly ignoreFirstLF: boolean;
    readonly contentModel: ContentModel;
-   readonly implicitNameSpace: string;
+   readonly implicitNameSpace: string | undefined;
 
    /**
     *
@@ -65,7 +65,7 @@ class NodeDescription implements INodeDescription {
       this.ignoreFirstLF = !!options.ignoreFirstLF;
       this.isVoid = !!options.isVoid;
       this.contentModel = options.contentModel || ContentModel.DATA;
-      this.implicitNameSpace = options.implicitNameSpace || null;
+      this.implicitNameSpace = options.implicitNameSpace;
    }
 
    /**
@@ -86,7 +86,7 @@ const DEFAULT_DEFINITION = new NodeDescription({});
  *
  */
 interface INodeDescriptions {
-   [elementName: string]: INodeDescription;
+   [elementName: string]: NodeDescription;
 }
 
 /**
@@ -115,7 +115,7 @@ const NODE_DESCRIPTION: INodeDescriptions = {
  *
  * @param name
  */
-export function getTagNodeDescription(name: string): INodeDescription {
+export function getTagNodeDescription(name: string): NodeDescription {
    if (NODE_DESCRIPTION[name]) {
       return NODE_DESCRIPTION[name];
    }

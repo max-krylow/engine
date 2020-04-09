@@ -119,30 +119,26 @@ function getStateByContentModel(contentModel: ContentModel): TokenizerState {
  *
  */
 export class Tokenizer implements ITokenizer {
-   private tokenHandler: ITokenHandler;
-   private errorHandler: IErrorHandler;
-   private source: ISourceReader;
+   private readonly tokenHandler: ITokenHandler;
+   private readonly errorHandler: IErrorHandler | undefined;
+   private source: ISourceReader | undefined;
 
-   private state: TokenizerState;
-   private returnState: TokenizerState;
-   private charBuffer: string;
-   private index: number;
-   private startPosition: Position;
-   private currentPosition: Position;
+   private state: TokenizerState = TokenizerState.DATA;
+   private returnState: TokenizerState = TokenizerState.DATA;
+   private charBuffer: string = '';
+   private index: number = 0;
+   private startPosition: Position | undefined;
+   private currentPosition: Position | undefined;
+   private endTagExpectation: string = '';
 
-   private endTagExpectation: string;
-   private containsHyphen: boolean;
+   private endTag: boolean = false;
+   private tagName: string | undefined;
+   private selfClosing: boolean = false;
+   private attributeName: AttributeName | undefined;
+   private attributes: IAttributes | undefined;
 
-   private endTag: boolean;
-   private tagName: string;
-   private selfClosing: boolean;
-   private attributeName: AttributeName;
-   private attributes: IAttributes;
-
-   private readonly html4: boolean;
-   private readonly allowComments: boolean;
-   private readonly allowCDATA: boolean;
-   private readonly tagNameToLowerCase: boolean;
+   private readonly allowComments: boolean = false;
+   private readonly allowCDATA: boolean = false;
 
    /**
     *
@@ -152,10 +148,8 @@ export class Tokenizer implements ITokenizer {
     */
    constructor(tokenHandler: ITokenHandler, options?: ITokenizerOptions, errorHandler?: IErrorHandler) {
       this.tokenHandler = tokenHandler;
-      this.html4 = !!(options && options.html4);
       this.allowComments = !!(options && options.allowComments);
       this.allowCDATA = !!(options && options.allowCDATA);
-      this.tagNameToLowerCase = !!(options && options.tagNameToLowerCase);
       this.errorHandler = errorHandler;
    }
 
@@ -180,9 +174,9 @@ export class Tokenizer implements ITokenizer {
       this.tagName = '';
       this.selfClosing = false;
       this.index = Number.MAX_VALUE;
-      this.endTagExpectation = null;
+      this.endTagExpectation = '';
       this.startPosition = new Position(0, 0);
-      this.currentPosition = null;
+      this.currentPosition = undefined;
       this.tokenHandler.onStart(this);
    }
 
@@ -195,7 +189,7 @@ export class Tokenizer implements ITokenizer {
       let char;
       let treatAsDefault;
       while (this.source.hasNext()) {
-         char = this.source.consume();
+         char = this.source.consume() as string;
          this.currentPosition = this.source.getPosition();
          switch (this.state) {
             case TokenizerState.DATA:
@@ -224,7 +218,6 @@ export class Tokenizer implements ITokenizer {
                   this.cleanCharBuffer();
                   this.appendCharBuffer(char);
                   this.endTag = false;
-                  this.containsHyphen = false;
                   this.state = TokenizerState.TAG_NAME;
                   break;
                }
@@ -235,7 +228,6 @@ export class Tokenizer implements ITokenizer {
                   this.cleanCharBuffer();
                   this.appendCharBuffer(char);
                   this.endTag = false;
-                  this.containsHyphen = false;
                   this.state = TokenizerState.TAG_NAME;
                   break;
                }
@@ -278,7 +270,6 @@ export class Tokenizer implements ITokenizer {
                   this.endTag = true;
                   this.cleanCharBuffer();
                   this.appendCharBuffer(char);
-                  this.containsHyphen = false;
                   this.state = TokenizerState.TAG_NAME;
                   break;
                }
@@ -289,7 +280,6 @@ export class Tokenizer implements ITokenizer {
                   this.endTag = true;
                   this.cleanCharBuffer();
                   this.appendCharBuffer(char);
-                  this.containsHyphen = false;
                   this.state = TokenizerState.TAG_NAME;
                   break;
                }
@@ -304,7 +294,6 @@ export class Tokenizer implements ITokenizer {
                      this.error(`Garbage after ${this.charBuffer + char}`);
                      this.cleanCharBuffer();
                      this.appendCharBuffer(char);
-                     this.containsHyphen = false;
                      this.state = TokenizerState.BOGUS_COMMENT;
                      break;
                }
@@ -825,7 +814,7 @@ export class Tokenizer implements ITokenizer {
                      break;
                   case Symbols.GREATER_THAN_SIGN:
                      // Parse error. Switch to the data state. Emit the comment token.
-                     this.errorHandler.error('errPrematureEndOfComment');
+                     this.error('errPrematureEndOfComment');
                      this.emitComment(1);
                      this.state = TokenizerState.DATA;
                      break;
@@ -1548,7 +1537,7 @@ export class Tokenizer implements ITokenizer {
                } else {
                   this.endTag = true;
                   this.tagName = this.endTagExpectation;
-                  this.endTagExpectation = null;
+                  this.endTagExpectation = '';
                   switch (char) {
                      case Symbols.LINE_FEED:
                      case Symbols.SPACE:
@@ -1608,7 +1597,7 @@ export class Tokenizer implements ITokenizer {
    }
 
    private getCurrentLocation(): Location {
-      return new Location(this.startPosition, this.currentPosition);
+      return new Location(this.startPosition as Position, this.currentPosition as Position);
    }
 
    private resetPosition(): void {
@@ -1650,9 +1639,9 @@ export class Tokenizer implements ITokenizer {
 
    private emitTagToken(): void {
       if (this.endTag) {
-         this.tokenHandler.onCloseTag(this.tagName, this.getCurrentLocation());
+         this.tokenHandler.onCloseTag(this.tagName as string, this.getCurrentLocation());
       } else {
-         this.tokenHandler.onOpenTag(this.tagName, this.attributes, this.selfClosing, this.getCurrentLocation());
+         this.tokenHandler.onOpenTag(this.tagName as string, this.attributes || { }, this.selfClosing, this.getCurrentLocation());
       }
       this.tagName = '';
       this.attributes = undefined;
@@ -1676,24 +1665,24 @@ export class Tokenizer implements ITokenizer {
       }
       if (this.attributes[this.attributeName.name]) {
          this.error(`Duplicate attribute "${this.attributeName.name}"`);
-         this.attributeName = null;
+         this.attributeName = undefined;
       }
    }
 
    private addAttributeWithoutValue(): void {
       this.warn('noteAttributeWithoutValue');
-      if (this.attributeName) {
-         this.attributes[this.attributeName.name] = new AttributeValue(this.attributeName, null, null);
+      if (this.attributes && this.attributeName) {
+         this.attributes[this.attributeName.name] = new AttributeValue(this.attributeName, null, this.getCurrentLocation());
       }
-      this.attributeName = null;
+      this.attributeName = undefined;
       this.cleanCharBuffer();
    }
 
    private addAttributeWithValue(): void {
-      if (this.attributeName) {
-         this.attributes[this.attributeName.name] = new AttributeValue(this.attributeName, this.charBuffer, null);
+      if (this.attributes && this.attributeName) {
+         this.attributes[this.attributeName.name] = new AttributeValue(this.attributeName, this.charBuffer, this.getCurrentLocation());
       }
-      this.attributeName = null;
+      this.attributeName = undefined;
       this.cleanCharBuffer();
    }
 

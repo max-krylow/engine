@@ -118,7 +118,7 @@ export class SourceReader implements ISourceReader {
     *
     * @param char
     */
-   private updateNavigation(char: string): void {
+   private updateNavigation(char: string | null): void {
       if (this.lastLF) {
          this.lastLF = false;
          this.column = 0;

@@ -1,7 +1,6 @@
 /// <amd-module name="engine/core/Source" />
 
 import { assertIndex } from "./debug/Assertions";
-import Location from "./utils/Location";
 import Symbols from "../html/base/Symbols";
 
 /**
