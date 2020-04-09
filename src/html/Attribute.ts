@@ -4,6 +4,11 @@ import Location from "../core/utils/Location";
 
 /**
  *
+ * @file src/html/Attribute.ts
+ */
+
+/**
+ *
  */
 export class AttributeValue {
    /**
@@ -15,6 +20,11 @@ export class AttributeValue {
     */
    public readonly location: Location;
 
+   /**
+    *
+    * @param value
+    * @param location
+    */
    constructor(value: string | null, location: Location) {
       this.value = value;
       this.location = location;

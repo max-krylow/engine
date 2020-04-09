@@ -6,6 +6,11 @@
 npm install
 ```
 
+## Documentation
+```bash
+npm run doc
+```
+
 ## Build
 
 ```bash

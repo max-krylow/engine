@@ -2,5 +2,6 @@
 artifacts
 build
 node_modules
+doc
 
 package-lock.json

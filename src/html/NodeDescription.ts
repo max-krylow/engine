@@ -1,6 +1,7 @@
 /// <amd-module name="engine/html/NodeDescription" />
 
 /**
+ * @file src/html/NodeDescription.ts
  * @link https://www.w3.org/TR/2011/WD-html5-20110525/content-models.html
  * @link https://www.w3.org/TR/2011/WD-html5-20110525/syntax.html
  */

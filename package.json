@@ -25,7 +25,8 @@
     "build": "npm run precompile && npm run compile && npm run postcompile",
     "test": "mocha test/**/*.test.js",
     "coverage": "nyc npm run test",
-    "format": "prettier --write '**/*.{ts,md,json}'"
+    "format": "prettier --write '**/*.{ts,md,json}'",
+    "doc": "typedoc --out doc/ src/"
   },
   "dependencies": {
     "jison": "0.4.18"
@@ -39,7 +40,8 @@
     "chai": "^4.2.0",
     "mocha": "^6.2.2",
     "nyc": "^15.0.0",
-    "prettier": "^1.18.2"
+    "prettier": "^1.18.2",
+    "typedoc": "0.17.4"
   },
   "nyc": {
     "excludeNodeModules": false,

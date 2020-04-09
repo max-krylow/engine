@@ -3,7 +3,18 @@
 import { ISource } from "./Source";
 import Position from "./utils/Position";
 
+/**
+ *
+ * @file src/core/SourceReader.ts
+ */
+
+/**
+ *
+ */
 const EOF: null = null;
+/**
+ *
+ */
 const LINE_FEED: string = '\n';
 
 export interface ISourceReader {

@@ -2,6 +2,11 @@
 
 /**
  *
+ * @file src/core/utils/Position.ts
+ */
+
+/**
+ *
  */
 export default class Position {
    /**

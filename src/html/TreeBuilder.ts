@@ -12,6 +12,11 @@ import { ContentModel } from "./base/ContentModel";
 
 /**
  *
+ * @file src/html/TreeBuilder.ts
+ */
+
+/**
+ *
  */
 declare type TNodeDescriptor = (name: string) => INodeDescription;
 

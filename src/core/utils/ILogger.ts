@@ -2,6 +2,11 @@
 
 /**
  *
+ * @file src/core/utils/ILogger.ts
+ */
+
+/**
+ *
  */
 export enum LoggerLevel {
    /**

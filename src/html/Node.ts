@@ -5,6 +5,11 @@ import Location  from "../core/utils/Location";
 
 /**
  *
+ * @file src/html/Node.ts
+ */
+
+/**
+ *
  */
 export enum NodeType {
    /**
@@ -133,8 +138,17 @@ export class NodeWithChildren extends Node {
    }
 }
 
+/**
+ *
+ */
 export interface ITagNodeOptions {
+   /**
+    *
+    */
    selfClosing: boolean;
+   /**
+    *
+    */
    isVoid: boolean;
 }
 

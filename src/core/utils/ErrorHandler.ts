@@ -1,9 +1,14 @@
 /// <amd-module name="engine/core/utils/ErrorHandler" />
 
+/**
+ *
+ * @file src/core/utils/ErrorHandler.ts
+ */
+
 import { ILogger } from "./ILogger";
 
 /**
- *
+ * Interface for handler errors.
  */
 export interface IErrorHandler {
    /**

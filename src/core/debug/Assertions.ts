@@ -2,6 +2,11 @@
 
 /**
  *
+ * @file src/core/debug/Assertions.ts
+ */
+
+/**
+ * Flag for debug mode.
  * @todo Move to environment
  */
 const IS_DEBUG: boolean = true;

@@ -4,21 +4,26 @@ import Position from "./Position";
 
 /**
  *
+ * @file src/core/utils/Location.ts
+ */
+
+/**
+ *
  */
 export default class Location {
    /**
-    *
+    * Start position.
     */
    public readonly start: Position;
    /**
-    *
+    * End position.
     */
    public readonly end: Position;
 
    /**
-    *
-    * @param start
-    * @param end
+    * Initialize new instance of location.
+    * @param start {Position} Start position.
+    * @param end {Position} End position.
     */
    constructor(start: Position, end: Position) {
       this.start = start;
