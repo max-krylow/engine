@@ -15,57 +15,57 @@ import { ISourceReader } from "../../core/SourceReader";
  */
 export interface ITokenHandler {
    /**
-    *
-    * @param tokenizer
+    * Notify about start of tokenize process.
+    * @param tokenizer {ITokenizer} Concrete tokenizer implementation.
     */
    onStart(tokenizer: ITokenizer): void;
 
    /**
-    *
-    * @param name
-    * @param attributes
-    * @param selfClosing
-    * @param location
+    * Emit open tag token.
+    * @param name {string} Tag name.
+    * @param attributes {IAttributes} Tag attributes.
+    * @param selfClosing {boolean} Flag whether tag is self-closing.
+    * @param location {Location} Start and end positions of the tag.
     */
    onOpenTag(name: string, attributes: IAttributes, selfClosing: boolean, location: Location): void;
 
    /**
-    *
-    * @param name
-    * @param location
+    * Emit close tag token.
+    * @param name {string} Tag name.
+    * @param location {Location} Start and end positions of the tag.
     */
    onCloseTag(name: string, location: Location): void;
 
    /**
-    *
-    * @param data
-    * @param location
+    * Emit text token.
+    * @param data {string} Text data.
+    * @param location {Location} Start and end positions of the text.
     */
    onText(data: string, location: Location): void;
 
    /**
-    *
-    * @param data
-    * @param location
+    * Emit comment token.
+    * @param data {string} Comment data.
+    * @param location {Location} Start and end positions of the comment.
     */
    onComment(data: string, location: Location): void;
 
    /**
-    *
-    * @param data
-    * @param location
+    * Emit CDATA token.
+    * @param data {string} Text data placed inside CDATA section.
+    * @param location {Location} Start and end positions of the CDATA section.
     */
    onCDATA(data: string, location: Location): void;
 
    /**
-    *
-    * @param data
-    * @param location
+    * Emit doctype token.
+    * @param data {string} Text data placed inside doctype declaration.
+    * @param location {Location} Start and end positions of the doctype declaration.
     */
    onDoctype(data: string, location: Location): void;
 
    /**
-    *
+    * Emit end of file token.
     */
    onEOF(): void;
 }
@@ -89,7 +89,7 @@ export interface ITokenizer {
    /**
     * Force set content model during the tokenize process.
     * @param contentModel {ContentModel} Content model.
-    * @param expectingEndTagName {string} The name of tag which indicates that
+    * @param expectingEndTagName {string} The name of the tag which indicates that
     * the tokenizer should go out of this content model state in its previous state.
     */
    setContentModel(contentModel: ContentModel, expectingEndTagName: string): void;

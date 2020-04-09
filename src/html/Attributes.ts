@@ -58,6 +58,10 @@ function getFlagByAttributeName(name: string): AttributeFlag {
    return AttributeFlag.NONE;
 }
 
+/**
+ *
+ * @param flag
+ */
 function getAttributePrefixByFlag(flag: AttributeFlag): string {
    switch (flag) {
       case AttributeFlag.ATTRIBUTE:
@@ -85,8 +89,8 @@ export class AttributeName {
    readonly flag: AttributeFlag;
 
    /**
-    *
-    * @param name
+    * Initialize new instance of attribute name.
+    * @param name {string} The name of attribute.
     */
    constructor(name: string) {
       this.name = name;
@@ -94,7 +98,7 @@ export class AttributeName {
    }
 
    /**
-    *
+    * Get string representation of attribute name.
     */
    toString(): string {
       return getAttributePrefixByFlag(this.flag) + this.name;
@@ -119,10 +123,10 @@ export class AttributeValue {
    public readonly location: Location;
 
    /**
-    *
-    * @param name
-    * @param value
-    * @param location
+    * Initialize new instance of attribute value.
+    * @param name {AttributeName} Attribute name.
+    * @param value {string | null} Attribute value: string, or null in case of boolean attribute.
+    * @param location Attribute value location.
     */
    constructor(name: AttributeName, value: string | null, location: Location) {
       this.name = name;
@@ -131,7 +135,7 @@ export class AttributeValue {
    }
 
    /**
-    *
+    * Get string representation of attribute value.
     */
    toString(): string {
       if (this.value) {
