@@ -1,25 +1,22 @@
 /* global require, describe, it */
 
 const { assert } = require('chai');
-const { default: TreeBuilder } = require('engine/html/TreeBuilder');
-const { Tokenizer } = require('engine/html/Tokenizer');
-const { getTagNodeDescription } = require('engine/html/NodeDescription');
 const { SourceFile } = require("engine/html/base/SourceFile");
 const { SourceReader } = require("engine/html/base/SourceReader");
 const { MarkupVisitor } = require("engine/html/base/Nodes");
+const { Parser } = require("engine/html/Parser");
+const { getTagNodeDescription } = require('engine/html/NodeDescription');
 const { ERROR_HANDLER } = require('../ErrorHandler');
 
 const visitor = new MarkupVisitor();
 const CONTEXT = { };
+const parser = new Parser({
+   nodeDescriptor: getTagNodeDescription
+}, ERROR_HANDLER);
 
-
-function createTree(html, options) {
+function parse(html) {
    let reader = new SourceReader(new SourceFile(html));
-   let builder = new TreeBuilder(getTagNodeDescription, ERROR_HANDLER);
-   let tokenizer = new Tokenizer(builder, options, ERROR_HANDLER);
-   tokenizer.start();
-   tokenizer.tokenize(reader);
-   return builder.getTree();
+   return parser.parse(reader);
 }
 
 const html1 = `<html>
@@ -49,12 +46,12 @@ const html2 = `<div><br><br></div>`;
 
 describe('engine/html/TreeBuilder (html)', function() {
    it('Markup', function() {
-      const tree = createTree(html1);
+      const tree = parse(html1);
       const markup = visitor.visitAll(tree, CONTEXT);
       assert.strictEqual(markup, html1);
    });
    it('Void elements', function() {
-      const tree = createTree(html2);
+      const tree = parse(html2);
       const markup = visitor.visitAll(tree, CONTEXT);
       assert.strictEqual(markup, html2);
    });
