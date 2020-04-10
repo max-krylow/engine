@@ -62,6 +62,7 @@ export default class TreeBuilder implements ITokenHandler {
       this.tree = [];
       this.stack = [];
       this.tokenizer = tokenizer;
+      this.dataNode = undefined;
    }
 
    /**
