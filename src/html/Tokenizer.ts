@@ -6,11 +6,11 @@
  * @link https://www.w3.org/TR/2011/WD-html5-20110525/content-models.html
  */
 import { SourceLocation, SourcePosition, ISourceReader } from "./base/SourceReader";
-import { IAttributes, AttributeName, AttributeValue } from "./Attributes";
 import { IErrorHandler } from "../utils/ErrorHandler";
 import { ITokenizer, ITokenHandler } from "./base/ITokenizer";
 import Characters from "./base/Characters";
 import { ContentModel } from "./base/ContentModel";
+import { Attribute, IAttributes } from "./base/Nodes";
 
 const CDATA: string = 'CDATA[';
 const DOCTYPE: string = 'OCTYPE';
@@ -131,7 +131,7 @@ export class Tokenizer implements ITokenizer {
    private endTag: boolean = false;
    private tagName: string | undefined;
    private selfClosing: boolean = false;
-   private attributeName: AttributeName | undefined;
+   private attributeName: string | undefined;
    private attributes: IAttributes | undefined;
 
    private readonly allowComments: boolean = false;
@@ -1655,13 +1655,13 @@ export class Tokenizer implements ITokenizer {
    }
 
    private attributeNameComplete(): void {
-      this.attributeName = new AttributeName(this.charBuffer);
+      this.attributeName = this.charBuffer;
       this.cleanCharBuffer();
       if (!this.attributes) {
          this.attributes = { };
       }
-      if (this.attributes[this.attributeName.name]) {
-         this.error(`Duplicate attribute "${this.attributeName.name}"`);
+      if (this.attributes[this.attributeName]) {
+         this.error(`Duplicate attribute "${this.attributeName}"`);
          this.attributeName = undefined;
       }
    }
@@ -1669,7 +1669,7 @@ export class Tokenizer implements ITokenizer {
    private addAttributeWithoutValue(): void {
       this.warn('noteAttributeWithoutValue');
       if (this.attributes && this.attributeName) {
-         this.attributes[this.attributeName.name] = new AttributeValue(this.attributeName, null, this.getCurrentLocation());
+         this.attributes[this.attributeName] = new Attribute(this.attributeName, null, this.getCurrentLocation());
       }
       this.attributeName = undefined;
       this.cleanCharBuffer();
@@ -1677,7 +1677,7 @@ export class Tokenizer implements ITokenizer {
 
    private addAttributeWithValue(): void {
       if (this.attributes && this.attributeName) {
-         this.attributes[this.attributeName.name] = new AttributeValue(this.attributeName, this.charBuffer, this.getCurrentLocation());
+         this.attributes[this.attributeName] = new Attribute(this.attributeName, this.charBuffer, this.getCurrentLocation());
       }
       this.attributeName = undefined;
       this.cleanCharBuffer();

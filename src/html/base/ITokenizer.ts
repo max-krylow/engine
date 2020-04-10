@@ -1,7 +1,7 @@
 /// <amd-module name="engine/html/base/ITokenizer" />
 
 import { ContentModel } from "./ContentModel";
-import { IAttributes } from "../Attributes";
+import { IAttributes } from "./Nodes";
 import { SourceLocation, ISourceReader } from "./SourceReader";
 
 /**

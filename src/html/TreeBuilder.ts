@@ -1,13 +1,12 @@
 /// <amd-module name="engine/html/TreeBuilder" />
 
-import { DataNode, Node, NodeType, NodeWithChildren, TagNode, ITagNodeOptions } from "./Node";
 import { NodeDescription } from "./NodeDescription";
 import { SourceLocation } from "./base/SourceReader";
 import { ITokenHandler } from "./base/ITokenizer";
 import { IErrorHandler } from "../utils/ErrorHandler";
 import { ITokenizer } from "./base/ITokenizer";
-import { IAttributes } from "./Attributes";
 import { ContentModel } from "./base/ContentModel";
+import * as Nodes from "./base/Nodes";
 
 /**
  * @file src/html/TreeBuilder.ts
@@ -33,15 +32,15 @@ export default class TreeBuilder implements ITokenHandler {
    /**
     *
     */
-   private tree: Node[] = [];
+   private tree: Nodes.Node[] = [];
    /**
     *
     */
-   private stack: Node[] = [];
+   private stack: Nodes.Tag[] = [];
    /**
     *
     */
-   private dataNode: DataNode | undefined;
+   private dataNode: Nodes.Node | undefined;
    /**
     *
     */
@@ -72,18 +71,16 @@ export default class TreeBuilder implements ITokenHandler {
     * @param selfClosing
     * @param location
     */
-   public onOpenTag(name: string, attributes: IAttributes, selfClosing: boolean, location: SourceLocation): void {
+   public onOpenTag(name: string, attributes: Nodes.IAttributes, selfClosing: boolean, location: SourceLocation): void {
       const description = this.nodeDescriptor(name);
       if (selfClosing) {
          if (!(description.allowSelfClosing || description.isVoid)) {
             this.error(`Tag ${name} cannot be self-closing or void`);
          }
       }
-      const options: ITagNodeOptions = {
-         selfClosing,
-         isVoid: description.isVoid
-      };
-      let node = new TagNode(name, attributes, options, location);
+      const node = new Nodes.Tag(name, attributes, location);
+      node.isSelfClosing = selfClosing;
+      node.isVoid = description.isVoid;
       this.appendNode(node);
       if ((!selfClosing && !description.isVoid)) {
          this.stack.push(node);
@@ -113,7 +110,14 @@ export default class TreeBuilder implements ITokenHandler {
     * @param location
     */
    public onText(data: string, location: SourceLocation): void {
-      this.appendDataNode(NodeType.Text, data, location);
+      if (this.dataNode instanceof Nodes.Text) {
+         this.dataNode.value += data;
+         this.dataNode.location = new SourceLocation(this.dataNode.location.start, location.end);
+         return;
+      }
+      let node = new Nodes.Text(data, location);
+      this.appendNode(node);
+      this.dataNode = node;
    }
 
    /**
@@ -122,7 +126,14 @@ export default class TreeBuilder implements ITokenHandler {
     * @param location
     */
    public onComment(data: string, location: SourceLocation): void {
-      this.appendDataNode(NodeType.Comment, data, location);
+      if (this.dataNode instanceof Nodes.Comment) {
+         this.dataNode.value += data;
+         this.dataNode.location = new SourceLocation(this.dataNode.location.start, location.end);
+         return;
+      }
+      let node = new Nodes.Comment(data, location);
+      this.appendNode(node);
+      this.dataNode = node;
    }
 
    /**
@@ -131,8 +142,7 @@ export default class TreeBuilder implements ITokenHandler {
     * @param location
     */
    public onCDATA(data: string, location: SourceLocation): void {
-      let node = new DataNode(NodeType.CDATA, data, location);
-      this.appendNode(node);
+      this.appendNode(new Nodes.CData(data, location));
    }
 
    /**
@@ -141,8 +151,7 @@ export default class TreeBuilder implements ITokenHandler {
     * @param location
     */
    public onDoctype(data: string, location: SourceLocation): void {
-      let node = new DataNode(NodeType.Doctype, data, location);
-      this.appendNode(node);
+      this.appendNode(new Nodes.Doctype(data, location));
    }
 
    /**
@@ -155,7 +164,7 @@ export default class TreeBuilder implements ITokenHandler {
    /**
     * Get resulting tree.
     */
-   public getTree(): Node[] {
+   public getTree(): Nodes.Node[] {
       return this.tree;
    }
 
@@ -163,9 +172,9 @@ export default class TreeBuilder implements ITokenHandler {
     * Append new tag node.
     * @param node
     */
-   private appendNode(node: Node): void {
+   private appendNode(node: Nodes.Node): void {
       const parent = this.stack.length > 0 ? this.stack[this.stack.length - 1] : null;
-      const siblings = parent ? (parent as NodeWithChildren).children : this.tree;
+      const siblings = parent ? parent.children : this.tree;
       const prev = siblings.length > 0 ? siblings[siblings.length - 1] : null;
       siblings.push(node);
       if (prev) {
@@ -173,26 +182,9 @@ export default class TreeBuilder implements ITokenHandler {
          prev.next = node;
       }
       if (parent) {
-         node.parent = parent as NodeWithChildren;
+         node.parent = parent;
       }
       this.dataNode = undefined;
-   }
-
-   /**
-    * Append new data node.
-    * @param type
-    * @param data
-    * @param location
-    */
-   private appendDataNode(type: NodeType, data: string, location: SourceLocation): void {
-      if (this.dataNode && this.dataNode.type === type) {
-         this.dataNode.data += data;
-         this.dataNode.location = new SourceLocation(this.dataNode.location.start, location.end);
-         return;
-      }
-      let node = new DataNode(type, data, location);
-      this.appendNode(node);
-      this.dataNode = node;
    }
 
    /**
@@ -212,7 +204,7 @@ export default class TreeBuilder implements ITokenHandler {
    private popNode(name: string): void {
       for (let index = this.stack.length - 1; index >= 0; --index) {
          const node = this.stack[index];
-         const currentNodeName = (node as TagNode).name;
+         const currentNodeName = (node as Nodes.Tag).name;
          if (currentNodeName === name) {
             this.stack.splice(index, this.stack.length - index);
             return;
@@ -231,9 +223,8 @@ export default class TreeBuilder implements ITokenHandler {
    private flushStack(): void {
       for (let index = this.stack.length - 1; index >= 0; --index) {
          const node = this.stack[index];
-         const currentNodeName = (node as TagNode).name;
-         if (!this.nodeDescriptor(currentNodeName).closedByParent) {
-            this.error(`Unclosed element ${currentNodeName}`);
+         if (!this.nodeDescriptor(node.name).closedByParent) {
+            this.error(`Unclosed element ${node.name}`);
          }
       }
    }

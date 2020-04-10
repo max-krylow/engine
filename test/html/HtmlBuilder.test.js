@@ -6,19 +6,17 @@ const { Tokenizer } = require('engine/html/Tokenizer');
 const { getTagNodeDescription } = require('engine/html/NodeDescription');
 const { SourceFile } = require("engine/html/base/SourceFile");
 const { SourceReader } = require("engine/html/base/SourceReader");
+const { MarkupVisitor } = require("engine/html/base/Nodes");
+const { ERROR_HANDLER } = require('../ErrorHandler');
 
-const errorHandler = {
-   debug: console.log.bind(console),
-   info: console.log.bind(console),
-   warn: console.warn.bind(console),
-   error: console.error.bind(console),
-   fatal: console.error.bind(console)
-};
+const visitor = new MarkupVisitor();
+const CONTEXT = { };
+
 
 function createTree(html, options) {
    let reader = new SourceReader(new SourceFile(html));
-   let builder = new TreeBuilder(getTagNodeDescription, errorHandler);
-   let tokenizer = new Tokenizer(builder, options, errorHandler);
+   let builder = new TreeBuilder(getTagNodeDescription, ERROR_HANDLER);
+   let tokenizer = new Tokenizer(builder, options, ERROR_HANDLER);
    tokenizer.start();
    tokenizer.tokenize(reader);
    return builder.getTree();
@@ -52,10 +50,12 @@ const html2 = `<div><br><br></div>`;
 describe('engine/html/TreeBuilder (html)', function() {
    it('Markup', function() {
       const tree = createTree(html1);
-      assert.strictEqual(tree.toString(), html1);
+      const markup = visitor.visitAll(tree, CONTEXT);
+      assert.strictEqual(markup, html1);
    });
    it('Void elements', function() {
       const tree = createTree(html2);
-      assert.strictEqual(tree.toString(), html2);
+      const markup = visitor.visitAll(tree, CONTEXT);
+      assert.strictEqual(markup, html2);
    });
 });
