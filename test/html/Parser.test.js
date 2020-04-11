@@ -9,7 +9,6 @@ const { getTagNodeDescription } = require('engine/html/NodeDescription');
 const { ERROR_HANDLER } = require('../ErrorHandler');
 
 const visitor = new MarkupVisitor();
-const CONTEXT = { };
 const parser = new Parser({
    nodeDescriptor: getTagNodeDescription
 }, ERROR_HANDLER);
@@ -44,15 +43,15 @@ const html1 = `<html>
 
 const html2 = `<div><br><br></div>`;
 
-describe('engine/html/TreeBuilder (html)', function() {
+describe('engine/html/Parser', function() {
    it('Markup', function() {
       const tree = parse(html1);
-      const markup = visitor.visitAll(tree, CONTEXT);
+      const markup = visitor.visitAll(tree);
       assert.strictEqual(markup, html1);
    });
    it('Void elements', function() {
       const tree = parse(html2);
-      const markup = visitor.visitAll(tree, CONTEXT);
+      const markup = visitor.visitAll(tree);
       assert.strictEqual(markup, html2);
    });
 });
