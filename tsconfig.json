@@ -7,7 +7,7 @@
     "allowSyntheticDefaultImports": true,
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
-    "allowJs": false,
+    "allowJs": true,
     "checkJs": false,
     "declaration": false,
     "emitDecoratorMetadata": true,
@@ -26,13 +26,12 @@
     "strictNullChecks": true,
     "pretty": true,
     "removeComments": true,
-    "baseUrl": ".src/",
-    "paths": {
-      "engine": [""]
-    },
     "resolveJsonModule": true
   },
   "exclude": [
     "node_modules"
+  ],
+  "include": [
+    "src"
   ]
 }

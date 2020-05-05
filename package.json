@@ -20,6 +20,8 @@
   },
   "scripts": {
     "precompile": "rm -rf node_modules/engine/",
+    "compile-expressions": "jison src/expression/resource/parser.jison -o src/expression/resource/parser.js",
+    "format-expressions": "prettier --write src/expression/resource/parser.js",
     "compile": "tsc",
     "postcompile": "cp -R build/ node_modules/engine/",
     "build": "npm run precompile && npm run compile && npm run postcompile",
@@ -41,7 +43,8 @@
     "mocha": "^6.2.2",
     "nyc": "^15.0.0",
     "prettier": "^1.18.2",
-    "typedoc": "0.17.4"
+    "typedoc": "0.17.4",
+    "jison": "0.4.18"
   },
   "nyc": {
     "excludeNodeModules": false,
