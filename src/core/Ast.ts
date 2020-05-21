@@ -93,6 +93,7 @@ export interface IAstVisitor<C, R> {
    visitCData(node: CDataNode, context: C): R;
    visitComment(node: CommentNode, context: C): R;
    visitExpression(node: ExpressionNode, context: C): R;
+   visitLocalization(node: LocalizationNode, context: C): R;
 }
 
 /**
@@ -762,5 +763,29 @@ export class ExpressionNode extends Ast {
 
    accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitExpression(this, context);
+   }
+}
+
+/**
+ * Represents node for translatable text.
+ *
+ * ```
+ *    {[ translatable text ]}
+ * ```
+ */
+export class LocalizationNode extends Ast {
+   text: string;
+
+   /**
+    * Initialize new instance of abstract syntax node.
+    * @param text {string} Translatable text data.
+    */
+   constructor(text: string) {
+      super();
+      this.text = text;
+   }
+
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
+      return visitor.visitLocalization(this, context);
    }
 }
