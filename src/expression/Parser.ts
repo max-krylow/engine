@@ -998,4 +998,4 @@ interface IParser {
 }
 
 Object.assign(RawParser.prototype, ParserMixin);
-export const Parser: new (...args: any[]) => IParser = RawParser;
+export const Parser: new () => IParser = RawParser;

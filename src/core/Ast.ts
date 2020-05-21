@@ -34,7 +34,7 @@ declare type TText = ProgramNode | TextNode;
 /**
  * Content representation type.
  */
-declare type TContent = PartialNode | IfNode | ElseNode | ForNode | ForeachNode | ElementNode | ProgramNode | TextNode;
+export declare type TContent = PartialNode | IfNode | ElseNode | ForNode | ForeachNode | ElementNode | ProgramNode | TextNode;
 
 /**
  * Interface for attributes collection.
