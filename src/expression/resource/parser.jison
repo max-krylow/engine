@@ -28,23 +28,101 @@ EscapeSequence {CharacterEscapeSequence}|{OctalEscapeSequence}|{HexEscapeSequenc
 DoubleStringCharacter ([^\"\\\n\r]+)|(\\{EscapeSequence})|{LineContinuation}
 SingleStringCharacter ([^\'\\\n\r]+)|(\\{EscapeSequence})|{LineContinuation}
 StringLiteral (\"{DoubleStringCharacter}*\")|(\'{SingleStringCharacter}*\')
+RegularExpressionNonTerminator [^\n\r]
+RegularExpressionBackslashSequence \\{RegularExpressionNonTerminator}
+RegularExpressionClassChar [^\n\r\]\\]|{RegularExpressionBackslashSequence}
+RegularExpressionClass \[{RegularExpressionClassChar}*\]
+RegularExpressionFlags {IdentifierPart}*
+RegularExpressionFirstChar ([^\n\r\*\\\/\[])|{RegularExpressionBackslashSequence}|{RegularExpressionClass}
+RegularExpressionChar ([^\n\r\\\/\[])|{RegularExpressionBackslashSequence}|{RegularExpressionClass}
+RegularExpressionBody {RegularExpressionFirstChar}{RegularExpressionChar}*
+RegularExpressionLiteral {RegularExpressionBody}\/{RegularExpressionFlags}
 
+%x REGEXP
+%options flex
 %%
+<REGEXP>{RegularExpressionLiteral} %{
+                                        this.begin("INITIAL");
+                                        return "REGEXP_LITERAL";
+                                   %}
+(\r\n|\r|\n)+\s*"++"               return "BR++"; /* Handle restricted postfix production */
+(\r\n|\r|\n)+\s*"--"               return "BR--"; /* Handle restricted postfix production */
+\s+                                %{
+                                        if (yytext.match(/\r|\n/)) {
+                                            parser.newLine = true;
+                                        }
 
+                                        if (parser.restricted && parser.newLine) {
+                                            this.unput(yytext);
+                                            parser.restricted = false;
+                                            return ";";
+                                        }
+                                   %}
+"/*"(.|\r|\n)*?"*/"                %{
+                                        if (yytext.match(/\r|\n/)) {
+                                            parser.newLine = true;
+                                        }
+
+                                        if (parser.restricted && parser.newLine) {
+                                            this.unput(yytext);
+                                            parser.restricted = false;
+                                            return ";";
+                                        }
+                                   %}
+"//".*($|\r\n|\r|\n)               %{
+                                        if (yytext.match(/\r|\n/)) {
+                                            parser.newLine = true;
+                                        }
+
+                                        if (parser.restricted && parser.newLine) {
+                                            this.unput(yytext);
+                                            parser.restricted = false;
+                                            return ";";
+                                        }
+                                   %}
 {StringLiteral}                    parser.restricted = false; return "STRING_LITERAL";
+"break"                            parser.restricted = true; return "BREAK";
+"case"                             return "CASE";
+"catch"                            return "CATCH";
+"continue"                         parser.restricted = true; return "CONTINUE";
+"debugger"                         return "DEBUGGER";
+"default"                          return "DEFAULT";
+"delete"                           return "DELETE";
+"do"                               return "DO";
+"else"                             return "ELSE";
+"finally"                          return "FINALLY";
+"for"                              return "FOR";
+"function"                         return "FUNCTION";
+"if"                               return "IF";
+"in"                               return "IN";
+"instanceof"                       return "INSTANCEOF";
+"new"                              parser.restricted = false; return "NEW";
+"return"                           parser.restricted = true; return "RETURN";
+"switch"                           return "SWITCH";
 "this"                             parser.restricted = false; return "THIS";
+"throw"                            parser.restricted = true; return "THROW";
+"try"                              return "TRY";
+"typeof"                           parser.restricted = false; return "TYPEOF";
+"var"                              return "VAR";
+"void"                             parser.restricted = false; return "VOID";
+"while"                            return "WHILE";
+"with"                             return "WITH";
 "true"                             parser.restricted = false; return "TRUE";
 "false"                            parser.restricted = false; return "FALSE";
 "null"                             parser.restricted = false; return "NULL";
 "NaN"                              parser.restricted = false; return "NAN";
-"undefined"                        parser.restricted = false; return "UNDEFINED";
-"..."                              parser.restricted = false; return "ROOT";
+"class"                            return "CLASS";
+"const"                            return "CONST";
+"enum"                             return "ENUM";
+"export"                           return "EXPORT";
+"extends"                          return "EXTENDS";
+"import"                           return "IMPORT";
+"super"                            return "SUPER";
 {Identifier}                       parser.restricted = false; return "IDENTIFIER";
 {DecimalLiteral}                   parser.restricted = false; return "NUMERIC_LITERAL";
 {HexIntegerLiteral}                parser.restricted = false; return "NUMERIC_LITERAL";
 {OctalIntegerLiteral}              parser.restricted = false; return "NUMERIC_LITERAL";
 "{"                                parser.restricted = false; return "{";
-\s+                   /* skip whitespace */
 "}"                                return "}";
 "("                                parser.restricted = false; return "(";
 ")"                                return ")";
@@ -57,23 +135,41 @@ StringLiteral (\"{DoubleStringCharacter}*\")|(\'{SingleStringCharacter}*\')
 ":"                                return ":";
 "==="                              return "===";
 "=="                               return "==";
+"="                                return "=";
 "!=="                              return "!==";
 "!="                               return "!=";
 "!"                                parser.restricted = false; return "!";
-"||"                               return "||";
-"|"                                return "|";
+"<<="                              return "<<=";
+"<<"                               return "<<";
 "<="                               return "<=";
 "<"                                return "<";
+">>>="                             return ">>>=";
+">>>"                              return ">>>";
+">>="                              return ">>=";
+">>"                               return ">>";
 ">="                               return ">=";
 ">"                                return ">";
+"+="                               return "+=";
 "++"                               parser.restricted = false; return "++";
 "+"                                return "+";
+"-="                               return "-=";
 "--"                               parser.restricted = false; return "--";
 "-"                                return "-";
+"*="                               return "*=";
 "*"                                return "*";
+"/="                               return "/=";
 "/"                                return "/";
+"%="                               return "%=";
 "%"                                return "%";
 "&&"                               return "&&";
+"&="                               return "&=";
+"&"                                return "&";
+"||"                               return "||";
+"|="                               return "|=";
+"|"                                return "|";
+"^="                               return "^=";
+"^"                                return "^";
+"~"                                parser.restricted = false; return "~";
 <<EOF>>                            return "EOF";
 .                                  return "ERROR";
 
@@ -83,10 +179,10 @@ StringLiteral (\"{DoubleStringCharacter}*\")|(\'{SingleStringCharacter}*\')
 var _originalLexMethod = lexer.lex;
 
 lexer.lex = function() {
-	parser.wasNewLine = parser.newLine;
-	parser.newLine = false;
+    parser.wasNewLine = parser.newLine;
+    parser.newLine = false;
 
-	return _originalLexMethod.call(this);
+    return _originalLexMethod.call(this);
 };
 /* End Lexer Customization Methods */
 
@@ -101,13 +197,13 @@ lexer.lex = function() {
 Program
     : SourceElements EOF
         {
-            $$ = new parser.nodes.ProgramNode($1);
+            $$ = new parser.nodes.ProgramNode($1, createSourceLocation(null, @1, @2));
             return $$;
         }
     ;
 
 SourceElements
-    : SourceElements Statement
+    : SourceElements SourceElement
         {
             $$ = $1.concat($2);
         }
@@ -117,9 +213,132 @@ SourceElements
         }
     ;
 
+SourceElement
+    : Statement
+    | FunctionDeclaration
+    ;
+
+FunctionDeclaration
+    : "FUNCTION" error
+    ;
+
 Statement
-    : EmptyStatement
+    : IfStatement
+    | IterationStatement
+    | ContinueStatement
+    | BreakStatement
+    | ReturnStatement
+    | WithStatement
+    | LabelledStatement
+    | SwitchStatement
+    | ThrowStatement
+    | TryStatement
+    | DebuggerStatement
+    | VariableStatement
+    | EmptyStatement
     | ExpressionStatement
+    ;
+
+IfStatement
+    : "IF" error
+    ;
+
+IterationStatement
+    : "DO" error
+    | "WHILE" error
+    | "FOR" error
+    ;
+
+ContinueStatement
+    : "CONTINUE" error
+    ;
+
+BreakStatement
+    : "BREAK" error
+    ;
+
+ReturnStatement
+    : "RETURN" error
+    ;
+
+WithStatement
+    : "WITH" error
+    ;
+
+LabelledStatement
+    : "IDENTIFIER" ":" error
+    ;
+
+SwitchStatement
+    : "SWITCH" error
+    ;
+
+ThrowStatement
+    : "THROW" error
+    ;
+
+TryStatement
+    : "TRY" error
+    | "CATCH" error
+    | "FINALLY" error
+    ;
+
+DebuggerStatement
+    : "DEBUGGER" error
+    ;
+
+VariableStatement
+    : "VAR" VariableDeclarationList
+        {
+            $$ = new parser.nodes.VariableDeclarationNode($2, "var", createSourceLocation(null, @1, @2));
+        }
+    ;
+
+VariableDeclarationList
+    : VariableDeclaration
+        {
+            $$ = [$1];
+        }
+    | VariableDeclarationList "," VariableDeclaration
+        {
+            $$ = $1.concat($3);
+        }
+    ;
+
+VariableDeclaration
+    : "IDENTIFIER"
+        {
+            $$ = new parser.nodes.VariableDeclaratorNode(new parser.nodes.IdentifierNode($1, createSourceLocation(null, @1, @1)), null, createSourceLocation(null, @1, @1));
+        }
+    | "IDENTIFIER" Initializer
+        {
+            $$ = new parser.nodes.VariableDeclaratorNode(new parser.nodes.IdentifierNode($1, createSourceLocation(null, @1, @1)), $2, createSourceLocation(null, @1, @2));
+        }
+    ;
+
+Initializer
+    : "=" AssignmentExpression
+        {
+            $$ = $2;
+        }
+    ;
+
+EmptyStatement
+    : ";"
+        {
+            $$ = new parser.nodes.EmptyStatementNode(createSourceLocation(null, @1, @1));
+        }
+    ;
+
+ExpressionStatement
+    : ExpressionNoBF ";"
+        {
+            $$ = new parser.nodes.ExpressionStatementNode($1, createSourceLocation(null, @1, @2));
+        }
+    | ExpressionNoBF error
+        {
+            $$ = new parser.nodes.ExpressionStatementNode($1, createSourceLocation(null, @1, @1));
+        }
     ;
 
 StatementList
@@ -133,33 +352,14 @@ StatementList
         }
     ;
 
-
-EmptyStatement
-    : ";"
-        {
-            $$ = new parser.nodes.EmptyStatementNode();
-        }
-    ;
-
-ExpressionStatement
-    : ExpressionNoBF ";"
-        {
-            $$ = new parser.nodes.ExpressionStatementNode($1);
-        }
-    | ExpressionNoBF error
-        {
-            $$ = new parser.nodes.ExpressionStatementNode($1);
-        }
-    ;
-
 FormalParameterList
     : "IDENTIFIER"
         {
-            $$ = [$1];
+            $$ = [new parser.nodes.IdentifierNode($1, createSourceLocation(null, @1, @1))];
         }
     | FormalParameterList "," "IDENTIFIER"
         {
-            $$ = $1.concat(new parser.nodes.IdentifierNode($3));
+            $$ = $1.concat(new parser.nodes.IdentifierNode($3, createSourceLocation(null, @3, @3)));
         }
     ;
 
@@ -167,61 +367,744 @@ FunctionBody
     : SourceElements
     ;
 
+Expression
+    : AssignmentExpression
+    | Expression "," AssignmentExpression
+        {
+            if ($1.type === "SequenceExpression") {
+                $1.expressions = $1.expressions.concat($3);
+                $1.loc = createSourceLocation(null, @1, @3);
+                $$ = $1;
+            } else {
+                $$ = new parser.nodes.SequenceExpressionNode([$1, $3], createSourceLocation(null, @1, @3));
+            }
+        }
+    ;
+
+ExpressionNoIn
+    : AssignmentExpressionNoIn
+    | ExpressionNoIn "," AssignmentExpressionNoIn
+        {
+            if ($1.type === "SequenceExpression") {
+                $1.expressions = $1.expressions.concat($3);
+                $1.loc = createSourceLocation(null, @1, @3);
+                $$ = $1;
+            } else {
+                $$ = new parser.nodes.SequenceExpressionNode([$1, $3], createSourceLocation(null, @1, @3));
+            }
+        }
+    ;
+
+ExpressionNoBF
+    : AssignmentExpressionNoBF
+    | ExpressionNoBF "," AssignmentExpression
+        {
+            if ($1.type === "SequenceExpression") {
+                $1.expressions = $1.expressions.concat($3);
+                $1.loc = createSourceLocation(null, @1, @3);
+                $$ = $1;
+            } else {
+                $$ = new parser.nodes.SequenceExpressionNode([$1, $3], createSourceLocation(null, @1, @3));
+            }
+        }
+    ;
+
+AssignmentExpression
+    : ConditionalExpression
+    | LeftHandSideExpression "=" AssignmentExpression
+        {
+            $$ = new parser.nodes.AssignmentExpressionNode("=", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | LeftHandSideExpression AssignmentOperator AssignmentExpression
+        {
+            $$ = new parser.nodes.AssignmentExpressionNode($2, $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+AssignmentExpressionNoIn
+    : ConditionalExpressionNoIn
+    | LeftHandSideExpression "=" AssignmentExpressionNoIn
+        {
+            $$ = new parser.nodes.AssignmentExpressionNode("=", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | LeftHandSideExpression AssignmentOperator AssignmentExpressionNoIn
+        {
+            $$ = new parser.nodes.AssignmentExpressionNode($2, $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+AssignmentExpressionNoBF
+    : ConditionalExpressionNoBF
+    | LeftHandSideExpressionNoBF "=" AssignmentExpression
+        {
+            $$ = new parser.nodes.AssignmentExpressionNode("=", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | LeftHandSideExpressionNoBF AssignmentOperator AssignmentExpression
+        {
+            $$ = new parser.nodes.AssignmentExpressionNode($2, $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+ConditionalExpression
+    : LogicalORExpression
+    | LogicalORExpression "?" AssignmentExpression ":" AssignmentExpression
+        {
+            $$ = new parser.nodes.ConditionalExpressionNode($1, $3, $5, createSourceLocation(null, @1, @5));
+        }
+    ;
+
+ConditionalExpressionNoIn
+    : LogicalORExpressionNoIn
+    | LogicalORExpressionNoIn "?" AssignmentExpression ":" AssignmentExpressionNoIn
+        {
+            $$ = new parser.nodes.ConditionalExpressionNode($1, $3, $5, createSourceLocation(null, @1, @5));
+        }
+    ;
+
+ConditionalExpressionNoBF
+    : LogicalORExpressionNoBF
+    | LogicalORExpressionNoBF "?" AssignmentExpression ":" AssignmentExpression
+        {
+            $$ = new parser.nodes.ConditionalExpressionNode($1, $3, $5, createSourceLocation(null, @1, @5));
+        }
+    ;
+
+LeftHandSideExpression
+    : NewExpression
+    | CallExpression
+    ;
+
+LeftHandSideExpressionNoBF
+    : NewExpressionNoBF
+    | CallExpressionNoBF
+    ;
+
+NewExpression
+    : MemberExpression
+    | "NEW" NewExpression
+        {
+            $$ = new parser.nodes.NewExpressionNode($2, null, createSourceLocation(null, @1, @2));
+        }
+    ;
+
+NewExpressionNoBF
+    : MemberExpressionNoBF
+    | "NEW" NewExpression
+        {
+            $$ = new parser.nodes.NewExpressionNode($2, null, createSourceLocation(null, @1, @2));
+        }
+    ;
+
+MemberExpression
+    : PrimaryExpression
+    | FunctionExpression
+    | MemberExpression "[" Expression "]"
+        {
+            $$ = new parser.nodes.MemberExpressionNode($1, $3, true, createSourceLocation(null, @1, @4));
+        }
+    | MemberExpression "." IdentifierName
+        {
+            $$ = new parser.nodes.MemberExpressionNode($1, $3, false, createSourceLocation(null, @1, @3));
+        }
+    | "NEW" MemberExpression Arguments
+        {
+            $$ = new parser.nodes.NewExpressionNode($2, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+MemberExpressionNoBF
+    : PrimaryExpressionNoBrace
+    | MemberExpressionNoBF "[" Expression "]"
+        {
+            $$ = new parser.nodes.MemberExpressionNode($1, $3, true, createSourceLocation(null, @1, @4));
+        }
+    | MemberExpressionNoBF "." IdentifierName
+        {
+            $$ = new parser.nodes.MemberExpressionNode($1, $3, false, createSourceLocation(null, @1, @3));
+        }
+    | "NEW" MemberExpression Arguments
+        {
+            $$ = new parser.nodes.NewExpressionNode($2, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
 PrimaryExpression
     : PrimaryExpressionNoBrace
+    | ObjectLiteral
+    ;
+
+ObjectLiteral
+    : "{" "}"
+        {
+            $$ = new parser.nodes.ObjectExpressionNode([], createSourceLocation(null, @1, @2));
+        }
+    | "{" PropertyNameAndValueList "}"
+        {
+            $$ = new parser.nodes.ObjectExpressionNode($2, createSourceLocation(null, @1, @3));
+        }
+    | "{" PropertyNameAndValueList "," "}"
+        {
+            $$ = new parser.nodes.ObjectExpressionNode($2, createSourceLocation(null, @1, @4));
+        }
+    ;
+
+PropertyNameAndValueList
+    : PropertyAssignment
+        {
+            $$ = [$1];
+        }
+    | PropertyNameAndValueList "," PropertyAssignment
+        {
+            $$ = $1.concat($3);
+        }
+    ;
+
+PropertyAssignment
+    : PropertyName ":" AssignmentExpression
+        {
+            $$ = {key: $1, value: $3, kind: "init"};
+        }
+    ;
+
+PropertyName
+    : IdentifierName
+    | StringLiteral
+    | NumericLiteral
+    ;
+
+PropertySetParameterList
+    : "IDENTIFIER"
+        {
+            $$ = [new parser.nodes.IdentifierNode($1, createSourceLocation(null, @1, @1))];
+        }
     ;
 
 PrimaryExpressionNoBrace
     : "THIS"
         {
-            $$ = new parser.nodes.ThisExpressionNode();
-        }
-    | "ROOT"
-        {
-            $$ = new parser.nodes.IdentifierNode($1);
+            $$ = new parser.nodes.ThisExpressionNode(createSourceLocation(null, @1, @1));
         }
     | "IDENTIFIER"
         {
-            $$ = new parser.nodes.IdentifierNode($1);
+            $$ = new parser.nodes.IdentifierNode($1, createSourceLocation(null, @1, @1));
         }
     | Literal
     | ArrayLiteral
     | ObjectLiteral
-    | DecoratorChain
-    | "(" PrimaryExpressionNoBrace ")"
-        {
-            $$ = new parser.nodes.ExpressionBrace($2);
-        }
     | "(" Expression ")"
         {
-            $$ = new parser.nodes.ExpressionBrace($2);
+            $$ = $2;
         }
-    | "(" ExpressionNoBF ")"
+    ;
+
+LogicalORExpression
+    : LogicalANDExpression
+    | LogicalORExpression "||" LogicalANDExpression
         {
-            $$ = new parser.nodes.ExpressionBrace($2);
+            $$ = new parser.nodes.LogicalExpressionNode("||", $1, $3, createSourceLocation(null, @1, @3));
         }
+    ;
+
+LogicalORExpressionNoIn
+    : LogicalANDExpressionNoIn
+    | LogicalORExpressionNoIn "||" LogicalANDExpressionNoIn
+        {
+            $$ = new parser.nodes.LogicalExpressionNode("||", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+LogicalORExpressionNoBF
+    : LogicalANDExpressionNoBF
+    | LogicalORExpressionNoBF "||" LogicalANDExpression
+        {
+            $$ = new parser.nodes.LogicalExpressionNode("||", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+LogicalANDExpression
+    : BitwiseORExpression
+    | LogicalANDExpression "&&" BitwiseORExpression
+        {
+            $$ = new parser.nodes.LogicalExpressionNode("&&", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+LogicalANDExpressionNoIn
+    : BitwiseORExpressionNoIn
+    | LogicalANDExpressionNoIn "&&" BitwiseORExpressionNoIn
+        {
+            $$ = new parser.nodes.LogicalExpressionNode("&&", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+LogicalANDExpressionNoBF
+    : BitwiseORExpressionNoBF
+    | LogicalANDExpressionNoBF "&&" BitwiseORExpression
+        {
+            $$ = new parser.nodes.LogicalExpressionNode("&&", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+BitwiseORExpression
+    : BitwiseXORExpression
+    | BitwiseORExpression "|" BitwiseXORExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("|", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+BitwiseORExpressionNoIn
+    : BitwiseXORExpressionNoIn
+    | BitwiseORExpressionNoIn "|" BitwiseXORExpressionNoIn
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("|", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+BitwiseORExpressionNoBF
+    : BitwiseXORExpressionNoBF
+    | BitwiseORExpressionNoBF "|" BitwiseXORExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("|", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+BitwiseXORExpression
+    : BitwiseANDExpression
+    | BitwiseXORExpression "^" BitwiseANDExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("^", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+BitwiseXORExpressionNoIn
+    : BitwiseANDExpressionNoIn
+    | BitwiseXORExpressionNoIn "^" BitwiseANDExpressionNoIn
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("^", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+BitwiseXORExpressionNoBF
+    : BitwiseANDExpressionNoBF
+    | BitwiseXORExpressionNoBF "^" BitwiseANDExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("^", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+BitwiseANDExpression
+    : EqualityExpression
+    | BitwiseANDExpression "&" EqualityExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("&", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+BitwiseANDExpressionNoIn
+    : EqualityExpressionNoIn
+    | BitwiseANDExpressionNoIn "&" EqualityExpressionNoIn
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("&", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+BitwiseANDExpressionNoBF
+    : EqualityExpressionNoBF
+    | BitwiseANDExpressionNoBF "&" EqualityExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("&", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+EqualityExpression
+    : RelationalExpression
+    | EqualityExpression "==" RelationalExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("==", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | EqualityExpression "!=" RelationalExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("!=", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | EqualityExpression "===" RelationalExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("===", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | EqualityExpression "!==" RelationalExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("!==", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+EqualityExpressionNoIn
+    : RelationalExpressionNoIn
+    | EqualityExpressionNoIn "==" RelationalExpressionNoIn
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("==", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | EqualityExpressionNoIn "!=" RelationalExpressionNoIn
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("!=", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | EqualityExpressionNoIn "===" RelationalExpressionNoIn
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("===", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | EqualityExpressionNoIn "!==" RelationalExpressionNoIn
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("!==", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+EqualityExpressionNoBF
+    : RelationalExpressionNoBF
+    | EqualityExpressionNoBF "==" RelationalExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("==", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | EqualityExpressionNoBF "!=" RelationalExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("!=", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | EqualityExpressionNoBF "===" RelationalExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("===", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | EqualityExpressionNoBF "!==" RelationalExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("!==", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+RelationalExpression
+    : ShiftExpression
+    | RelationalExpression "<" ShiftExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("<", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | RelationalExpression ">" ShiftExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode(">", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | RelationalExpression "<=" ShiftExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("<=", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | RelationalExpression ">=" ShiftExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode(">=", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | RelationalExpression "INSTANCEOF" ShiftExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("instanceof", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | RelationalExpression "IN" ShiftExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("in", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+RelationalExpressionNoIn
+    : ShiftExpression
+    | RelationalExpressionNoIn "<" ShiftExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("<", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | RelationalExpressionNoIn ">" ShiftExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode(">", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | RelationalExpressionNoIn "<=" ShiftExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("<=", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | RelationalExpressionNoIn ">=" ShiftExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode(">=", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | RelationalExpressionNoIn "INSTANCEOF" ShiftExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("instanceof", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+RelationalExpressionNoBF
+    : ShiftExpressionNoBF
+    | RelationalExpressionNoBF "<" ShiftExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("<", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | RelationalExpressionNoBF ">" ShiftExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode(">", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | RelationalExpressionNoBF "<=" ShiftExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("<=", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | RelationalExpressionNoBF ">=" ShiftExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode(">=", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | RelationalExpressionNoBF "INSTANCEOF" ShiftExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("instanceof", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | RelationalExpressionNoBF "IN" ShiftExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("in", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+ShiftExpression
+    : AdditiveExpression
+    | ShiftExpression "<<" AdditiveExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("<<", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | ShiftExpression ">>" AdditiveExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode(">>", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | ShiftExpression ">>>" AdditiveExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode(">>>", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+ShiftExpressionNoBF
+    : AdditiveExpressionNoBF
+    | ShiftExpressionNoBF "<<" AdditiveExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("<<", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | ShiftExpressionNoBF ">>" AdditiveExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode(">>", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | ShiftExpressionNoBF ">>>" AdditiveExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode(">>>", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+AdditiveExpression
+    : MultiplicativeExpression
+    | AdditiveExpression "+" MultiplicativeExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("+", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | AdditiveExpression "-" MultiplicativeExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("-", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+AdditiveExpressionNoBF
+    : MultiplicativeExpressionNoBF
+    | AdditiveExpressionNoBF "+" MultiplicativeExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("+", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | AdditiveExpressionNoBF "-" MultiplicativeExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("-", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+MultiplicativeExpression
+    : UnaryExpression
+    | MultiplicativeExpression "*" UnaryExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("*", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | MultiplicativeExpression "/" UnaryExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("/", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | MultiplicativeExpression "%" UnaryExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("%", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+MultiplicativeExpressionNoBF
+    : UnaryExpressionNoBF
+    | MultiplicativeExpressionNoBF "*" UnaryExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("*", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | MultiplicativeExpressionNoBF "/" UnaryExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("/", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    | MultiplicativeExpressionNoBF "%" UnaryExpression
+        {
+            $$ = new parser.nodes.BinaryExpressionNode("%", $1, $3, createSourceLocation(null, @1, @3));
+        }
+    ;
+
+UnaryExpression
+    : PostfixExpression
+    | UnaryExpr
+    ;
+
+UnaryExpressionNoBF
+    : PostfixExpressionNoBF
+    | UnaryExpr
+    ;
+
+PostfixExpression
+    : LeftHandSideExpression
+    | LeftHandSideExpression "++"
+        {
+            $$ = new parser.nodes.UpdateExpressionNode("++", $1, false, createSourceLocation(null, @1, @2));
+        }
+    | LeftHandSideExpression "--"
+        {
+            $$ = new parser.nodes.UpdateExpressionNode("--", $1, false, createSourceLocation(null, @1, @2));
+        }
+    ;
+
+PostfixExpressionNoBF
+    : LeftHandSideExpressionNoBF
+    | LeftHandSideExpressionNoBF "++"
+        {
+            $$ = new parser.nodes.UpdateExpressionNode("++", $1, false, createSourceLocation(null, @1, @2));
+        }
+    | LeftHandSideExpressionNoBF "--"
+        {
+            $$ = new parser.nodes.UpdateExpressionNode("--", $1, false, createSourceLocation(null, @1, @2));
+        }
+    ;
+
+UnaryExpr
+    : "DELETE" UnaryExpression
+        {
+            $$ = new parser.nodes.UnaryExpressionNode("delete", true, $2, createSourceLocation(null, @1, @2));
+        }
+    | "VOID" UnaryExpression
+        {
+            $$ = new parser.nodes.UnaryExpressionNode("void", true, $2, createSourceLocation(null, @1, @2));
+        }
+    | "TYPEOF" UnaryExpression
+        {
+            $$ = new parser.nodes.UnaryExpressionNode("typeof", true, $2, createSourceLocation(null, @1, @2));
+        }
+    | "BR++" UnaryExpression
+        {
+            @1.first_line = @1.last_line;
+            @1.first_column = @1.last_column - 2;
+            $$ = new parser.nodes.UpdateExpressionNode("++", $2, true, createSourceLocation(null, @1, @2));
+        }
+    | "BR--" UnaryExpression
+        {
+            @1.first_line = @1.last_line;
+            @1.first_column = @1.last_column - 2;
+            $$ = new parser.nodes.UpdateExpressionNode("--", $2, true, createSourceLocation(null, @1, @2));
+        }
+    | "++" UnaryExpression
+        {
+            $$ = new parser.nodes.UpdateExpressionNode("++", $2, true, createSourceLocation(null, @1, @2));
+        }
+    | "--" UnaryExpression
+        {
+            $$ = new parser.nodes.UpdateExpressionNode("--", $2, true, createSourceLocation(null, @1, @2));
+        }
+    | "+" UnaryExpression
+        {
+            $$ = new parser.nodes.UnaryExpressionNode("+", true, $2, createSourceLocation(null, @1, @2));
+        }
+    | "-" UnaryExpression
+        {
+            $$ = new parser.nodes.UnaryExpressionNode("-", true, $2, createSourceLocation(null, @1, @2));
+        }
+    | "~" UnaryExpression
+        {
+            $$ = new parser.nodes.UnaryExpressionNode("~", true, $2, createSourceLocation(null, @1, @2));
+        }
+    | "!" UnaryExpression
+        {
+            $$ = new parser.nodes.UnaryExpressionNode("!", true, $2, createSourceLocation(null, @1, @2));
+        }
+    ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+VariableDeclarationListNoIn
+    : VariableDeclarationNoIn
+        {
+            $$ = [$1];
+        }
+    | VariableDeclarationListNoIn "," VariableDeclarationNoIn
+        {
+            $$ = $1.concat($3);
+        }
+    ;
+
+VariableDeclarationNoIn
+    : "IDENTIFIER"
+        {
+            $$ = new parser.nodes.VariableDeclaratorNode(new parser.nodes.IdentifierNode($1, createSourceLocation(null, @1, @1)), null, createSourceLocation(null, @1, @1));
+        }
+    | "IDENTIFIER" InitializerNoIn
+        {
+            $$ = new parser.nodes.VariableDeclaratorNode(new parser.nodes.IdentifierNode($1, createSourceLocation(null, @1, @1)), $2, createSourceLocation(null, @1, @2));
+        }
+    ;
+
+InitializerNoIn
+    : "=" AssignmentExpressionNoIn
+        {
+            $$ = $2;
+        }
+    ;
+
+FunctionExpression
+    : "FUNCTION" error
     ;
 
 ArrayLiteral
     : "[" "]"
         {
-            $$ = new parser.nodes.ArrayExpressionNode([]);
+            $$ = new parser.nodes.ArrayExpressionNode([], createSourceLocation(null, @1, @2));
         }
     | "[" Elision "]"
         {
-            $$ = new parser.nodes.ArrayExpressionNode($2);
+            $$ = new parser.nodes.ArrayExpressionNode($2, createSourceLocation(null, @1, @3));
         }
     | "[" ElementList "]"
         {
-            $$ = new parser.nodes.ArrayExpressionNode($2);
+            $$ = new parser.nodes.ArrayExpressionNode($2, createSourceLocation(null, @1, @3));
         }
     | "[" ElementList "," "]"
         {
-            $$ = new parser.nodes.ArrayExpressionNode($2.concat(null));
+            $$ = new parser.nodes.ArrayExpressionNode($2.concat(null), createSourceLocation(null, @1, @4));
         }
     | "[" ElementList "," Elision "]"
         {
-            $$ = new parser.nodes.ArrayExpressionNode($2.concat($4));
+            $$ = new parser.nodes.ArrayExpressionNode($2.concat($4), createSourceLocation(null, @1, @5));
         }
     ;
 
@@ -255,155 +1138,52 @@ Elision
         }
     ;
 
-ObjectLiteral
-    : "{" "}"
-        {
-            $$ = new parser.nodes.ObjectExpressionNode([]);
-        }
-    | "{" PropertyNameAndValueList "}"
-        {
-            $$ = new parser.nodes.ObjectExpressionNode($2);
-        }
-    | "{" PropertyNameAndValueList "," "}"
-        {
-            $$ = new parser.nodes.ObjectExpressionNode($2);
-        }
-    ;
-
-PropertyNameAndValueList
-    : PropertyAssignment
-        {
-            $$ = [$1];
-        }
-    | PropertyNameAndValueList "," PropertyAssignment
-        {
-            $$ = $1.concat($3);
-        }
-    ;
-
-PropertyAssignment
-    : PropertyName ":" AssignmentExpression
-        {
-            $$ = {key: $1, value: $3, kind: "init"};
-        }
-    ;
-
-PropertyName
-    : IdentifierName
-    | StringLiteral
-    | NumericLiteral
-    ;
-
-PropertySetParameterList
-    : "IDENTIFIER"
-        {
-            $$ = $1;
-        }
-    ;
-
-MemberExpression
-    : PrimaryExpression
-    | MemberExpression "[" Expression "]"
-        {
-            $$ = new parser.nodes.MemberExpressionNode($1, $3, true);
-        }
-    | MemberExpression "." IdentifierName
-        {
-            $$ = new parser.nodes.MemberExpressionNode($1, $3, false);
-        }
-    ;
-
-MemberExpressionNoBF
-    : PrimaryExpressionNoBrace
-    | MemberExpressionNoBF "[" Expression "]"
-        {
-            $$ = new parser.nodes.MemberExpressionNode($1, $3, true);
-        }
-    | MemberExpressionNoBF "." IdentifierName
-        {
-            $$ = new parser.nodes.MemberExpressionNode($1, $3, false);
-        }
-    | DecoratorCalls
-    ;
-
-NewExpression
-    : MemberExpression
-    ;
-
-NewExpressionNoBF
-    : MemberExpressionNoBF
-    ;
-
 CallExpression
     : MemberExpression Arguments
         {
-            $$ = new parser.nodes.CallExpressionNode($1, $2);
-        }
-    | MemberExpression "[" Expression "]"
-        {
-            $$ = new parser.nodes.MemberExpressionNode($1, $3, true);
-        }
-    | MemberExpression "." IdentifierName
-        {
-           $$ = new parser.nodes.MemberExpressionNode($1, $3, false);
+            $$ = new parser.nodes.CallExpressionNode($1, $2, createSourceLocation(null, @1, @2));
         }
     | CallExpression Arguments
         {
-            $$ = new parser.nodes.CallExpressionNode($1, $2);
+            $$ = new parser.nodes.CallExpressionNode($1, $2, createSourceLocation(null, @1, @2));
         }
     | CallExpression "[" Expression "]"
         {
-            $$ = new parser.nodes.MemberExpressionNode($1, $3, true);
+            $$ = new parser.nodes.MemberExpressionNode($1, $3, true, createSourceLocation(null, @1, @4));
         }
     | CallExpression "." IdentifierName
         {
-            $$ = new parser.nodes.MemberExpressionNode($1, $3, false);
-        }
-    | DecoratorChain "[" Expression "]"
-        {
-            $$ = new parser.nodes.MemberExpressionNode($1, $3, true);
-        }
-    | DecoratorChain "." IdentifierName
-        {
-            $$ = new parser.nodes.MemberExpressionNode($1, $3, false);
+            $$ = new parser.nodes.MemberExpressionNode($1, $3, false, createSourceLocation(null, @1, @3));
         }
     ;
 
 CallExpressionNoBF
     : MemberExpressionNoBF Arguments
         {
-            $$ = new parser.nodes.CallExpressionNode($1, $2);
+            $$ = new parser.nodes.CallExpressionNode($1, $2, createSourceLocation(null, @1, @2));
         }
     | CallExpressionNoBF Arguments
         {
-            $$ = new parser.nodes.CallExpressionNode($1, $2);
+            $$ = new parser.nodes.CallExpressionNode($1, $2, createSourceLocation(null, @1, @2));
         }
     | CallExpressionNoBF "[" Expression "]"
         {
-            $$ = new parser.nodes.MemberExpressionNode($1, $3, true);
+            $$ = new parser.nodes.MemberExpressionNode($1, $3, true, createSourceLocation(null, @1, @4));
         }
     | CallExpressionNoBF "." IdentifierName
         {
-            $$ = new parser.nodes.MemberExpressionNode($1, $3, false);
-        }
-    | CallExpressionNoBF "[" Expression "]"
-        {
-            $$ = new parser.nodes.MemberExpressionNode($1, $3, true);
-        }
-    | CallExpressionNoBF "." IdentifierName
-        {
-           $$ = new parser.nodes.MemberExpressionNode($1, $3, false);
+            $$ = new parser.nodes.MemberExpressionNode($1, $3, false, createSourceLocation(null, @1, @3));
         }
     ;
 
 IdentifierName
     : "IDENTIFIER"
         {
-            $$ = new parser.nodes.IdentifierNode($1);
+            $$ = new parser.nodes.IdentifierNode($1, createSourceLocation(null, @1, @1));
         }
     | ReservedWord
         {
-            $$ = new parser.nodes.IdentifierNode($1);
+            $$ = new parser.nodes.IdentifierNode($1, createSourceLocation(null, @1, @1));
         }
     ;
 
@@ -429,613 +1209,162 @@ ArgumentList
         }
     ;
 
-LeftHandSideExpression
-    : NewExpression
-    | CallExpression
-    ;
-
-LeftHandSideExpressionNoBF
-    : NewExpressionNoBF
-    | CallExpressionNoBF
-    ;
-
-PostfixExpression
-    : LeftHandSideExpression
-    | LeftHandSideExpression "++"
-        {
-            $$ = new parser.nodes.UpdateExpressionNode("++", $1, false);
-        }
-    | LeftHandSideExpression "--"
-        {
-            $$ = new parser.nodes.UpdateExpressionNode("--", $1, false);
-        }
-    ;
-
-PostfixExpressionNoBF
-    : LeftHandSideExpressionNoBF
-    | LeftHandSideExpressionNoBF "++"
-        {
-            $$ = new parser.nodes.UpdateExpressionNode("++", $1, false);
-        }
-    | LeftHandSideExpressionNoBF "--"
-        {
-            $$ = new parser.nodes.UpdateExpressionNode("--", $1, false);
-        }
-    ;
-
-UnaryExpression
-    : PostfixExpression
-    | UnaryExpr
-    ;
-
-UnaryExpressionNoBF
-    : PostfixExpressionNoBF
-    | UnaryExpr
-    ;
-
-UnaryExpr
-    :"BR++" UnaryExpression
-        {
-            @1.first_line = @1.last_line;
-            @1.first_column = @1.last_column - 2;
-            $$ = new parser.nodes.UpdateExpressionNode("++", $2, true);
-        }
-    | "BR--" UnaryExpression
-        {
-            @1.first_line = @1.last_line;
-            @1.first_column = @1.last_column - 2;
-            $$ = new parser.nodes.UpdateExpressionNode("--", $2, true);
-        }
-    | "++" UnaryExpression
-        {
-            $$ = new parser.nodes.UpdateExpressionNode("++", $2, true);
-        }
-    | "--" UnaryExpression
-        {
-            $$ = new parser.nodes.UpdateExpressionNode("--", $2, true);
-        }
-    | "+" UnaryExpression
-        {
-            $$ = new parser.nodes.UnaryExpressionNode("+", true, $2);
-        }
-    | "-" UnaryExpression
-        {
-            $$ = new parser.nodes.UnaryExpressionNode("-", true, $2);
-        }
-    | "!" UnaryExpression
-        {
-            $$ = new parser.nodes.UnaryExpressionNode("!", true, $2);
-        }
-    ;
-
-
-MultiplicativeExpression
-    : UnaryExpression
-    | MultiplicativeExpression "*" UnaryExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("*", $1, $3);
-        }
-    | MultiplicativeExpression "/" UnaryExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("/", $1, $3);
-        }
-    | MultiplicativeExpression "%" UnaryExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("%", $1, $3);
-        }
-    ;
-
-MultiplicativeExpressionNoBF
-    : UnaryExpressionNoBF
-    | MultiplicativeExpressionNoBF "*" UnaryExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("*", $1, $3);
-        }
-    | MultiplicativeExpressionNoBF "/" UnaryExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("/", $1, $3);
-        }
-    | MultiplicativeExpressionNoBF "%" UnaryExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("%", $1, $3);
-        }
-    ;
-
-AdditiveExpression
-    : MultiplicativeExpression
-    | AdditiveExpression "+" MultiplicativeExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("+", $1, $3);
-        }
-    | AdditiveExpression "-" MultiplicativeExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("-", $1, $3);
-        }
-    ;
-
-AdditiveExpressionNoBF
-    : MultiplicativeExpressionNoBF
-    | AdditiveExpressionNoBF "+" MultiplicativeExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("+", $1, $3);
-        }
-    | AdditiveExpressionNoBF "-" MultiplicativeExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("-", $1, $3);
-        }
-    ;
-
-ShiftExpression
-    : AdditiveExpression
-    ;
-
-ShiftExpressionNoBF
-    : AdditiveExpressionNoBF
-    | DecoratorCalls
-    ;
-
-RelationalExpression
-    : ShiftExpression
-    | RelationalExpression "<" ShiftExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("<", $1, $3);
-        }
-    | RelationalExpression ">" ShiftExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode(">", $1, $3);
-        }
-    | RelationalExpression "<=" ShiftExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("<=", $1, $3);
-        }
-    | RelationalExpression ">=" ShiftExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode(">=", $1, $3);
-        }
-    ;
-
-RelationalExpressionNoIn
-    : ShiftExpression
-    | RelationalExpressionNoIn "<" ShiftExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("<", $1, $3);
-        }
-    | RelationalExpressionNoIn ">" ShiftExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode(">", $1, $3);
-        }
-    | RelationalExpressionNoIn "<=" ShiftExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("<=", $1, $3);
-        }
-    | RelationalExpressionNoIn ">=" ShiftExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode(">=", $1, $3);
-        }
-    ;
-
-RelationalExpressionNoBF
-    : ShiftExpressionNoBF
-    | RelationalExpressionNoBF "<" ShiftExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("<", $1, $3);
-        }
-    | RelationalExpressionNoBF ">" ShiftExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode(">", $1, $3);
-        }
-    | RelationalExpressionNoBF "<=" ShiftExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("<=", $1, $3);
-        }
-    | RelationalExpressionNoBF ">=" ShiftExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode(">=", $1, $3);
-        }
-    ;
-
-EqualityExpression
-    : RelationalExpression
-    | EqualityExpression "==" RelationalExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("==", $1, $3);
-        }
-    | EqualityExpression "!=" RelationalExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("!=", $1, $3);
-        }
-    | EqualityExpression "===" RelationalExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("===", $1, $3);
-        }
-    | EqualityExpression "!==" RelationalExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("!==", $1, $3);
-        }
-    ;
-
-EqualityExpressionNoIn
-    : RelationalExpressionNoIn
-    | EqualityExpressionNoIn "==" RelationalExpressionNoIn
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("==", $1, $3);
-        }
-    | EqualityExpressionNoIn "!=" RelationalExpressionNoIn
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("!=", $1, $3);
-        }
-    | EqualityExpressionNoIn "===" RelationalExpressionNoIn
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("===", $1, $3);
-        }
-    | EqualityExpressionNoIn "!==" RelationalExpressionNoIn
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("!==", $1, $3);
-        }
-    ;
-
-EqualityExpressionNoBF
-    : RelationalExpressionNoBF
-    | EqualityExpressionNoBF "==" RelationalExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("==", $1, $3);
-        }
-    | EqualityExpressionNoBF "!=" RelationalExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("!=", $1, $3);
-        }
-    | EqualityExpressionNoBF "===" RelationalExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("===", $1, $3);
-        }
-    | EqualityExpressionNoBF "!==" RelationalExpression
-        {
-            $$ = new parser.nodes.BinaryExpressionNode("!==", $1, $3);
-        }
-    ;
-
-BitwiseANDExpression
-    : EqualityExpression
-    ;
-
-BitwiseANDExpressionNoIn
-    : EqualityExpressionNoIn
-    ;
-
-BitwiseANDExpressionNoBF
-    : EqualityExpressionNoBF
-    ;
-
-BitwiseXORExpression
-    : BitwiseANDExpression
-    ;
-
-BitwiseXORExpressionNoIn
-    : BitwiseANDExpressionNoIn
-    ;
-
-BitwiseXORExpressionNoBF
-    : BitwiseANDExpressionNoBF
-    ;
-
-BitwiseORExpression
-    : BitwiseXORExpression
-    ;
-
-BitwiseORExpressionNoIn
-    : BitwiseXORExpressionNoIn
-    ;
-
-BitwiseORExpressionNoBF
-    : BitwiseXORExpressionNoBF
-    ;
-
-
-    LogicalANDExpression
-        : BitwiseORExpression
-        | LogicalANDExpression "&&" BitwiseORExpression
-            {
-                $$ = new parser.nodes.LogicalExpressionNode("&&", $1, $3);
-            }
-        ;
-
-    LogicalANDExpressionNoIn
-        : BitwiseORExpressionNoIn
-        | LogicalANDExpressionNoIn "&&" BitwiseORExpressionNoIn
-            {
-                $$ = new parser.nodes.LogicalExpressionNode("&&", $1, $3);
-            }
-        ;
-
-    LogicalANDExpressionNoBF
-        : BitwiseORExpressionNoBF
-        | LogicalANDExpressionNoBF "&&" BitwiseORExpression
-            {
-                $$ = new parser.nodes.LogicalExpressionNode("&&", $1, $3);
-            }
-        ;
-
-    LogicalORExpression
-        : LogicalANDExpression
-        | LogicalORExpression "||" LogicalANDExpression
-            {
-                $$ = new parser.nodes.LogicalExpressionNode("||", $1, $3);
-            }
-        ;
-
-    LogicalORExpressionNoIn
-        : LogicalANDExpressionNoIn
-        | LogicalORExpressionNoIn "||" LogicalANDExpressionNoIn
-            {
-                $$ = new parser.nodes.LogicalExpressionNode("||", $1, $3);
-            }
-        ;
-
-    LogicalORExpressionNoBF
-        : LogicalANDExpressionNoBF
-        | LogicalORExpressionNoBF "||" LogicalANDExpression
-            {
-                $$ = new parser.nodes.LogicalExpressionNode("||", $1, $3);
-            }
-        ;
-
-DecoratorCalls
-    : PrimaryExpressionNoBrace DecoratorChain
-        {
-            $$ = new parser.nodes.DecoratorCallNode($2, $1);
-        }
-    | MemberExpressionNoBF DecoratorChain
-        {
-            $$ = new parser.nodes.DecoratorCallNode($2, $1);
-        }
-    | CallExpressionNoBF DecoratorChain
-        {
-            $$ = new parser.nodes.DecoratorCallNode($2, $1);
-        }
-    | "(" CallExpressionNoBF DecoratorChain ")"
-        {
-            $$ = new parser.nodes.DecoratorCallNode($3, $2);
-        }
-    | "(" CallExpressionNoBF ")" DecoratorChain
-        {
-            $$ = new parser.nodes.DecoratorCallNode($4, $2);
-        }
-    | DecoratorChain
-        {
-            $$ = new parser.nodes.DecoratorCallNode($1);
-        }
-    ;
-
-DecoratorChain
-    : DecoratorChainEntity
-        {
-            $$ = new parser.nodes.DecoratorChainContext($1);
-        }
-    | DecoratorChain DecoratorChainEntity
-        {
-            $$ = new parser.nodes.DecoratorChainContext($2, $1);
-        }
-    ;
-
-DecoratorChainEntity
-    : "|" "IDENTIFIER"
-        {
-            $$ = new parser.nodes.DecoratorChainCallNode($2);
-        }
-    | "|" "IDENTIFIER" ":" ArgumentList
-        {
-            $$ = new parser.nodes.DecoratorChainCallNode($2, $4)
-        }
-    | "|" "IDENTIFIER" ":" ArgumentList
-        {
-            $$ = new parser.nodes.DecoratorChainCallNode($1, $3)
-        }
-    ;
-
-
-
-ConditionalExpression
-    : LogicalORExpression
-    | LogicalORExpression "?" AssignmentExpression ":" AssignmentExpression
-        {
-            $$ = new parser.nodes.ConditionalExpressionNode($1, $3, $5);
-        }
-    ;
-
-ConditionalExpressionNoIn
-    : LogicalORExpressionNoIn
-    | LogicalORExpressionNoIn "?" AssignmentExpression ":" AssignmentExpressionNoIn
-        {
-            $$ = new parser.nodes.ConditionalExpressionNode($1, $3, $5);
-        }
-    ;
-
-ConditionalExpressionNoBF
-    : LogicalORExpressionNoBF
-    | LogicalORExpressionNoBF "?" AssignmentExpression ":" AssignmentExpression
-        {
-            $$ = new parser.nodes.ConditionalExpressionNode($1, $3, $5);
-        }
-    | LogicalORExpressionNoBF "?" PrimaryExpressionNoBrace ":" PrimaryExpressionNoBrace
-      {
-        $$ = new parser.nodes.ConditionalExpressionNode($1, $3, $5);
-      }
-    | LogicalORExpressionNoBF "?" AssignmentExpression ":" PrimaryExpressionNoBrace
-      {
-        $$ = new parser.nodes.ConditionalExpressionNode($1, $3, $5);
-      }
-    | LogicalORExpressionNoBF "?" PrimaryExpressionNoBrace ":" AssignmentExpression
-      {
-        $$ = new parser.nodes.ConditionalExpressionNode($1, $3, $5);
-      }
-
-    ;
-
-ConditionalExpressionCast
-    : LogicalORExpression
-    | LogicalORExpression "?" AssignmentExpression
-        {
-            $$ = new parser.nodes.ConditionalExpressionNode($1, $3);
-        }
-    ;
-
-ConditionalExpressionCastNoIn
-    : LogicalORExpressionNoIn
-    | LogicalORExpressionNoIn "?" AssignmentExpressionNoIn
-        {
-            $$ = new parser.nodes.ConditionalExpressionNode($1, $3);
-        }
-    ;
-
-ConditionalExpressionCastNoBF
-    : LogicalORExpressionNoBF
-    | LogicalORExpressionNoBF "?" AssignmentExpression
-        {
-            $$ = new parser.nodes.ConditionalExpressionNode($1, $3);
-        }
-    ;
-
-AssignmentExpression
-    : ConditionalExpression
-    | ConditionalExpressionCast
-    ;
-
-AssignmentExpressionNoIn
-    : ConditionalExpressionNoIn
-    | ConditionalExpressionCastNoIn
-    ;
-
-AssignmentExpressionNoBF
-    : ConditionalExpressionNoBF
-    | ConditionalExpressionCastNoBF
-    ;
-
-Expression
-    : AssignmentExpression
-    | Expression "," AssignmentExpression
-        {
-            if ($1.type === "SequenceExpression") {
-                $1.expressions = $1.expressions.concat($3);
-                $$ = $1;
-            } else {
-                $$ = new parser.nodes.SequenceExpressionNode([$1, $3]);
-                $1.string += "," + $3.string;
-            }
-        }
-    ;
-
-ExpressionNoIn
-    : AssignmentExpressionNoIn
-    | ExpressionNoIn "," AssignmentExpressionNoIn
-        {
-            if ($1.type === "SequenceExpression") {
-                $1.expressions = $1.expressions.concat($3);
-                $1.string += "," + $3.string;
-                $$ = $1;
-            } else {
-                $$ = new parser.nodes.SequenceExpressionNode([$1, $3]);
-            }
-        }
-    ;
-
-ExpressionNoBF
-    : AssignmentExpressionNoBF
-    | AssignmentExpressionNoBF DecoratorChain
-    | ExpressionNoBF "," AssignmentExpression
-        {
-            if ($1.type === "SequenceExpression") {
-                $1.expressions = $1.expressions.concat($3);
-                $1.string += "," + $3.string;
-                $$ = $1;
-            } else {
-                $$ = new parser.nodes.SequenceExpressionNode([$1, $3]);
-            }
-        }
+AssignmentOperator
+    : "*="
+    | "/="
+    | "%="
+    | "+="
+    | "-="
+    | "<<="
+    | ">>="
+    | ">>>="
+    | "&="
+    | "^="
+    | "|="
     ;
 
 Literal
     : NullLiteral
-    | NanLiteral
-    | UndefinedLiteral
     | BooleanLiteral
     | NumericLiteral
     | StringLiteral
-    ;
-
-NanLiteral
-    : "NAN"
-        {
-            $$ = new parser.nodes.LiteralNode(NaN);
-        }
+    | RegularExpressionLiteral
     ;
 
 NullLiteral
     : "NULL"
         {
-            $$ = new parser.nodes.LiteralNode(null);
-        }
-    ;
-
-UndefinedLiteral
-    : "UNDEFINED"
-        {
-            $$ = new parser.nodes.LiteralNode(undefined);
+            $$ = new parser.nodes.LiteralNode(null, createSourceLocation(null, @1, @1));
         }
     ;
 
 BooleanLiteral
     : "TRUE"
         {
-            $$ = new parser.nodes.LiteralNode(true);
+            $$ = new parser.nodes.LiteralNode(true, createSourceLocation(null, @1, @1));
         }
     | "FALSE"
         {
-            $$ = new parser.nodes.LiteralNode(false);
+            $$ = new parser.nodes.LiteralNode(false, createSourceLocation(null, @1, @1));
         }
     ;
 
 NumericLiteral
     : "NUMERIC_LITERAL"
         {
-            $$ = new parser.nodes.LiteralNode(parseNumericLiteral($1));
+            $$ = new parser.nodes.LiteralNode(parseNumericLiteral($1), createSourceLocation(null, @1, @1));
+        }
+    | "NAN"
+        {
+            $$ = new parser.nodes.LiteralNode(NaN, createSourceLocation(null, @1, @1));
         }
     ;
 
 StringLiteral
     : "STRING_LITERAL"
         {
-            $$ = new parser.nodes.LiteralNode($1, true);
+            $$ = new parser.nodes.LiteralNode($1, createSourceLocation(null, @1, @1));
         }
     ;
 
+RegularExpressionLiteral
+    : RegularExpressionLiteralBegin "REGEXP_LITERAL"
+        {
+            $$ = new parser.nodes.RegularExpressionNode($1 + $2, createSourceLocation(null, @1, @2));
+        }
+    ;
+
+RegularExpressionLiteralBegin
+    : "/"
+        {
+            yy.lexer.begin("REGEXP");
+        }
+    | "/="
+        {
+            yy.lexer.begin("REGEXP");
+        }
+    ;
 
 ReservedWord
-    : "THIS"
+    : "BREAK"
+    | "CASE"
+    | "CATCH"
+    | "CONTINUE"
+    | "DEBUGGER"
+    | "DEFAULT"
+    | "DELETE"
+    | "DO"
+    | "ELSE"
+    | "FINALLY"
+    | "FOR"
+    | "FUNCTION"
+    | "IF"
+    | "IN"
+    | "INSTANCEOF"
+    | "NEW"
+    | "RETURN"
+    | "SWITCH"
+    | "THIS"
+    | "THROW"
+    | "TRY"
+    | "TYPEOF"
+    | "VAR"
     | "VOID"
+    | "WHILE"
+    | "WITH"
     | "TRUE"
     | "FALSE"
     | "NULL"
-    | "NAN"
-    | "UNDEFINED"
+    | "CLASS"
+    | "CONST"
+    | "ENUM"
+    | "EXPORT"
+    | "EXTENDS"
+    | "IMPORT"
+    | "SUPER"
     ;
 
 %%
 
-function parseNumericLiteral(literal) {
-   if (literal.charAt(0) === "0") {
-      if (literal.charAt(1).toLowerCase() === "x") {
-         return parseInt(literal, 16);
-      }
-      if (literal.charAt(1) === ".") {
-         return parseFloat(literal);
-      }
-      return parseInt(literal, 8);
-   }
-   return Number(literal);
+function createSourceLocation(source, firstToken, lastToken) {
+    return new SourceLocation(source, new Position(firstToken.first_line, firstToken.first_column), new Position(lastToken.last_line, lastToken.last_column));
 }
-parser.parseError = function (str, hash) {
-   if (!((hash.expected && hash.expected.indexOf("';'") >= 0) && (hash.token === "}" || hash.token === "EOF" || hash.token === "BR++" || hash.token === "BR--" || parser.newLine || parser.wasNewLine))) {
-      throw new SyntaxError(str);
-   }
+
+function SourceLocation(source, start, end) {
+	this.source = source;
+	this.start = start;
+	this.end = end;
+}
+
+function Position(line, column) {
+	this.line = line;
+	this.column = column;
+}
+
+function parseNumericLiteral(literal) {
+    if (literal.charAt(0) === "0") {
+        if (literal.charAt(1).toLowerCase() === "x") {
+            return parseInt(literal, 16);
+        }
+        return parseInt(literal, 8);
+    }
+    return Number(literal);
+}
+
+/* Begin Parser Customization Methods */
+var _originalParseMethod = parser.parse;
+
+parser.parse = function(source, args) {
+    parser.wasNewLine = false;
+    parser.newLine = false;
+    parser.restricted = false;
+
+    return _originalParseMethod.call(this, source);
+};
+
+parser.parseError = function(str, hash) {
+    if (!((hash.expected && hash.expected.indexOf("';'") >= 0) && (hash.token === "}" || hash.token === "EOF" || hash.token === "BR++" || hash.token === "BR--" || parser.newLine || parser.wasNewLine))) {
+        throw new SyntaxError(str);
+    }
 };
 /* End Parser Customization Methods */
