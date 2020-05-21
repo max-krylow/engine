@@ -1,6 +1,6 @@
 /// <amd-module name="engine/core/Ast" />
 
-import { Expression } from "../expression/Expression";
+import { ProgramNode } from '../expression/Parser';
 
 /**
  * @file src/core/Ast.ts
@@ -72,27 +72,27 @@ export interface IEventsCollection {
 /**
  * Interface for visitor of abstract syntax nodes.
  */
-export interface IAstVisitor {
-   visitArray(node: ArrayNode, context: any): any;
-   visitBoolean(node: BooleanNode, context: any): any;
-   visitFunction(node: FunctionNode, context: any): any;
-   visitNumber(node: NumberNode, context: any): any;
-   visitObject(node: ObjectNode, context: any): any;
-   visitString(node: StringNode, context: any): any;
-   visitValue(node: ValueNode, context: any): any;
-   visitTemplate(node: TemplateNode, context: any): any;
-   visitPartial(node: PartialNode, context: any): any;
-   visitControl(node: ControlNode, context: any): any;
-   visitIf(node: IfNode, context: any): any;
-   visitElse(node: ElseNode, context: any): any;
-   visitFor(node: ForNode, context: any): any;
-   visitForeach(node: ForeachNode, context: any): any;
-   visitElement(node: ElementNode, context: any): any;
-   visitText(node: TextNode, context: any): any;
-   visitDoctype(node: DoctypeNode, context: any): any;
-   visitCData(node: CDataNode, context: any): any;
-   visitComment(node: CommentNode, context: any): any;
-   visitProgram(node: ProgramNode, context: any): any;
+export interface IAstVisitor<C, R> {
+   visitArray(node: ArrayNode, context: C): R;
+   visitBoolean(node: BooleanNode, context: C): R;
+   visitFunction(node: FunctionNode, context: C): R;
+   visitNumber(node: NumberNode, context: C): R;
+   visitObject(node: ObjectNode, context: C): R;
+   visitString(node: StringNode, context: C): R;
+   visitValue(node: ValueNode, context: C): R;
+   visitTemplate(node: TemplateNode, context: C): R;
+   visitPartial(node: PartialNode, context: C): R;
+   visitControl(node: ControlNode, context: C): R;
+   visitIf(node: IfNode, context: C): R;
+   visitElse(node: ElseNode, context: C): R;
+   visitFor(node: ForNode, context: C): R;
+   visitForeach(node: ForeachNode, context: C): R;
+   visitElement(node: ElementNode, context: C): R;
+   visitText(node: TextNode, context: C): R;
+   visitDoctype(node: DoctypeNode, context: C): R;
+   visitCData(node: CDataNode, context: C): R;
+   visitComment(node: CommentNode, context: C): R;
+   visitExpression(node: ExpressionNode, context: C): R;
 }
 
 /**
@@ -117,7 +117,7 @@ export abstract class Ast {
     * @param visitor {IAstVisitor} Concrete visitor.
     * @param context {*} Context.
     */
-   abstract accept(visitor: IAstVisitor, context: any): any;
+   abstract accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown;
 }
 
 /**
@@ -168,7 +168,7 @@ export class ArrayNode extends Ast {
       super();
    }
 
-   accept(visitor: IAstVisitor, context: any): any {
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitArray(this, context);
    }
 }
@@ -194,7 +194,7 @@ export class BooleanNode extends Ast {
       this.content = content;
    }
 
-   accept(visitor: IAstVisitor, context: any): any {
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitBoolean(this, context);
    }
 }
@@ -220,7 +220,7 @@ export class FunctionNode extends Ast {
       this.content = content;
    }
 
-   accept(visitor: IAstVisitor, context: any): any {
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitFunction(this, context);
    }
 }
@@ -246,7 +246,7 @@ export class NumberNode extends Ast {
       this.content = content;
    }
 
-   accept(visitor: IAstVisitor, context: any): any {
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitNumber(this, context);
    }
 }
@@ -274,7 +274,7 @@ export class ObjectNode extends Ast {
       this.properties = properties;
    }
 
-   accept(visitor: IAstVisitor, context: any): any {
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitObject(this, context);
    }
 }
@@ -300,7 +300,7 @@ export class StringNode extends Ast {
       this.content = content;
    }
 
-   accept(visitor: IAstVisitor, context: any): any {
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitString(this, context);
    }
 }
@@ -326,7 +326,7 @@ export class ValueNode extends Ast {
       this.content = content;
    }
 
-   accept(visitor: IAstVisitor, context: any): any {
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitValue(this, context);
    }
 }
@@ -353,7 +353,7 @@ export class TemplateNode extends Ast {
       this.name = name;
    }
 
-   accept(visitor: IAstVisitor, context: any): any {
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitTemplate(this, context);
    }
 }
@@ -384,7 +384,7 @@ export class PartialNode extends ActiveNode {
       this.options = options;
    }
 
-   accept(visitor: IAstVisitor, context: any): any {
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitPartial(this, context);
    }
 }
@@ -421,7 +421,7 @@ export class ControlNode extends ActiveNode {
       this.options = options;
    }
 
-   accept(visitor: IAstVisitor, context: any): any {
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitControl(this, context);
    }
 }
@@ -462,7 +462,7 @@ export class IfNode extends Ast {
       this.alternate = alternate;
    }
 
-   accept(visitor: IAstVisitor, context: any): any {
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitIf(this, context);
    }
 }
@@ -503,7 +503,7 @@ export class ElseNode extends Ast {
       this.alternate = alternate;
    }
 
-   accept(visitor: IAstVisitor, context: any): any {
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitElse(this, context);
    }
 }
@@ -548,7 +548,7 @@ export class ForNode extends Ast {
       this.update = update;
    }
 
-   accept(visitor: IAstVisitor, context: any): any {
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitFor(this, context);
    }
 }
@@ -593,7 +593,7 @@ export class ForeachNode extends Ast {
       this.collection = collection;
    }
 
-   accept(visitor: IAstVisitor, context: any): any {
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitForeach(this, context);
    }
 }
@@ -628,7 +628,7 @@ export class ElementNode extends ActiveNode {
       this.name = name;
    }
 
-   accept(visitor: IAstVisitor, context: any): any {
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitElement(this, context);
    }
 }
@@ -651,7 +651,7 @@ export class TextNode extends Ast {
       this.content = content;
    }
 
-   accept(visitor: IAstVisitor, context: any): any {
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitText(this, context);
    }
 }
@@ -679,7 +679,7 @@ export class DoctypeNode extends Ast {
       this.content = content;
    }
 
-   accept(visitor: IAstVisitor, context: any): any {
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitDoctype(this, context);
    }
 }
@@ -706,7 +706,7 @@ export class CDataNode extends Ast {
       this.content = content;
    }
 
-   accept(visitor: IAstVisitor, context: any): any {
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitCData(this, context);
    }
 }
@@ -733,7 +733,7 @@ export class CommentNode extends Ast {
       this.content = content;
    }
 
-   accept(visitor: IAstVisitor, context: any): any {
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitComment(this, context);
    }
 }
@@ -745,22 +745,22 @@ export class CommentNode extends Ast {
  *    {{ javascript expression }}
  * ```
  */
-export class ProgramNode extends Ast {
+export class ExpressionNode extends Ast {
    /**
     * Program node expressions.
     */
-   expressions: Expression[];
+   programNode: ProgramNode;
 
    /**
     * Initialize new instance of abstract syntax node.
-    * @param expressions {Expression[]} Program node expressions.
+    * @param programNode {ProgramNode} Program node.
     */
-   constructor(expressions: Expression[]) {
+   constructor(programNode: ProgramNode) {
       super();
-      this.expressions = expressions;
+      this.programNode = programNode;
    }
 
-   accept(visitor: IAstVisitor, context: any): any {
-      return visitor.visitProgram(this, context);
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
+      return visitor.visitExpression(this, context);
    }
 }

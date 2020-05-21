@@ -10,7 +10,7 @@ import * as AstNodes from "./Ast";
 /**
  * Releases transformation from parse tree into abstract syntax tree.
  */
-export class TransformVisitor implements RawNodes.IVisitor {
+export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
 
    /**
     * Initialize new instance of transform visitor.
