@@ -993,7 +993,7 @@ const ParserMixin = {
    }
 };
 
-interface IParser {
+export interface IParser {
    parse(data: string): ProgramNode;
 }
 

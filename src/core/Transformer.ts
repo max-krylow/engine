@@ -70,7 +70,11 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
     * @param context {*} Context.
     */
    visitTag(node: RawNodes.Tag, context?: any): any {
-      return this.transform(node, context);
+      const attributes = { };
+      const events = { };
+      let ast = new AstNodes.ElementNode(node.name, attributes, events);
+      ast.content = this.visitAll(node.children, context);
+      return ast;
    }
 
    /**
@@ -81,28 +85,5 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
     */
    visitText(node: RawNodes.Text, context?: any): any {
       return new AstNodes.TextNode(node.value);
-   }
-
-   /**
-    * Transform tag node.
-    * @param node {Tag} Tag node.
-    * @param context {*} Context.
-    * @todo Release context transform using finite state machine.
-    */
-   private transform(node: RawNodes.Tag, context?: any): any {
-      return this.transformElement(node, context);
-   }
-
-   /**
-    * Transform element into abstract syntax element node.
-    * @param node {Text} Text node.
-    * @param context {*} Context.
-    */
-   private transformElement(node: RawNodes.Tag, context?: any): any {
-      const attributes = { };
-      const events = { };
-      let ast = new AstNodes.ElementNode(node.name, attributes, events);
-      ast.content = this.visitAll(node.children, context);
-      return ast;
    }
 }

@@ -29,7 +29,7 @@ declare type TData = ArrayNode | BooleanNode | FunctionNode | NumberNode | Objec
 /**
  * Text representation type.
  */
-declare type TText = ProgramNode | TextNode;
+declare type TText = ProgramNode | TextNode | LocalizationNode;
 
 /**
  * Content representation type.
