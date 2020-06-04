@@ -87,7 +87,11 @@ describe('engine/expression/Parser', () => {
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('BinaryExpression', () => {
-         const expression = 'first&second;';
+         const expression = 'first & second;';
+         assert.strictEqual(parseAndStringify(expression), expression);
+      });
+      it('BinaryExpression 2', () => {
+         const expression = 'index,item in collection;';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('UnaryExpression', () => {
@@ -111,7 +115,7 @@ describe('engine/expression/Parser', () => {
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('AssignmentExpression', () => {
-         const expression = 'identifier=value;';
+         const expression = 'identifier = value;';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
    });

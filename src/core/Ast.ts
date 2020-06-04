@@ -24,34 +24,12 @@ export enum Flags {
 /**
  * Text representation type.
  */
-declare type TText = ProgramNode | TextNode | LocalizationNode;
+export declare type TText = ExpressionNode | TextNode | LocalizationNode;
 
 /**
  * Content representation type.
  */
 export declare type TContent = PartialNode | IfNode | ElseNode | ForNode | ForeachNode | ElementNode | ProgramNode | TextNode;
-
-/**
- * Interface for attributes collection.
- */
-export interface IAttributesCollection {
-   /**
-    * @name {string} Attribute name.
-    * @returns {TText} Text or program node.
-    */
-   [name: string]: TText;
-}
-
-/**
- * Represents interface for event handlers.
- */
-export interface IEventsCollection {
-   /**
-    * @name {string} Event name.
-    * @returns {ProgramNode} Event handler.
-    */
-   [name: string]: ProgramNode;
-}
 
 /**
  * Interface for visitor of abstract syntax nodes.
@@ -71,6 +49,10 @@ export interface IAstVisitor<C, R> {
    visitComment(node: CommentNode, context: C): R;
    visitExpression(node: ExpressionNode, context: C): R;
    visitLocalization(node: LocalizationNode, context: C): R;
+   visitAttributeNode(node: AttributeNode, context: C): R;
+   visitOptionNode(node: OptionNode, context: C): R;
+   visitBindNode(node: BindNode, context: C): R;
+   visitEventNode(node: EventNode, context: C): R;
 }
 
 /**
@@ -99,29 +81,173 @@ export abstract class Ast {
 }
 
 /**
- * Abstract class for node of abstract syntax tree that
- * contains attributes and event handlers.
+ * Represents node for simple attribute.
+ *
+ * ```
+ *    ...
+ *    <htmlElementName
+ *       attribute="value" >
+ *       ...
+ *    <htmlElementName>
+ *    ...
+ *    ...
+ *    <controlName
+ *       attr:attribute="value" >
+ *       ...
+ *    <controlName>
+ *    ...
+ * ```
  */
-export abstract class ActiveNode extends Ast {
+export class AttributeNode extends Ast {
    /**
-    * Node attributes.
+    * Attribute name.
     */
-   attributes: IAttributesCollection;
+   name: string;
    /**
-    * Node event handlers.
+    * Attribute expression.
     */
-   events: IEventsCollection;
+   value: TText[];
 
    /**
     * Initialize new instance of abstract syntax node.
-    * @param attributes {IAttributesCollection} Node attributes.
-    * @param events {IEventsCollection} Node event handlers.
+    * @param name {string} Attribute name.
+    * @param value {TText[]} Attribute expression.
     */
-   protected constructor(attributes: IAttributesCollection, events: IEventsCollection) {
+   constructor(name: string, value: TText[]) {
       super();
-      this.attributes = attributes;
-      this.events = events;
+      this.name = name;
+      this.value = value;
    }
+
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
+      return visitor.visitAttributeNode(this, context);
+   }
+}
+
+/**
+ * Represents node for simple option.
+ *
+ * ```
+ *    ...
+ *    option="value"
+ *    ...
+ * ```
+ */
+export class OptionNode extends Ast {
+   /**
+    * Option name.
+    */
+   name: string;
+   /**
+    * Property expression.
+    */
+   value: TText[];
+
+   /**
+    * Initialize new instance of abstract syntax node.
+    * @param name {string} Option name.
+    * @param value {TText[]} Property expression.
+    */
+   constructor(name: string, value: TText[]) {
+      super();
+      this.name = name;
+      this.value = value;
+   }
+
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
+      return visitor.visitOptionNode(this, context);
+   }
+}
+
+/**
+ * Represents node for binding construction.
+ *
+ * ```
+ *    ...
+ *    bind:option="otherOption"
+ *    ...
+ * ```
+ */
+export class BindNode extends Ast {
+   /**
+    * Binding property name.
+    */
+   property: string;
+   /**
+    * Binding property name or expression.
+    */
+   value: ProgramNode;
+
+   /**
+    * Initialize new instance of abstract syntax node.
+    * @param property {string} Binding property name.
+    * @param value {ProgramNode} Binding property name or expression.
+    */
+   constructor(property: string, value: ProgramNode) {
+      super();
+      this.property = property;
+      this.value = value;
+   }
+
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
+      return visitor.visitBindNode(this, context);
+   }
+}
+
+/**
+ * Represents node for event handlers.
+ *
+ * ```
+ *    ...
+ *    on:eventName="handler(arguments)"
+ *    ...
+ * ```
+ */
+export class EventNode extends Ast {
+   /**
+    * Event name.
+    */
+   event: string;
+   /**
+    * Handler for event.
+    */
+   handler: ProgramNode;
+
+   /**
+    * Initialize new instance of abstract syntax node.
+    * @param event {string} Event name.
+    * @param handler {ProgramNode} Handler for event.
+    */
+   constructor(event: string, handler: ProgramNode) {
+      super();
+      this.event = event;
+      this.handler = handler;
+   }
+
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
+      return visitor.visitEventNode(this, context);
+   }
+}
+
+/**
+ * Interface for attributes collection.
+ */
+export interface IAttributes {
+   [attribute: string]: AttributeNode | BindNode;
+}
+
+/**
+ * Interface for options collection.
+ */
+export interface IOptions {
+   [option: string]: AttributeNode | BindNode;
+}
+
+/**
+ * Interface for event handlers collection.
+ */
+export interface IEvents {
+   [event: string]: EventNode;
 }
 
 /**
@@ -151,37 +277,55 @@ export class TemplateNode extends Ast {
    }
 }
 
-export interface IOptions {
+/**
+ * Abstract class for node of abstract syntax tree that
+ * contains attributes and event handlers.
+ */
+export abstract class ActiveNode extends Ast {
    /**
-    * @name {string} Control or object property.
-    * @returns {TText | TContent} Content of object property.
+    * Node attributes.
     */
-   [name: string]: TText | TContent;
+   attributes: IAttributes;
+   /**
+    * Node event handlers.
+    */
+   events: IEvents;
+
+   /**
+    * Initialize new instance of abstract syntax node.
+    * @param attributes {IAttributes} Node attributes.
+    * @param events {IEvents} Node event handlers.
+    */
+   protected constructor(attributes: IAttributes, events: IEvents) {
+      super();
+      this.attributes = attributes;
+      this.events = events;
+   }
 }
 
 /**
  * Represents node for ws:partial tag.
  *
  * ```
- *    <ws:partial template="name or expression">
+ *    <ws:partial template="name">
  *       content
  *    </ws:partial>
  * ```
  */
 export class PartialNode extends ActiveNode {
-   name: ProgramNode | string;
+   name: string;
    options: IOptions;
 
    /**
     * Initialize new instance of abstract syntax node.
-    * @param name {string} Partial name.
-    * @param attributes {IAttributesCollection} Partial attributes.
+    * @param template {string} Partial name.
+    * @param attributes {IAttributes} Partial attributes.
     * @param options {IOptions} Partial properties.
-    * @param events {IEventsCollection} Partial event handlers.
+    * @param events {IEvents} Partial event handlers.
     */
-   constructor(name: ProgramNode | string, attributes: IAttributesCollection, options: IOptions, events: IEventsCollection) {
+   constructor(template: string, attributes: IAttributes, options: IOptions, events: IEvents) {
       super(attributes, events);
-      this.name = name;
+      this.name = template;
       this.options = options;
    }
 
@@ -212,11 +356,11 @@ export class ControlNode extends ActiveNode {
    /**
     * Initialize new instance of abstract syntax node.
     * @param name {string} Control name.
-    * @param attributes {IAttributesCollection} Control attributes.
+    * @param attributes {IAttributes} Control attributes.
     * @param options {IOptions} Control properties.
-    * @param events {IEventsCollection} Control event handlers.
+    * @param events {IEvents} Control event handlers.
     */
-   constructor(name: string, attributes: IAttributesCollection, options: IOptions, events: IEventsCollection) {
+   constructor(name: string, attributes: IAttributes, options: IOptions, events: IEvents) {
       super(attributes, events);
       this.name = name;
       this.options = options;
@@ -320,17 +464,9 @@ export class ElseNode extends Ast {
  */
 export class ForNode extends Ast {
    /**
-    * Initialize expression.
+    * Cycle expression aka 'init; test; update'.
     */
-   init: ProgramNode | undefined;
-   /**
-    * Test expression.
-    */
-   test: ProgramNode | undefined;
-   /**
-    * Update expression.
-    */
-   update: ProgramNode | undefined;
+   expression: ProgramNode;
    /**
     * Content nodes.
     */
@@ -338,15 +474,11 @@ export class ForNode extends Ast {
 
    /**
     * Initialize new instance of abstract syntax node.
-    * @param init {ProgramNode | undefined} Initialize expression.
-    * @param test {ProgramNode | undefined} Test expression.
-    * @param update {ProgramNode | undefined} Update expression.
+    * @param expression {ProgramNode} Initialize expression.
     */
-   constructor(init: ProgramNode | undefined, test: ProgramNode | undefined, update: ProgramNode | undefined) {
+   constructor(expression: ProgramNode) {
       super();
-      this.init = init;
-      this.test = test;
-      this.update = update;
+      this.expression = expression;
    }
 
    accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
@@ -358,24 +490,16 @@ export class ForNode extends Ast {
  * Represents node for ws:for.
  *
  * ```
- *    <ws:for data="index, iterator in collection">
+ *    <ws:foreach data="index, iterator in collection">
  *       content
- *    </ws:for>
+ *    </ws:foreach>
  * ```
  */
 export class ForeachNode extends Ast {
    /**
-    * Expression for iterator indexer.
+    * Cycle expression aka '[index, ] item in collection'.
     */
-   index: ProgramNode | undefined;
-   /**
-    * Iterator expression.
-    */
-   iterator: ProgramNode;
-   /**
-    * Collection expression.
-    */
-   collection: ProgramNode;
+   expression: ProgramNode;
    /**
     * Content nodes.
     */
@@ -383,15 +507,11 @@ export class ForeachNode extends Ast {
 
    /**
     * Initialize new instance of abstract syntax node.
-    * @param index {ProgramNode | undefined} Expression for iterator indexer.
-    * @param iterator {ProgramNode} Iterator expression.
-    * @param collection {ProgramNode} Collection expression.
+    * @param expression {ProgramNode} Cycle expression aka '[index, ] item in collection'.
     */
-   constructor(index: ProgramNode | undefined, iterator: ProgramNode, collection: ProgramNode) {
+   constructor(expression: ProgramNode) {
       super();
-      this.index = index;
-      this.iterator = iterator;
-      this.collection = collection;
+      this.expression = expression;
    }
 
    accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
@@ -421,10 +541,10 @@ export class ElementNode extends ActiveNode {
    /**
     * Initialize new instance of abstract syntax node.
     * @param name {string} Element name.
-    * @param attributes {IAttributesCollection} Element attributes collection.
-    * @param events {IEventsCollection} Element event handlers.
+    * @param attributes {IAttributes} Element attributes collection.
+    * @param events {IEvents} Element event handlers.
     */
-   constructor(name: string, attributes: IAttributesCollection, events: IEventsCollection) {
+   constructor(name: string, attributes: IAttributes, events: IEvents) {
       super(attributes, events);
       this.name = name;
    }
@@ -570,19 +690,22 @@ export class ExpressionNode extends Ast {
  * Represents node for translatable text.
  *
  * ```
- *    {[ translatable text ]}
+ *    {[ translatable context @@ translatable text ]}
  * ```
  */
 export class LocalizationNode extends Ast {
    text: string;
+   context: string;
 
    /**
     * Initialize new instance of abstract syntax node.
     * @param text {string} Translatable text data.
+    * @param context {string} Translatable context data.
     */
-   constructor(text: string) {
+   constructor(text: string, context: string) {
       super();
       this.text = text;
+      this.context = context;
    }
 
    accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
