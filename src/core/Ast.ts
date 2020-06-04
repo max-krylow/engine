@@ -22,11 +22,6 @@ export enum Flags {
 }
 
 /**
- * Data representation type.
- */
-declare type TData = ArrayNode | BooleanNode | FunctionNode | NumberNode | ObjectNode | StringNode | ValueNode;
-
-/**
  * Text representation type.
  */
 declare type TText = ProgramNode | TextNode | LocalizationNode;
@@ -48,17 +43,6 @@ export interface IAttributesCollection {
 }
 
 /**
- * Interface for control or object properties.
- */
-export interface IObjectProperties {
-   /**
-    * @name {string} Control or object property.
-    * @returns {TData | TContent} Content of object property.
-    */
-   [name: string]: TData | TContent;
-}
-
-/**
  * Represents interface for event handlers.
  */
 export interface IEventsCollection {
@@ -73,13 +57,6 @@ export interface IEventsCollection {
  * Interface for visitor of abstract syntax nodes.
  */
 export interface IAstVisitor<C, R> {
-   visitArray(node: ArrayNode, context: C): R;
-   visitBoolean(node: BooleanNode, context: C): R;
-   visitFunction(node: FunctionNode, context: C): R;
-   visitNumber(node: NumberNode, context: C): R;
-   visitObject(node: ObjectNode, context: C): R;
-   visitString(node: StringNode, context: C): R;
-   visitValue(node: ValueNode, context: C): R;
    visitTemplate(node: TemplateNode, context: C): R;
    visitPartial(node: PartialNode, context: C): R;
    visitControl(node: ControlNode, context: C): R;
@@ -148,191 +125,6 @@ export abstract class ActiveNode extends Ast {
 }
 
 /**
- * Represents node for ws:Array tag.
- *
- * ```
- *    <ws:Array>
- *       elements
- *    </ws:Array>
- * ```
- */
-export class ArrayNode extends Ast {
-   /**
-    * Content elements.
-    */
-   elements: TData[] = [];
-
-   /**
-    * Initialize new instance of abstract syntax node.
-    */
-   constructor() {
-      super();
-   }
-
-   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
-      return visitor.visitArray(this, context);
-   }
-}
-
-/**
- * Represents node for ws:Boolean tag.
- *
- * ```
- *    <ws:Boolean>
- *       content
- *    </ws:Boolean>
- * ```
- */
-export class BooleanNode extends Ast {
-   content: ProgramNode;
-
-   /**
-    * Initialize new instance of abstract syntax node.
-    * @param content {ProgramNode} Content expression.
-    */
-   constructor(content: ProgramNode) {
-      super();
-      this.content = content;
-   }
-
-   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
-      return visitor.visitBoolean(this, context);
-   }
-}
-
-/**
- * Represents node for ws:Function tag.
- *
- * ```
- *    <ws:Function>
- *       content
- *    </ws:Function>
- * ```
- */
-export class FunctionNode extends Ast {
-   content: ProgramNode;
-
-   /**
-    * Initialize new instance of abstract syntax node.
-    * @param content {ProgramNode} Content expression.
-    */
-   constructor(content: ProgramNode) {
-      super();
-      this.content = content;
-   }
-
-   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
-      return visitor.visitFunction(this, context);
-   }
-}
-
-/**
- * Represents node for ws:Number tag.
- *
- * ```
- *    <ws:Number>
- *       content
- *    </ws:Number>
- * ```
- */
-export class NumberNode extends Ast {
-   content: ProgramNode;
-
-   /**
-    * Initialize new instance of abstract syntax node.
-    * @param content {ProgramNode} Content expression.
-    */
-   constructor(content: ProgramNode) {
-      super();
-      this.content = content;
-   }
-
-   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
-      return visitor.visitNumber(this, context);
-   }
-}
-
-/**
- * Represents node for ws:Object tag.
- *
- * ```
- *    <ws:Object>
- *       <ws:property>
- *          content
- *       </ws:property>
- *    </ws:Object>
- * ```
- */
-export class ObjectNode extends Ast {
-   properties: IObjectProperties;
-
-   /**
-    * Initialize new instance of abstract syntax node.
-    * @param properties {IObjectProperties} Object properties collection.
-    */
-   constructor(properties: IObjectProperties) {
-      super();
-      this.properties = properties;
-   }
-
-   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
-      return visitor.visitObject(this, context);
-   }
-}
-
-/**
- * Represents node for ws:String tag.
- *
- * ```
- *    <ws:String>
- *       content
- *    </ws:String>
- * ```
- */
-export class StringNode extends Ast {
-   content: ProgramNode;
-
-   /**
-    * Initialize new instance of abstract syntax node.
-    * @param content {ProgramNode} Content expression.
-    */
-   constructor(content: ProgramNode) {
-      super();
-      this.content = content;
-   }
-
-   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
-      return visitor.visitString(this, context);
-   }
-}
-
-/**
- * Represents node for ws:Value tag.
- *
- * ```
- *    <ws:Value>
- *       content
- *    </ws:Value>
- * ```
- */
-export class ValueNode extends Ast {
-   content: ProgramNode;
-
-   /**
-    * Initialize new instance of abstract syntax node.
-    * @param content {ProgramNode} Content expression.
-    */
-   constructor(content: ProgramNode) {
-      super();
-      this.content = content;
-   }
-
-   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
-      return visitor.visitValue(this, context);
-   }
-}
-
-/**
  * Represents node for ws:template tag.
  *
  * ```
@@ -359,6 +151,14 @@ export class TemplateNode extends Ast {
    }
 }
 
+export interface IOptions {
+   /**
+    * @name {string} Control or object property.
+    * @returns {TText | TContent} Content of object property.
+    */
+   [name: string]: TText | TContent;
+}
+
 /**
  * Represents node for ws:partial tag.
  *
@@ -370,16 +170,16 @@ export class TemplateNode extends Ast {
  */
 export class PartialNode extends ActiveNode {
    name: ProgramNode | string;
-   options: IObjectProperties;
+   options: IOptions;
 
    /**
     * Initialize new instance of abstract syntax node.
     * @param name {string} Partial name.
     * @param attributes {IAttributesCollection} Partial attributes.
-    * @param options {IObjectProperties} Partial properties.
+    * @param options {IOptions} Partial properties.
     * @param events {IEventsCollection} Partial event handlers.
     */
-   constructor(name: ProgramNode | string, attributes: IAttributesCollection, options: IObjectProperties, events: IEventsCollection) {
+   constructor(name: ProgramNode | string, attributes: IAttributesCollection, options: IOptions, events: IEventsCollection) {
       super(attributes, events);
       this.name = name;
       this.options = options;
@@ -407,16 +207,16 @@ export class ControlNode extends ActiveNode {
    /**
     * Control properties.
     */
-   options: IObjectProperties;
+   options: IOptions;
 
    /**
     * Initialize new instance of abstract syntax node.
     * @param name {string} Control name.
     * @param attributes {IAttributesCollection} Control attributes.
-    * @param options {IObjectProperties} Control properties.
+    * @param options {IOptions} Control properties.
     * @param events {IEventsCollection} Control event handlers.
     */
-   constructor(name: string, attributes: IAttributesCollection, options: IObjectProperties, events: IEventsCollection) {
+   constructor(name: string, attributes: IAttributesCollection, options: IOptions, events: IEventsCollection) {
       super(attributes, events);
       this.name = name;
       this.options = options;
