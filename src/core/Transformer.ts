@@ -314,7 +314,7 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
       return [ast];
    }
 
-   visitAttributes(node: RawNodes.Tag, hasAttributesOnly: boolean = false): IAttributesCollection {
+   visitAttributes(node: RawNodes.Tag, hasAttributesOnly: boolean): IAttributesCollection {
       const collection: IAttributesCollection = {
          attributes: { },
          options: { },
@@ -336,7 +336,7 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
                collection.attributes[attribute] = new AstNodes.AttributeNode(attribute, processedValue);
             } else {
                const processedValue = this.processTextData(value);
-               collection.options[attributeName] = new AstNodes.AttributeNode(attributeName, processedValue);
+               collection.options[attributeName] = new AstNodes.OptionNode(attributeName, processedValue);
             }
          }
       }
@@ -363,8 +363,8 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
    }
 
    createElementNode(node: RawNodes.Tag, context?: any): AstNodes.ElementNode[] {
-      const { attributes, events } = this.visitAttributes(node, true);
-      let ast = new AstNodes.ElementNode(node.name, attributes, events);
+      const { attributes, events, options } = this.visitAttributes(node, true);
+      let ast = new AstNodes.ElementNode(node.name, attributes, events, options);
       ast.content = this.visitAll(node.children, context);
       return [ast];
    }

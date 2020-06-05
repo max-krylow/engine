@@ -1,6 +1,7 @@
 /// <amd-module name="engine/core/Ast" />
 
 import { ProgramNode } from '../expression/Parser';
+import { IExpressionVisitor } from "../expression/Parser";
 
 /**
  * @file src/core/Ast.ts
@@ -26,15 +27,20 @@ export enum Flags {
  */
 export declare type TText = ExpressionNode | TextNode | LocalizationNode;
 
+export declare type TWasaby = TemplateNode | PartialNode | ControlNode | IfNode | ElseNode | ForNode | ForeachNode;
+
+export declare type THtml = ElementNode | DoctypeNode | CDataNode | CommentNode;
+
 /**
  * Content representation type.
  */
-export declare type TContent = PartialNode | IfNode | ElseNode | ForNode | ForeachNode | ElementNode | ProgramNode | TextNode;
+export declare type TContent = TWasaby | TText | THtml;
 
 /**
  * Interface for visitor of abstract syntax nodes.
  */
 export interface IAstVisitor<C, R> {
+   visitAll(nodes: Ast[], context: C): R;
    visitTemplate(node: TemplateNode, context: C): R;
    visitPartial(node: PartialNode, context: C): R;
    visitControl(node: ControlNode, context: C): R;
@@ -388,7 +394,7 @@ export class IfNode extends Ast {
    /**
     * Consequent nodes.
     */
-   consequent: TContent;
+   consequent: TContent[];
    /**
     * Alternate nodes.
     */
@@ -400,7 +406,7 @@ export class IfNode extends Ast {
     * @param consequent {TContent} Consequent nodes.
     * @param alternate {TContent} Alternate nodes.
     */
-   constructor(test: ProgramNode, consequent: TContent, alternate?: TContent) {
+   constructor(test: ProgramNode, consequent: TContent[], alternate?: TContent) {
       super();
       this.test = test;
       this.consequent = consequent;
@@ -425,7 +431,7 @@ export class ElseNode extends Ast {
    /**
     * Consequent nodes.
     */
-   consequent: TContent;
+   consequent: TContent[];
    /**
     * Test expression. If not empty then node equals to "else if".
     */
@@ -441,7 +447,7 @@ export class ElseNode extends Ast {
     * @param test {ProgramNode} Test expression.
     * @param alternate {TContent} Alternate nodes.
     */
-   constructor(consequent: TContent, test?: ProgramNode, alternate?: TContent) {
+   constructor(consequent: TContent[], test?: ProgramNode, alternate?: TContent) {
       super();
       this.consequent = consequent;
       this.test = test;
@@ -534,6 +540,10 @@ export class ElementNode extends ActiveNode {
     */
    name: string;
    /**
+    * Node attribute binds.
+    */
+   binds: IOptions;
+   /**
     * Element children.
     */
    content: TContent[] = [];
@@ -543,10 +553,12 @@ export class ElementNode extends ActiveNode {
     * @param name {string} Element name.
     * @param attributes {IAttributes} Element attributes collection.
     * @param events {IEvents} Element event handlers.
+    * @param binds {IOptions} Node attribute binds.
     */
-   constructor(name: string, attributes: IAttributes, events: IEvents) {
+   constructor(name: string, attributes: IAttributes, events: IEvents, binds: IOptions) {
       super(attributes, events);
       this.name = name;
+      this.binds = binds;
    }
 
    accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
@@ -710,5 +722,181 @@ export class LocalizationNode extends Ast {
 
    accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitLocalization(this, context);
+   }
+}
+
+interface IAstVisitorContext {
+   hasAttributesOnly?: boolean;
+}
+
+export class MarkupVisitor implements IAstVisitor<IAstVisitorContext, string> {
+   expressionVisitor: IExpressionVisitor<IAstVisitorContext, string>;
+
+   constructor(expressionVisitor: IExpressionVisitor<IAstVisitorContext, string>) {
+      this.expressionVisitor = expressionVisitor;
+   }
+
+   visitAttributeNode(node: AttributeNode, context: IAstVisitorContext): string {
+      const value = this.visitAll(node.value, context);
+      if (!context.hasAttributesOnly) {
+         return `attr:${node.name}="${value}"`;
+      }
+      return `${node.name}="${value}"`;
+   }
+
+   visitBindNode(node: BindNode, context: IAstVisitorContext): string {
+      const value = node.value.accept(this.expressionVisitor, context);
+      return `bind:${node.property}="${value}"`;
+   }
+
+   visitCData(node: CDataNode, context: IAstVisitorContext): string {
+      return `<![CDATA[${node.content}]]>`;
+   }
+
+   visitComment(node: CommentNode, context: IAstVisitorContext): string {
+      return `<!--${node.content}-->`;
+   }
+
+   visitControl(node: ControlNode, context: IAstVisitorContext): string {
+      let attributes = '';
+      for (const name in node.attributes) {
+         if (node.attributes.hasOwnProperty(name)) {
+            const value = node.attributes[name].accept(this, { ...context, hasAttributesOnly: false });
+            attributes += ` ${value}`;
+         }
+      }
+      for (const name in node.events) {
+         if (node.events.hasOwnProperty(name)) {
+            const value = node.events[name].accept(this, context);
+            attributes += ` ${value}`;
+         }
+      }
+      for (const name in node.options) {
+         if (node.options.hasOwnProperty(name) && name !== 'content') {
+            const value = node.options[name].accept(this, context);
+            attributes += ` ${value}`;
+         }
+      }
+      let content = '';
+      if (node.options.hasOwnProperty('content')) {
+         content = this.visitAll(((node.options.content as unknown) as TContent[]), context) as string;
+      }
+
+      return `<${node.name}${attributes}>${content}</${node.name}>`;
+   }
+
+   visitDoctype(node: DoctypeNode, context: IAstVisitorContext): string {
+      return `<!DOCTYPE ${node.content}>`;
+   }
+
+   visitElement(node: ElementNode, context: IAstVisitorContext): string {
+      let attributes = '';
+      for (const name in node.attributes) {
+         if (node.attributes.hasOwnProperty(name)) {
+            const value = node.attributes[name].accept(this, { ...context, hasAttributesOnly: true });
+            attributes += ` ${value}`;
+         }
+      }
+      for (const name in node.events) {
+         if (node.events.hasOwnProperty(name)) {
+            const value = node.events[name].accept(this, context);
+            attributes += ` ${value}`;
+         }
+      }
+      for (const name in node.binds) {
+         if (node.binds.hasOwnProperty(name)) {
+            const value = node.binds[name].accept(this, context);
+            attributes += ` ${value}`;
+         }
+      }
+      const content = this.visitAll(node.content, context);
+      return `<${node.name}${attributes}>${content}</${node.name}>`;
+   }
+
+   visitElse(node: ElseNode, context: IAstVisitorContext): string {
+      const data = node.test !== undefined ? node.test.accept(this.expressionVisitor, context) : '';
+      const attribute = data ? ` data="${data}"` : '';
+      const content = this.visitAll(node.consequent, context);
+      return `<ws:else${attribute}>${content}</ws:else>`;
+   }
+
+   visitEventNode(node: EventNode, context: IAstVisitorContext): string {
+      const value = node.handler.accept(this.expressionVisitor, context);
+      return `on:${node.event}="${value}"`;
+   }
+
+   visitExpression(node: ExpressionNode, context: IAstVisitorContext): string {
+      const value = node.programNode.accept(this.expressionVisitor, context);
+      return `{{${value}}}`;
+   }
+
+   visitFor(node: ForNode, context: IAstVisitorContext): string {
+      const data = node.expression.accept(this.expressionVisitor, context);
+      const content = this.visitAll(node.content, context);
+      return `<ws:for data="${data}">${content}</ws:for>`;
+   }
+
+   visitForeach(node: ForeachNode, context: IAstVisitorContext): string {
+      const data = node.expression.accept(this.expressionVisitor, context);
+      const content = this.visitAll(node.content, context);
+      return `<ws:foreach data="${data}">${content}</ws:foreach>`;
+   }
+
+   visitIf(node: IfNode, context: IAstVisitorContext): string {
+      const data = node.test.accept(this.expressionVisitor, context);
+      const content = this.visitAll(node.consequent, context);
+      return `<ws:if data="${data}">${content}</ws:if>`;
+   }
+
+   visitLocalization(node: LocalizationNode, context: IAstVisitorContext): string {
+      if (node.context) {
+         return `{[${node.context}@@${node.text}]}`;
+      }
+      return `{[${node.text}]}`;
+   }
+
+   visitOptionNode(node: OptionNode, context: IAstVisitorContext): string {
+      const value = this.visitAll(node.value, context);
+      return `${node.name}="${value}"`;
+   }
+
+   visitPartial(node: PartialNode, context: IAstVisitorContext): string {
+      let attributes = '';
+      let content = '';
+      for (const name in node.attributes) {
+         if (node.attributes.hasOwnProperty(name)) {
+            const value = node.attributes[name].accept(this, { ...context, hasAttributesOnly: false });
+            attributes += ` ${value}`;
+         }
+      }
+      for (const name in node.events) {
+         if (node.events.hasOwnProperty(name)) {
+            const value = node.events[name].accept(this, context);
+            attributes += ` ${value}`;
+         }
+      }
+      for (const name in node.options) {
+         if (node.options.hasOwnProperty(name) && name !== 'content') {
+            const value = node.options[name].accept(this, context);
+            attributes += ` ${value}`;
+         }
+      }
+      if (node.options.hasOwnProperty('content')) {
+         content = this.visitAll(((node.options.content as unknown) as TContent[]), context) as string;
+      }
+      return `<ws:partial template="${node.name}"${attributes}>${content}</ws:partial>`;
+   }
+
+   visitTemplate(node: TemplateNode, context: IAstVisitorContext): string {
+      const content = this.visitAll(node.content, context);
+      return `<ws:template name="${node.name}">${content}</ws:template>`;
+   }
+
+   visitText(node: TextNode, context: IAstVisitorContext): string {
+      return node.content;
+   }
+
+   visitAll(nodes: Ast[], context: IAstVisitorContext = { }): string {
+      return nodes.map(child => child.accept(this, context)).join('');
    }
 }
