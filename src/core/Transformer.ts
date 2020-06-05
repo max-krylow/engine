@@ -26,38 +26,84 @@ const SAFE_REPLACE_CASE_PATTERN = /\r|\n|\t|\/\*[\s\S]*?\*\//g;
  */
 const SAFE_WHITESPACE_REMOVE_PATTERN = / +(?= )/g;
 
+/**
+ *
+ */
 interface IAttributesCollection {
+   /**
+    *
+    */
    attributes: AstNodes.IAttributes;
+   /**
+    *
+    */
    options: AstNodes.IOptions;
+   /**
+    *
+    */
    events: AstNodes.IEvents;
 }
 
+/**
+ *
+ * @param name
+ */
 function isAttribute(name: string): boolean {
    return /^attr:/gi.test(name);
 }
 
+/**
+ *
+ * @param name
+ */
 function getAttributeName(name: string): string {
    return name.replace(/^attr:/gi, EMPTY_STRING);
 }
 
+/**
+ *
+ * @param name
+ */
 function isEvent(name: string): boolean {
    return /^on:/gi.test(name);
 }
 
+/**
+ *
+ * @param name
+ */
 function getEventName(name: string): string {
    return name.replace(/^on:/gi, EMPTY_STRING);
 }
 
+/**
+ *
+ * @param name
+ */
 function isBind(name: string): boolean {
    return /^bind:/gi.test(name);
 }
 
+/**
+ *
+ * @param name
+ */
 function getBindName(name: string): string {
    return name.replace(/^bind:/gi, EMPTY_STRING);
 }
 
+/**
+ *
+ */
 declare type TWrapper = (text: string) => AstNodes.TText;
 
+/**
+ *
+ * @param nodes
+ * @param regex
+ * @param targetWrapper
+ * @param defaultWrapper
+ */
 function markDataByRegex(
    nodes: AstNodes.TText[],
    regex: RegExp,
@@ -97,6 +143,10 @@ function markDataByRegex(
    return data;
 }
 
+/**
+ *
+ * @param text
+ */
 function splitLocalizationText(text: string): { text: string, context: string } {
    const pair = text.split('@@');
    return {
@@ -105,14 +155,26 @@ function splitLocalizationText(text: string): { text: string, context: string } 
    };
 }
 
+/**
+ *
+ * @param name
+ */
 function isComponentName(name: string): boolean {
    return /(\w+[\.:])+\w+/gi.test(name);
 }
 
+/**
+ *
+ */
 interface IFilteredAttributes {
    [name: string]: RawNodes.Attribute;
 }
 
+/**
+ *
+ * @param node
+ * @param expected
+ */
 function filterAttributes(node: RawNodes.Tag, expected: string[]): IFilteredAttributes {
    const collection: IFilteredAttributes = { };
    for (const attributeName in node.attributes) {
@@ -127,6 +189,11 @@ function filterAttributes(node: RawNodes.Tag, expected: string[]): IFilteredAttr
    return collection;
 }
 
+/**
+ *
+ * @param node
+ * @param name
+ */
 function getDataNode(node: RawNodes.Tag, name: string): string {
    const attributes = filterAttributes(node, [name]);
    const data = attributes[name];
@@ -242,6 +309,10 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
       return this.processTextData(value);
    }
 
+   /**
+    *
+    * @param text
+    */
    processTextData(text: string): AstNodes.TText[] {
       SAFE_REPLACE_CASE_PATTERN.lastIndex = 0;
       SAFE_WHITESPACE_REMOVE_PATTERN.lastIndex = 0;
@@ -270,6 +341,11 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
       );
    }
 
+   /**
+    *
+    * @param node
+    * @param context
+    */
    createIfNode(node: RawNodes.Tag, context?: any): AstNodes.IfNode[] {
       const dataNode = getDataNode(node, 'data');
       const test = this.expressionParser.parse(dataNode);
@@ -277,6 +353,11 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
       return [new AstNodes.IfNode(test, consequent)];
    }
 
+   /**
+    *
+    * @param node
+    * @param context
+    */
    createElseNode(node: RawNodes.Tag, context?: any): AstNodes.ElseNode[] {
       let test;
       const { data: dataNode } = filterAttributes(node, ['data']);
@@ -291,6 +372,11 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
       return [new AstNodes.ElseNode(consequent, test)];
    }
 
+   /**
+    *
+    * @param node
+    * @param context
+    */
    createForNode(node: RawNodes.Tag, context?: any): AstNodes.ForNode[] {
       const dataNode = getDataNode(node, 'data');
       const data = this.expressionParser.parse(dataNode);
@@ -299,6 +385,11 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
       return [ast];
    }
 
+   /**
+    *
+    * @param node
+    * @param context
+    */
    createForeachNode(node: RawNodes.Tag, context?: any): AstNodes.ForeachNode[] {
       const dataNode = getDataNode(node, 'data');
       const data = this.expressionParser.parse(dataNode);
@@ -307,6 +398,11 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
       return [ast];
    }
 
+   /**
+    *
+    * @param node
+    * @param context
+    */
    createTemplateNode(node: RawNodes.Tag, context?: any): AstNodes.TemplateNode[] {
       const nameNode = getDataNode(node, 'name');
       const ast = new AstNodes.TemplateNode(nameNode);
@@ -314,6 +410,11 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
       return [ast];
    }
 
+   /**
+    *
+    * @param node
+    * @param hasAttributesOnly
+    */
    visitAttributes(node: RawNodes.Tag, hasAttributesOnly: boolean): IAttributesCollection {
       const collection: IAttributesCollection = {
          attributes: { },
@@ -343,6 +444,11 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
       return collection;
    }
 
+   /**
+    *
+    * @param node
+    * @param context
+    */
    createPartialNode(node: RawNodes.Tag, context?: any): AstNodes.PartialNode[] {
       const { attributes, events, options } = this.visitAttributes(node, false);
       const { template } = options;
@@ -355,6 +461,11 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
       return [ast];
    }
 
+   /**
+    *
+    * @param node
+    * @param context
+    */
    createControlNode(node: RawNodes.Tag, context?: any): AstNodes.ControlNode[] {
       const { attributes, events, options } = this.visitAttributes(node, false);
       let ast = new AstNodes.ControlNode(node.name, attributes, options, events);
@@ -362,6 +473,11 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
       return [ast];
    }
 
+   /**
+    *
+    * @param node
+    * @param context
+    */
    createElementNode(node: RawNodes.Tag, context?: any): AstNodes.ElementNode[] {
       const { attributes, events, options } = this.visitAttributes(node, true);
       let ast = new AstNodes.ElementNode(node.name, attributes, events, options);

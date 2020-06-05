@@ -7,6 +7,9 @@ import { IExpressionVisitor } from "../expression/Parser";
  * @file src/core/Ast.ts
  */
 
+/**
+ * Ast node flags.
+ */
 export enum Flags {
    /**
     * Flag for broken node that should be ignored.
@@ -27,8 +30,14 @@ export enum Flags {
  */
 export declare type TText = ExpressionNode | TextNode | LocalizationNode;
 
+/**
+ * Wasaby node type.
+ */
 export declare type TWasaby = TemplateNode | PartialNode | ControlNode | IfNode | ElseNode | ForNode | ForeachNode;
 
+/**
+ * Html node type.
+ */
 export declare type THtml = ElementNode | DoctypeNode | CDataNode | CommentNode;
 
 /**
@@ -725,13 +734,31 @@ export class LocalizationNode extends Ast {
    }
 }
 
+/**
+ * Ast node visitor context.
+ */
 interface IAstVisitorContext {
+   /**
+    * To make difference between options and attributes.
+    */
    hasAttributesOnly?: boolean;
 }
 
+/**
+ * Markup visitor.
+ * Recursively visit all nodes in given tree
+ * and returns string representation.
+ */
 export class MarkupVisitor implements IAstVisitor<IAstVisitorContext, string> {
+   /**
+    * Expression visitor.
+    */
    expressionVisitor: IExpressionVisitor<IAstVisitorContext, string>;
 
+   /**
+    * Initialize new instance of markup visitor.
+    * @param expressionVisitor {IExpressionVisitor<IAstVisitorContext, string>} Expression visitor.
+    */
    constructor(expressionVisitor: IExpressionVisitor<IAstVisitorContext, string>) {
       this.expressionVisitor = expressionVisitor;
    }
