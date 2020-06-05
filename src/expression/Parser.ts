@@ -75,7 +75,7 @@ export class StringVisitor implements IExpressionVisitor<void, string> {
       let str = node.id.accept(this, context) as string;
       let init = node.init;
       if (init !== null) {
-         str += "=" + init.accept(this, context);
+         str += " = " + init.accept(this, context);
       }
       return str;
    }
@@ -101,33 +101,12 @@ export class StringVisitor implements IExpressionVisitor<void, string> {
       let properties = node.properties;
       for (let i = 0, len = properties.length; i < len; i++) {
          let prop = properties[i];
-         // @ts-ignore
-         let kind = prop.kind;
-         // @ts-ignore
          let key = prop.key;
-         // @ts-ignore
          let value = prop.value;
          if (i !== 0) {
             str += ",";
          }
-         if (kind === "init") {
-            str += key.accept(this, context) + ":" + value.accept(this, context);
-         } else {
-            let params = value.params;
-            let body = value.body;
-            str += kind + " " + key.accept(this, context) + "(";
-            for (let j = 0, paramsLen = params.length; j < paramsLen; j++) {
-               if (j !== 0) {
-                  str += ",";
-               }
-               str += params[j].accept(this, context);
-            }
-            str += "){";
-            for (let j = 0, bodyLen = body.length; j < bodyLen; j++) {
-               str += body[j].accept(this, context) + " ";
-            }
-            str += "}";
-         }
+         str += key.accept(this, context) + ":" + value.accept(this, context);
       }
       return str + "}";
    }
@@ -308,9 +287,14 @@ export class ArrayExpressionNode extends Node {
    }
 }
 
+interface IObjectProperty {
+   key: Node;
+   value: Node;
+}
+
 export class ObjectExpressionNode extends Node {
-   public properties: Node[];
-   constructor(properties: Node[], loc: SourceLocation) {
+   public properties: IObjectProperty[];
+   constructor(properties: IObjectProperty[], loc: SourceLocation) {
       super("ObjectExpression", loc);
       this.properties = properties;
    }

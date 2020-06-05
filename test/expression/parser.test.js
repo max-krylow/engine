@@ -74,6 +74,10 @@ describe('engine/expression/Parser', () => {
          const expression = 'func(arg);';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
+      it('CallExpression 2', () => {
+         const expression = 'func(arg1,arg2,arg3);';
+         assert.strictEqual(parseAndStringify(expression), expression);
+      });
       it('ConditionalExpression', () => {
          const expression = 'condition?true:false;';
          assert.strictEqual(parseAndStringify(expression), expression);
@@ -82,8 +86,12 @@ describe('engine/expression/Parser', () => {
          const expression = 'first&&second;';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
-      it('UpdateExpression', () => {
+      it('UpdateExpression postfix', () => {
          const expression = 'identifier++;';
+         assert.strictEqual(parseAndStringify(expression), expression);
+      });
+      it('UpdateExpression prefix', () => {
+         const expression = '++identifier;';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('BinaryExpression', () => {
@@ -103,11 +111,11 @@ describe('engine/expression/Parser', () => {
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('ObjectExpression', () => {
-         const expression = 'var object={property:value};';
+         const expression = 'var object = {property:value};';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('ArrayExpression', () => {
-         const expression = 'var array=[1,true,{},[1]]';
+         const expression = 'var array = [1,true,{},[1]]';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('ThisExpression', () => {
@@ -116,6 +124,30 @@ describe('engine/expression/Parser', () => {
       });
       it('AssignmentExpression', () => {
          const expression = 'identifier = value;';
+         assert.strictEqual(parseAndStringify(expression), expression);
+      });
+      it('AssignmentExpression 2', () => {
+         const expression = 'object[property] = item.value;';
+         assert.strictEqual(parseAndStringify(expression), expression);
+      });
+      it('VariableDeclaration', () => {
+         const expression = 'var a = 1,b = true,c = "string";';
+         assert.strictEqual(parseAndStringify(expression), expression);
+      });
+      it('VariableDeclaration', () => {
+         const expression = 'var a,b,c;';
+         assert.strictEqual(parseAndStringify(expression), expression);
+      });
+      it('NewExpression', () => {
+         const expression = 'item = new Class();';
+         assert.strictEqual(parseAndStringify(expression), expression);
+      });
+      it('NewExpression 2', () => {
+         const expression = 'new Class();';
+         assert.strictEqual(parseAndStringify(expression), expression);
+      });
+      it('NewExpression with arguments', () => {
+         const expression = 'item = new Class(arg1,arg2,arg3);';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
    });

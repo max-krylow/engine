@@ -214,6 +214,15 @@ describe('engine/html/Tokenizer', function () {
          tokenizer.start();
          tokenizer.tokenize(reader);
       });
+      it('Instruction', function() {
+         let reader = createReader('<?instruction?>');
+         stack = [{
+            type: 'EOF'
+         }];
+         let tokenizer = new Tokenizer(handler, TOKENIZER_OPTIONS, ERROR_HANDLER);
+         tokenizer.start();
+         tokenizer.tokenize(reader);
+      });
    });
    it('Escapable content model', function() {
       // For elements: <textarea>, <title>

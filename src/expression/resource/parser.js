@@ -2290,7 +2290,7 @@ var parser = (function() {
 
                     break;
                 case 95:
-                    this.$ = { key: $$[$0 - 2], value: $$[$0], kind: "init" };
+                    this.$ = { key: $$[$0 - 2], value: $$[$0] };
 
                     break;
                 case 100:

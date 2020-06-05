@@ -562,7 +562,7 @@ PropertyNameAndValueList
 PropertyAssignment
     : PropertyName ":" AssignmentExpression
         {
-            $$ = {key: $1, value: $3, kind: "init"};
+            $$ = { key: $1, value: $3 };
         }
     ;
 
