@@ -3,7 +3,7 @@
 const { assert } = require('chai');
 const { SourceFile } = require("engine/html/base/SourceFile");
 const { SourceReader } = require("engine/html/base/SourceReader");
-const { TransformVisitor } = require("engine/core/Transformer");
+const { TransformVisitor } = require("engine/core/Transform");
 const { Parser } = require("engine/html/Parser");
 const { getTagNodeDescription } = require('engine/html/NodeDescription');
 const { ERROR_HANDLER } = require('../ErrorHandler');
@@ -26,7 +26,7 @@ function traverseAndStringify(html) {
    return visitor.visitAll(transformResult.ast);
 }
 
-describe('engine/core/Transformer', () => {
+describe('engine/core/Transform', () => {
    describe('HTML', () => {
       it('Text', () => {
          const html = 'text';

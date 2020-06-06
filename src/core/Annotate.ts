@@ -1,8 +1,8 @@
-/// <amd-module name="engine/core/Annotator" />
+/// <amd-module name="engine/core/Annotate" />
 
 import * as AstNodes from "./Ast";
 import { Dictionary } from "./i18n";
-import { ITraversedResult } from "./Traverser";
+import { ITraversedResult } from "./Traverse";
 
 /**
  * Interface for result object of annotation.
@@ -57,7 +57,7 @@ interface IOptions {
 /**
  * Represents methods for AST nodes annotation.
  */
-export class Annotator implements AstNodes.IAstVisitor<IAnnotatorContext, void> {
+export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotatorContext, void> {
 
    /**
     *

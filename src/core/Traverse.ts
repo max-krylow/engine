@@ -1,11 +1,11 @@
-/// <amd-module name="engine/core/Traverser" />
+/// <amd-module name="engine/core/Traverse" />
 
 import { SourceFile } from '../html/base/SourceFile';
 import { SourceReader } from '../html/base/SourceReader';
 import { getTagNodeDescription, NodeDescription, INodeDescriptions } from '../html/NodeDescription';
 import { IParser, Parser, IOptions as IParserOptions } from '../html/Parser';
 import { IErrorHandler } from '../utils/ErrorHandler';
-import {TransformVisitor, ITransformedResult, ITransformer } from "./Transformer";
+import { TransformVisitor, ITransformedResult, ITransformer } from "./Transform";
 
 export interface IOptions extends IParserOptions {
    filePath: string;
@@ -57,7 +57,7 @@ export interface ITraversedResult extends ITransformedResult {
    filePath: string;
 }
 
-export class Traverser {
+export class TraverseVisitor {
    htmlParser: IParser;
    transformer: ITransformer;
 

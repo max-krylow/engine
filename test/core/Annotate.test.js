@@ -1,5 +1,5 @@
-const { Traverser } = require('engine/core/Traverser');
-const { Annotator } = require('engine/core/Annotator');
+const { TraverseVisitor } = require('engine/core/Traverse');
+const { AnnotateVisitor } = require('engine/core/Annotate');
 const { ERROR_HANDLER } = require('../ErrorHandler');
 
 function traverseAndAnnotate(html) {
@@ -7,8 +7,8 @@ function traverseAndAnnotate(html) {
       allowComments: true,
       allowCDATA: true
    };
-   const traverser = new Traverser(options, ERROR_HANDLER);
-   const annotator = new Annotator();
+   const traverser = new TraverseVisitor(options, ERROR_HANDLER);
+   const annotator = new AnnotateVisitor();
    const traversed = traverser.traverse(html, {
       filePath: 'Annotator.wml'
    });
@@ -17,7 +17,7 @@ function traverseAndAnnotate(html) {
    });
 }
 
-describe('engine/core/Annotatator', () => {
+describe('engine/core/Annotate', () => {
    describe('HTML', () => {
       it('Element', () => {
          const html = '<input class="item-{{item.enabled}}" on:click="handler()" bind:value="_value">';

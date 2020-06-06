@@ -1,4 +1,4 @@
-/// <amd-module name="engine/core/Transformer" />
+/// <amd-module name="engine/core/Transform" />
 
 import * as RawNodes from "../html/base/Nodes";
 import * as AstNodes from "./Ast";
