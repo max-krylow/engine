@@ -5,8 +5,7 @@ import { SourceReader } from '../html/base/SourceReader';
 import { getTagNodeDescription, NodeDescription, INodeDescriptions } from '../html/NodeDescription';
 import { IParser, Parser, IOptions as IParserOptions } from '../html/Parser';
 import { IErrorHandler } from '../utils/ErrorHandler';
-import { IVisitor } from "../html/base/Nodes";
-import { TransformVisitor } from "./Transformer";
+import {TransformVisitor, ITransformedResult, ITransformer } from "./Transformer";
 
 export interface IOptions extends IParserOptions {
    filePath: string;
@@ -53,14 +52,14 @@ export function getNodeDescription(name: string): NodeDescription {
    return getTagNodeDescription(name);
 }
 
-interface ITraversed {
+export interface ITraversedResult extends ITransformedResult {
    ast: any[];
    filePath: string;
 }
 
 export class Traverser {
    htmlParser: IParser;
-   transformer: IVisitor<any, any>;
+   transformer: ITransformer;
 
    constructor(options: IOptions, errorHandler: IErrorHandler) {
       const config = {
@@ -71,12 +70,12 @@ export class Traverser {
       this.transformer = new TransformVisitor();
    }
 
-   traverse(html: string, options: IOptions): ITraversed {
+   traverse(html: string, options: IOptions): ITraversedResult {
       const reader = new SourceReader(new SourceFile(html, options.filePath));
       const tree = this.htmlParser.parse(reader);
-      const ast = this.transformer.visitAll(tree, { });
+      const traversed = this.transformer.transform(tree);
       return {
-         ast,
+         ...traversed,
          filePath: options.filePath
       };
    }

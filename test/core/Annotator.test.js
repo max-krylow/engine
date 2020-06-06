@@ -12,7 +12,7 @@ function traverseAndAnnotate(html) {
    const traversed = traverser.traverse(html, {
       filePath: 'Annotator.wml'
    });
-   return annotator.annotate(traversed.ast, {
+   return annotator.annotate(traversed, {
       module: 'Annotator'
    });
 }
@@ -86,10 +86,10 @@ describe('engine/core/Annotatator', () => {
          const annotatedAst = traverseAndAnnotate(html);
          debugger;
       });
-      it('Directive ws:partial', () => {
-         const html = '<ws:partial template="tmpl" attr:class="className" on:click="handler(arg);" text="string" bind:value="_value;"><div>Hello</div></ws:partial>';
-         const annotatedAst = traverseAndAnnotate(html);
-         debugger;
-      });
+      // it('Directive ws:partial', () => {
+      //    const html = '<ws:partial template="tmpl" attr:class="className" on:click="handler(arg);" text="string" bind:value="_value;"><div>Hello</div></ws:partial>';
+      //    const annotatedAst = traverseAndAnnotate(html);
+      //    debugger;
+      // });
    });
 });

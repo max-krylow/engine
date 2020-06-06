@@ -9,10 +9,11 @@ const { getTagNodeDescription } = require('engine/html/NodeDescription');
 const { ERROR_HANDLER } = require('../ErrorHandler');
 const { MarkupVisitor } = require('engine/core/Ast');
 const { StringVisitor } = require("engine/expression/Parser");
+const { Scope } = require('engine/core/Scope');
 
 function traverseAndStringify(html) {
    const transformer = new TransformVisitor();
-   const CONTEXT = { };
+   const scope = new Scope();
    const parser = new Parser({
       nodeDescriptor: getTagNodeDescription,
       allowComments: true,
@@ -20,9 +21,9 @@ function traverseAndStringify(html) {
    }, ERROR_HANDLER);
    let reader = new SourceReader(new SourceFile(html));
    const tree = parser.parse(reader);
-   const ast = transformer.visitAll(tree, CONTEXT);
+   const transformResult = transformer.transform(tree, scope);
    const visitor = new MarkupVisitor(new StringVisitor());
-   return visitor.visitAll(ast);
+   return visitor.visitAll(transformResult.ast);
 }
 
 describe('engine/core/Transformer', () => {
@@ -120,7 +121,7 @@ describe('engine/core/Transformer', () => {
          assert.strictEqual(actual, html);
       });
       it('ws:partial', () => {
-         const html = '<ws:partial template="tmpl" attr:class="className" on:click="handler(arg);" text="string" bind:value="_value;"><div>Hello</div></ws:partial>';
+         const html = '<ws:template name="tmpl"><div>Hello</div></ws:template><ws:partial template="tmpl" attr:class="className" on:click="handler(arg);" text="string" bind:value="_value;"><div>Hello</div></ws:partial>';
          const actual = traverseAndStringify(html);
          assert.strictEqual(actual, html);
       });
@@ -201,6 +202,14 @@ describe('engine/core/Transformer', () => {
             traverseAndStringify(html);
          } catch (error) {
             assert.strictEqual(error.message, 'Expected attribute "template" on tag "ws:partial". Ignore this tag');
+         }
+      });
+      it('ws:partial must be declared', () => {
+         try {
+            const html = '<ws:partial template="tmpl" attr:class="className" on:click="handler(arg);" text="string" bind:value="_value;"><div>Hello</div></ws:partial>';
+            traverseAndStringify(html);
+         } catch (error) {
+            assert.strictEqual(error.message, 'Template with name "tmpl" has not been declared in this scope');
          }
       });
    });
