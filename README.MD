@@ -1,5 +1,7 @@
 # WaSaby template engine
 
+[![Build Status](https://travis-ci.org/max-krylow/engine.svg?branch=diploma)](https://travis-ci.org/max-krylow/engine)
+
 ## Install
 
 ```bash
