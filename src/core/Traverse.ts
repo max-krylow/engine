@@ -7,6 +7,7 @@ import { Parser, IOptions as IParserOptions } from '../html/Parser';
 import { IErrorHandler } from '../utils/ErrorHandler';
 import { TransformVisitor } from "./Transform";
 import { Ast } from "./Ast";
+import { isComponentName } from "./Names";
 
 export interface IOptions extends IParserOptions {
    filePath: string;
@@ -38,10 +39,6 @@ const NODE_DESCRIPTION: INodeDescriptions = {
 const COMPONENT_DESCRIPTION = new NodeDescription({
    allowSelfClosing: true
 });
-
-function isComponentName(name: string): boolean {
-   return /(\w+[\.:])+\w+/gi.test(name);
-}
 
 export function getNodeDescription(name: string): NodeDescription {
    if (NODE_DESCRIPTION[name]) {
