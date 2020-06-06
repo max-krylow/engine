@@ -86,7 +86,7 @@ const DEFAULT_DEFINITION = new NodeDescription({});
 /**
  *
  */
-interface INodeDescriptions {
+export interface INodeDescriptions {
    [elementName: string]: NodeDescription;
 }
 

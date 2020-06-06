@@ -288,7 +288,7 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
             return this.createPartialNode(node, context);
          default:
             if (isComponentName(node.name)) {
-               return this.createControlNode(node, context);
+               return this.createComponentNode(node, context);
             }
             return this.createElementNode(node, context);
       }
@@ -466,9 +466,9 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
     * @param node
     * @param context
     */
-   createControlNode(node: RawNodes.Tag, context?: any): AstNodes.ControlNode[] {
+   createComponentNode(node: RawNodes.Tag, context?: any): AstNodes.ComponentNode[] {
       const { attributes, events, options } = this.visitAttributes(node, false);
-      let ast = new AstNodes.ControlNode(node.name, attributes, options, events);
+      let ast = new AstNodes.ComponentNode(node.name, attributes, options, events);
       ast.options['content'] = this.visitAll(node.children, context);
       return [ast];
    }

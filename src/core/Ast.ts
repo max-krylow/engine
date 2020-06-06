@@ -33,7 +33,7 @@ export declare type TText = ExpressionNode | TextNode | LocalizationNode;
 /**
  * Wasaby node type.
  */
-export declare type TWasaby = TemplateNode | PartialNode | ControlNode | IfNode | ElseNode | ForNode | ForeachNode;
+export declare type TWasaby = TemplateNode | PartialNode | ComponentNode | IfNode | ElseNode | ForNode | ForeachNode;
 
 /**
  * Html node type.
@@ -52,7 +52,7 @@ export interface IAstVisitor<C, R> {
    visitAll(nodes: Ast[], context: C): R;
    visitTemplate(node: TemplateNode, context: C): R;
    visitPartial(node: PartialNode, context: C): R;
-   visitControl(node: ControlNode, context: C): R;
+   visitComponent(node: ComponentNode, context: C): R;
    visitIf(node: IfNode, context: C): R;
    visitElse(node: ElseNode, context: C): R;
    visitFor(node: ForNode, context: C): R;
@@ -106,10 +106,10 @@ export abstract class Ast {
  *    <htmlElementName>
  *    ...
  *    ...
- *    <controlName
+ *    <componentName
  *       attr:attribute="value" >
  *       ...
- *    <controlName>
+ *    <componentName>
  *    ...
  * ```
  */
@@ -350,30 +350,30 @@ export class PartialNode extends ActiveNode {
 }
 
 /**
- * Represents node for control tag.
+ * Represents node for component tag.
  *
  * ```
- *    <control attr:name="value" on:event="handler" option="value">
+ *    <componentName attr:name="value" on:event="handler" option="value">
  *       content
- *    </control>
+ *    </componentName>
  * ```
  */
-export class ControlNode extends ActiveNode {
+export class ComponentNode extends ActiveNode {
    /**
-    * Control name.
+    * Component name.
     */
    name: string;
    /**
-    * Control properties.
+    * Component properties.
     */
    options: IOptions;
 
    /**
     * Initialize new instance of abstract syntax node.
-    * @param name {string} Control name.
-    * @param attributes {IAttributes} Control attributes.
-    * @param options {IOptions} Control properties.
-    * @param events {IEvents} Control event handlers.
+    * @param name {string} Component name.
+    * @param attributes {IAttributes} Component attributes.
+    * @param options {IOptions} Component properties.
+    * @param events {IEvents} Component event handlers.
     */
    constructor(name: string, attributes: IAttributes, options: IOptions, events: IEvents) {
       super(attributes, events);
@@ -382,7 +382,7 @@ export class ControlNode extends ActiveNode {
    }
 
    accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
-      return visitor.visitControl(this, context);
+      return visitor.visitComponent(this, context);
    }
 }
 
@@ -784,7 +784,7 @@ export class MarkupVisitor implements IAstVisitor<IAstVisitorContext, string> {
       return `<!--${node.content}-->`;
    }
 
-   visitControl(node: ControlNode, context: IAstVisitorContext): string {
+   visitComponent(node: ComponentNode, context: IAstVisitorContext): string {
       let attributes = '';
       for (const name in node.attributes) {
          if (node.attributes.hasOwnProperty(name)) {
