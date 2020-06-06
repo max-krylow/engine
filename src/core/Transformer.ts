@@ -128,6 +128,19 @@ function getDataNode(node: RawNodes.Tag, name: string): string {
    return data.value;
 }
 
+function validateElseNode(node: RawNodes.Tag) {
+   if (!(node.prev instanceof RawNodes.Tag)) {
+      throw new Error(`Unexpected tag "${node.name}" without tag "ws:if" before. Ignore this tag`);
+   }
+   if (node.prev.name === 'ws:else') {
+      if (!node.prev.attributes.hasOwnProperty('data')) {
+         throw new Error(`Unexpected tag "${node.name}" before tag "ws:else" without attribute "data". Ignore this tag`);
+      }
+   } else if (node.prev.name !== 'ws:if') {
+      throw new Error(`Unexpected tag "${node.name}" without tag "ws:if" before. Ignore this tag`);
+   }
+}
+
 /**
  * Releases transformation from parse tree into abstract syntax tree.
  */
@@ -241,6 +254,7 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
     */
    createElseNode(node: RawNodes.Tag, context?: any): AstNodes.ElseNode[] {
       let test;
+      validateElseNode(node);
       const { data: dataNode } = filterAttributes(node, ['data']);
       if (dataNode !== undefined) {
          if (dataNode.value !== null) {

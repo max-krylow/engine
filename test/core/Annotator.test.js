@@ -67,12 +67,17 @@ describe('engine/core/Annotatator', () => {
          debugger;
       });
       it('Directive ws:if', () => {
-         const html = '<ws:if data="condition;">Hello</ws:if>';
+         const html = '<ws:if data="condition;">First</ws:if>';
          const annotatedAst = traverseAndAnnotate(html);
          debugger;
       });
       it('Directive ws:else', () => {
-         const html = '<ws:else>Hello</ws:else>';
+         const html = '<ws:if data="condition;">First</ws:if><ws:else>Second</ws:else>';
+         const annotatedAst = traverseAndAnnotate(html);
+         debugger;
+      });
+      it('Directive ws:else 2', () => {
+         const html = '<ws:if data="condition;">First</ws:if><ws:else data="other;">Second</ws:else><ws:else>Third</ws:else>';
          const annotatedAst = traverseAndAnnotate(html);
          debugger;
       });

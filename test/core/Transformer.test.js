@@ -95,17 +95,22 @@ describe('engine/core/Transformer', () => {
          assert.strictEqual(actual, html);
       });
       it('ws:if', () => {
-         const html = '<ws:if data="condition;">Hello</ws:if>';
+         const html = '<ws:if data="condition;">First</ws:if>';
          const actual = traverseAndStringify(html);
          assert.strictEqual(actual, html);
       });
       it('ws:else 1', () => {
-         const html = '<ws:else>Hello</ws:else>';
+         const html = '<ws:if data="condition;">First</ws:if><ws:else>Second</ws:else>';
          const actual = traverseAndStringify(html);
          assert.strictEqual(actual, html);
       });
       it('ws:else 2', () => {
-         const html = '<ws:else data="condition;">Hello</ws:else>';
+         const html = '<ws:if data="condition;">First</ws:if><ws:else data="other;">Second</ws:else>';
+         const actual = traverseAndStringify(html);
+         assert.strictEqual(actual, html);
+      });
+      it('ws:else 3', () => {
+         const html = '<ws:if data="condition;">First</ws:if><ws:else data="other;">Second</ws:else><ws:else>Third</ws:else>';
          const actual = traverseAndStringify(html);
          assert.strictEqual(actual, html);
       });
@@ -136,7 +141,7 @@ describe('engine/core/Transformer', () => {
       });
       it('ws:if expected attribute', () => {
          try {
-            const html = '<ws:if>Hello</ws:if>';
+            const html = '<ws:if>First</ws:if>';
             traverseAndStringify(html);
          } catch (error) {
             assert.strictEqual(error.message, 'Expected attribute "data" on tag "ws:if". Ignore this tag');
@@ -144,15 +149,31 @@ describe('engine/core/Transformer', () => {
       });
       it('ws:if expected attribute has value', () => {
          try {
-            const html = '<ws:if data>Hello</ws:if>';
+            const html = '<ws:if data>First</ws:if>';
             traverseAndStringify(html);
          } catch (error) {
             assert.strictEqual(error.message, 'Expected attribute "data" on tag "ws:if" has value. Ignore this tag');
          }
       });
+      it('ws:else expected ws:if', () => {
+         try {
+            const html = '<ws:else data>Second</ws:else>';
+            traverseAndStringify(html);
+         } catch (error) {
+            assert.strictEqual(error.message, 'Unexpected tag "ws:else" without tag "ws:if" before. Ignore this tag');
+         }
+      });
+      it('ws:else expected ws:else has data', () => {
+         try {
+            const html = '<ws:if data="condition;">First</ws:if><ws:else>Second</ws:else><ws:else>Third</ws:else>';
+            traverseAndStringify(html);
+         } catch (error) {
+            assert.strictEqual(error.message, 'Unexpected tag "ws:else" before tag "ws:else" without attribute "data". Ignore this tag');
+         }
+      });
       it('ws:else expected attribute', () => {
          try {
-            const html = '<ws:else data>Hello</ws:else>';
+            const html = '<ws:if data="condition;">First</ws:if><ws:else data>Second</ws:else>';
             traverseAndStringify(html);
          } catch (error) {
             assert.strictEqual(error.message, 'Expected attribute "data" on tag "ws:else" has value. Ignore this tag');
