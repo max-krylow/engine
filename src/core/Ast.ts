@@ -30,44 +30,198 @@ export enum Flags {
  */
 export declare type TText = ExpressionNode | TextNode | LocalizationNode;
 
+export function isTypeofText(value: any): boolean {
+   return value instanceof ExpressionNode ||
+      value instanceof TextNode ||
+      value instanceof LocalizationNode;
+}
+
 /**
  * Wasaby node type.
  */
 export declare type TWasaby = TemplateNode | PartialNode | ComponentNode | IfNode | ElseNode | ForNode | ForeachNode;
+
+export function isTypeofWasaby(value: any): boolean {
+   return value instanceof TemplateNode ||
+      value instanceof PartialNode ||
+      value instanceof ComponentNode ||
+      value instanceof IfNode ||
+      value instanceof ForNode ||
+      value instanceof ForeachNode;
+}
 
 /**
  * Html node type.
  */
 export declare type THtml = ElementNode | DoctypeNode | CDataNode | CommentNode;
 
+export function isTypeofHtml(value: any): boolean {
+   return value instanceof ElementNode ||
+      value instanceof DoctypeNode ||
+      value instanceof CDataNode ||
+      value instanceof CommentNode;
+}
+
 /**
  * Content representation type.
  */
 export declare type TContent = TWasaby | TText | THtml;
 
+export function isTypeofContent(value: any): boolean {
+   return isTypeofWasaby(value) || isTypeofText(value) || isTypeofHtml(value);
+}
+
+export function validateContent(value: Ast[]): TContent[] {
+   for (let i = 0; i < value.length; ++i) {
+      if (!isTypeofContent(value[i])) {
+         throw new Error(`Expected node type of Content. Got ${value.constructor.name}`);
+      }
+   }
+   return value as TContent[];
+}
+
 /**
  * Interface for visitor of abstract syntax nodes.
  */
 export interface IAstVisitor<C, R> {
+   /**
+    * Visit all nodes in collection.
+    * @param nodes {Ast[]} Collection of nodes.
+    * @param context {C} Current visiting context.
+    */
    visitAll(nodes: Ast[], context: C): R;
+
+   /**
+    * Visit AST node.
+    * @param node {TemplateNode} Template node.
+    * @param context {C} Current visiting context.
+    */
    visitTemplate(node: TemplateNode, context: C): R;
+
+   /**
+    * Visit AST node.
+    * @param node {PartialNode} Partial node.
+    * @param context {C} Current visiting context.
+    */
    visitPartial(node: PartialNode, context: C): R;
+
+   /**
+    * Visit AST node.
+    * @param node {ComponentNode} Component node.
+    * @param context {C} Current visiting context.
+    */
    visitComponent(node: ComponentNode, context: C): R;
+
+   /**
+    * Visit AST node.
+    * @param node {IfNode} If node.
+    * @param context {C} Current visiting context.
+    */
    visitIf(node: IfNode, context: C): R;
+
+   /**
+    * Visit AST node.
+    * @param node {ElseNode} Else node.
+    * @param context {C} Current visiting context.
+    */
    visitElse(node: ElseNode, context: C): R;
+
+   /**
+    * Visit AST node.
+    * @param node {ForNode} For node.
+    * @param context {C} Current visiting context.
+    */
    visitFor(node: ForNode, context: C): R;
+
+   /**
+    * Visit AST node.
+    * @param node {ForeachNode} Foreach node.
+    * @param context {C} Current visiting context.
+    */
    visitForeach(node: ForeachNode, context: C): R;
+
+   /**
+    * Visit AST node.
+    * @param node {ElementNode} Element node.
+    * @param context {C} Current visiting context.
+    */
    visitElement(node: ElementNode, context: C): R;
+
+   /**
+    * Visit AST node.
+    * @param node {TextNode} Text node.
+    * @param context {C} Current visiting context.
+    */
    visitText(node: TextNode, context: C): R;
+
+   /**
+    * Visit AST node.
+    * @param node {DoctypeNode} Doctype node.
+    * @param context {C} Current visiting context.
+    */
    visitDoctype(node: DoctypeNode, context: C): R;
+
+   /**
+    * Visit AST node.
+    * @param node {CDataNode} CData node.
+    * @param context {C} Current visiting context.
+    */
    visitCData(node: CDataNode, context: C): R;
+
+   /**
+    * Visit AST node.
+    * @param node {CommentNode} Comment node.
+    * @param context {C} Current visiting context.
+    */
    visitComment(node: CommentNode, context: C): R;
+
+   /**
+    * Visit AST node.
+    * @param node {ExpressionNode} Expression node.
+    * @param context {C} Current visiting context.
+    */
    visitExpression(node: ExpressionNode, context: C): R;
+
+   /**
+    * Visit AST node.
+    * @param node {LocalizationNode} Localization node.
+    * @param context {C} Current visiting context.
+    */
    visitLocalization(node: LocalizationNode, context: C): R;
+
+   /**
+    * Visit AST node.
+    * @param node {AttributeNode} Attribute node.
+    * @param context {C} Current visiting context.
+    */
    visitAttributeNode(node: AttributeNode, context: C): R;
+
+   /**
+    * Visit AST node.
+    * @param node {OptionNode} Option node.
+    * @param context {C} Current visiting context.
+    */
    visitOptionNode(node: OptionNode, context: C): R;
+
+   /**
+    * Visit AST node.
+    * @param node {ContentOptionNode} Content option node.
+    * @param context {C} Current visiting context.
+    */
    visitContentOptionNode(node: ContentOptionNode, context: C): R;
+
+   /**
+    * Visit AST node.
+    * @param node {BindNode} Bind node.
+    * @param context {C} Current visiting context.
+    */
    visitBindNode(node: BindNode, context: C): R;
+
+   /**
+    * Visit AST node.
+    * @param node {EventNode} Event node.
+    * @param context {C} Current visiting context.
+    */
    visitEventNode(node: EventNode, context: C): R;
 }
 
@@ -305,7 +459,13 @@ export interface IEvents {
  * ```
  */
 export class TemplateNode extends Ast {
+   /**
+    * Template name.
+    */
    name: string;
+   /**
+    * Template content.
+    */
    content: TContent[] = [];
 
    /**
@@ -358,7 +518,13 @@ export abstract class BaseHtmlElement extends Ast {
  * ```
  */
 export class PartialNode extends BaseHtmlElement {
+   /**
+    * Partial name.
+    */
    name: string;
+   /**
+    * Partial properties.
+    */
    options: IOptions;
 
    /**
@@ -739,7 +905,13 @@ export class ExpressionNode extends Ast {
  * ```
  */
 export class LocalizationNode extends Ast {
+   /**
+    * Localization text.
+    */
    text: string;
+   /**
+    * Localization context.
+    */
    context: string;
 
    /**
@@ -787,6 +959,11 @@ export class MarkupVisitor implements IAstVisitor<IAstVisitorContext, string> {
       this.expressionVisitor = expressionVisitor;
    }
 
+   /**
+    * Generate text representation of node.
+    * @param node {AttributeNode} Attribute node.
+    * @param context {IAstVisitorContext} Current visiting context.
+    */
    visitAttributeNode(node: AttributeNode, context: IAstVisitorContext): string {
       const value = this.visitAll(node.value, context);
       if (!context.hasAttributesOnly) {
@@ -795,23 +972,48 @@ export class MarkupVisitor implements IAstVisitor<IAstVisitorContext, string> {
       return `${node.name}="${value}"`;
    }
 
+   /**
+    * Generate text representation of node.
+    * @param node {BindNode} Bind node.
+    * @param context {IAstVisitorContext} Current visiting context.
+    */
    visitBindNode(node: BindNode, context: IAstVisitorContext): string {
       const value = node.value.accept(this.expressionVisitor, context);
       return `bind:${node.property}="${value}"`;
    }
 
+   /**
+    * Generate text representation of node.
+    * @param node {CDataNode} CData node.
+    * @param context {IAstVisitorContext} Current visiting context.
+    */
    visitCData(node: CDataNode, context: IAstVisitorContext): string {
       return `<![CDATA[${node.content}]]>`;
    }
 
+   /**
+    * Generate text representation of node.
+    * @param node {CommentNode} Comment node.
+    * @param context {IAstVisitorContext} Current visiting context.
+    */
    visitComment(node: CommentNode, context: IAstVisitorContext): string {
       return `<!--${node.content}-->`;
    }
 
+   /**
+    * Generate text representation of node.
+    * @param node {ContentOptionNode} Content option node.
+    * @param context {IAstVisitorContext} Current visiting context.
+    */
    visitContentOptionNode(node: ContentOptionNode, context: IAstVisitorContext): string {
       return this.visitAll(node.content, context);
    }
 
+   /**
+    * Generate text representation of node.
+    * @param node {ComponentNode} Component node.
+    * @param context {IAstVisitorContext} Current visiting context.
+    */
    visitComponent(node: ComponentNode, context: IAstVisitorContext): string {
       let attributes = '';
       let content = '';
@@ -840,10 +1042,20 @@ export class MarkupVisitor implements IAstVisitor<IAstVisitorContext, string> {
       return `<${node.name}${attributes}>${content}</${node.name}>`;
    }
 
+   /**
+    * Generate text representation of node.
+    * @param node {DoctypeNode} Doctype node.
+    * @param context {IAstVisitorContext} Current visiting context.
+    */
    visitDoctype(node: DoctypeNode, context: IAstVisitorContext): string {
       return `<!DOCTYPE ${node.content}>`;
    }
 
+   /**
+    * Generate text representation of node.
+    * @param node {ElementNode} Element node.
+    * @param context {IAstVisitorContext} Current visiting context.
+    */
    visitElement(node: ElementNode, context: IAstVisitorContext): string {
       let attributes = '';
       for (const name in node.attributes) {
@@ -862,6 +1074,11 @@ export class MarkupVisitor implements IAstVisitor<IAstVisitorContext, string> {
       return `<${node.name}${attributes}>${content}</${node.name}>`;
    }
 
+   /**
+    * Generate text representation of node.
+    * @param node {ElseNode} Else node.
+    * @param context {IAstVisitorContext} Current visiting context.
+    */
    visitElse(node: ElseNode, context: IAstVisitorContext): string {
       const data = node.test !== undefined ? node.test.accept(this.expressionVisitor, context) : '';
       const attribute = data ? ` data="${data}"` : '';
@@ -869,34 +1086,64 @@ export class MarkupVisitor implements IAstVisitor<IAstVisitorContext, string> {
       return `<ws:else${attribute}>${content}</ws:else>`;
    }
 
+   /**
+    * Generate text representation of node.
+    * @param node {EventNode} Event node.
+    * @param context {IAstVisitorContext} Current visiting context.
+    */
    visitEventNode(node: EventNode, context: IAstVisitorContext): string {
       const value = node.handler.accept(this.expressionVisitor, context);
       return `on:${node.event}="${value}"`;
    }
 
+   /**
+    * Generate text representation of node.
+    * @param node {ExpressionNode} Expression node.
+    * @param context {IAstVisitorContext} Current visiting context.
+    */
    visitExpression(node: ExpressionNode, context: IAstVisitorContext): string {
       const value = node.programNode.accept(this.expressionVisitor, context);
       return `{{${value}}}`;
    }
 
+   /**
+    * Generate text representation of node.
+    * @param node {ForNode} For node.
+    * @param context {IAstVisitorContext} Current visiting context.
+    */
    visitFor(node: ForNode, context: IAstVisitorContext): string {
       const data = node.expression.accept(this.expressionVisitor, context);
       const content = this.visitAll(node.content, context);
       return `<ws:for data="${data}">${content}</ws:for>`;
    }
 
+   /**
+    * Generate text representation of node.
+    * @param node {ForeachNode} Foreach node.
+    * @param context {IAstVisitorContext} Current visiting context.
+    */
    visitForeach(node: ForeachNode, context: IAstVisitorContext): string {
       const data = node.expression.accept(this.expressionVisitor, context);
       const content = this.visitAll(node.content, context);
       return `<ws:foreach data="${data}">${content}</ws:foreach>`;
    }
 
+   /**
+    * Generate text representation of node.
+    * @param node {IfNode} If node.
+    * @param context {IAstVisitorContext} Current visiting context.
+    */
    visitIf(node: IfNode, context: IAstVisitorContext): string {
       const data = node.test.accept(this.expressionVisitor, context);
       const content = this.visitAll(node.consequent, context);
       return `<ws:if data="${data}">${content}</ws:if>`;
    }
 
+   /**
+    * Generate text representation of node.
+    * @param node {LocalizationNode} Localization node.
+    * @param context {IAstVisitorContext} Current visiting context.
+    */
    visitLocalization(node: LocalizationNode, context: IAstVisitorContext): string {
       if (node.context) {
          return `{[${node.context}@@${node.text}]}`;
@@ -904,11 +1151,21 @@ export class MarkupVisitor implements IAstVisitor<IAstVisitorContext, string> {
       return `{[${node.text}]}`;
    }
 
+   /**
+    * Generate text representation of node.
+    * @param node {OptionNode} Option node.
+    * @param context {IAstVisitorContext} Current visiting context.
+    */
    visitOptionNode(node: OptionNode, context: IAstVisitorContext): string {
       const value = this.visitAll(node.value, context);
       return `${node.name}="${value}"`;
    }
 
+   /**
+    * Generate text representation of node.
+    * @param node {PartialNode} Partial node.
+    * @param context {IAstVisitorContext} Current visiting context.
+    */
    visitPartial(node: PartialNode, context: IAstVisitorContext): string {
       let attributes = '';
       let content = '';
@@ -937,15 +1194,30 @@ export class MarkupVisitor implements IAstVisitor<IAstVisitorContext, string> {
       return `<ws:partial template="${node.name}"${attributes}>${content}</ws:partial>`;
    }
 
+   /**
+    * Generate text representation of node.
+    * @param node {TemplateNode} Template node.
+    * @param context {IAstVisitorContext} Current visiting context.
+    */
    visitTemplate(node: TemplateNode, context: IAstVisitorContext): string {
       const content = this.visitAll(node.content, context);
       return `<ws:template name="${node.name}">${content}</ws:template>`;
    }
 
+   /**
+    * Generate text representation of node.
+    * @param node {TextNode} Text node.
+    * @param context {IAstVisitorContext} Current visiting context.
+    */
    visitText(node: TextNode, context: IAstVisitorContext): string {
       return node.content;
    }
 
+   /**
+    * Generate markup for all nodes in collection.
+    * @param nodes {Ast[]} Collection of nodes.
+    * @param context {IAstVisitorContext} Current visiting context.
+    */
    visitAll(nodes: Ast[], context: IAstVisitorContext = { }): string {
       return nodes.map(child => child.accept(this, context)).join('');
    }

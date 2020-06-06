@@ -144,7 +144,7 @@ function validateElseNode(node: RawNodes.Tag) {
 /**
  * Releases transformation from parse tree into abstract syntax tree.
  */
-export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
+export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast[]> {
    expressionParser: IParser;
 
    /**
@@ -159,7 +159,7 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
     * @param nodes {IVisitable} Collection of nodes.
     * @param context {*} Context.
     */
-   visitAll(nodes: RawNodes.IVisitable[], context?: any): any {
+   visitAll(nodes: RawNodes.IVisitable[], context?: any): AstNodes.Ast[] {
       const children = nodes
          .map(node => node.accept(this, context))
          .reduce((acc: any[], cur) => acc.concat(cur), []);
@@ -171,7 +171,7 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
     * @param node {CData} CDATA section node.
     * @param context {*} Context.
     */
-   visitCData(node: RawNodes.CData, context?: any): any {
+   visitCData(node: RawNodes.CData, context?: any): AstNodes.Ast[] {
       return [new AstNodes.CDataNode(node.value)];
    }
 
@@ -180,7 +180,7 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
     * @param node {Comment} Comment node.
     * @param context {*} Context.
     */
-   visitComment(node: RawNodes.Comment, context?: any): any {
+   visitComment(node: RawNodes.Comment, context?: any): AstNodes.Ast[] {
       return [new AstNodes.CommentNode(node.value)];
    }
 
@@ -189,7 +189,7 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
     * @param node {Doctype} Doctype node.
     * @param context {*} Context.
     */
-   visitDoctype(node: RawNodes.Doctype, context?: any): any {
+   visitDoctype(node: RawNodes.Doctype, context?: any): AstNodes.Ast[] {
       return [new AstNodes.DoctypeNode(node.value)];
    }
 
@@ -198,7 +198,7 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
     * @param node {Tag} Tag node.
     * @param context {*} Context.
     */
-   visitTag(node: RawNodes.Tag, context?: any): any {
+   visitTag(node: RawNodes.Tag, context?: any): AstNodes.Ast[] {
       switch (node.name) {
          case 'ws:if':
             return this.createIfNode(node, context);
@@ -221,36 +221,36 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
    }
 
    /**
-    * Visit text node and generate its ast representation.
-    * @param node {Text} Text node.
-    * @param context {*} Context.
+    * Process text node and split it into expressions, text and localizations.
+    * @param node {Tag} Raw representation of Text nodes.
+    * @param context {*} Current transform context.
     */
-   visitText(node: RawNodes.Text, context?: any): any {
+   visitText(node: RawNodes.Text, context?: any): AstNodes.Ast[] {
       const value = node.value
          .replace(/(\r|\r\n|\n|\n\r)/gi, '')
          .trim();
       if (value.length === 0) {
-         return undefined;
+         return [];
       }
       return processTextData(value, this.expressionParser);
    }
 
    /**
-    *
-    * @param node
-    * @param context
+    * Create instance of If node by its raw representation.
+    * @param node {Tag} Raw representation of If node.
+    * @param context {*} Current transform context.
     */
    createIfNode(node: RawNodes.Tag, context?: any): AstNodes.IfNode[] {
       const dataNode = getDataNode(node, 'data');
       const test = this.expressionParser.parse(dataNode);
       const consequent = this.visitAll(node.children, context);
-      return [new AstNodes.IfNode(test, consequent)];
+      return [new AstNodes.IfNode(test, AstNodes.validateContent(consequent))];
    }
 
    /**
-    *
-    * @param node
-    * @param context
+    * Create instance of Else node by its raw representation.
+    * @param node {Tag} Raw representation of Else node.
+    * @param context {*} Current transform context.
     */
    createElseNode(node: RawNodes.Tag, context?: any): AstNodes.ElseNode[] {
       let test;
@@ -264,51 +264,56 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
          }
       }
       const consequent = this.visitAll(node.children, context);
-      return [new AstNodes.ElseNode(consequent, test)];
+      return [new AstNodes.ElseNode(AstNodes.validateContent(consequent), test)];
    }
 
    /**
-    *
-    * @param node
-    * @param context
+    * Create instance of For node by its raw representation.
+    * @param node {Tag} Raw representation of For node.
+    * @param context {*} Current transform context.
     */
    createForNode(node: RawNodes.Tag, context?: any): AstNodes.ForNode[] {
       const dataNode = getDataNode(node, 'data');
       const data = this.expressionParser.parse(dataNode);
       const ast = new AstNodes.ForNode(data);
-      ast.content = this.visitAll(node.children);
+      const content = this.visitAll(node.children);
+      ast.content = AstNodes.validateContent(content);
       return [ast];
    }
 
    /**
-    *
-    * @param node
-    * @param context
+    * Create instance of Foreach node by its raw representation.
+    * @param node {Tag} Raw representation of Foreach node.
+    * @param context {*} Current transform context.
     */
    createForeachNode(node: RawNodes.Tag, context?: any): AstNodes.ForeachNode[] {
       const dataNode = getDataNode(node, 'data');
       const data = this.expressionParser.parse(dataNode);
       const ast = new AstNodes.ForeachNode(data);
-      ast.content = this.visitAll(node.children);
+      const content = this.visitAll(node.children);
+      ast.content = AstNodes.validateContent(content);
       return [ast];
    }
 
    /**
-    *
-    * @param node
-    * @param context
+    * Create instance of Template node by its raw representation.
+    * @param node {Tag} Raw representation of Template node.
+    * @param context {*} Current transform context.
     */
    createTemplateNode(node: RawNodes.Tag, context?: any): AstNodes.TemplateNode[] {
       const nameNode = getDataNode(node, 'name');
       const ast = new AstNodes.TemplateNode(nameNode);
-      ast.content = this.visitAll(node.children);
+      const content = this.visitAll(node.children);
+      ast.content = AstNodes.validateContent(content);
       return [ast];
    }
 
    /**
-    *
-    * @param node
-    * @param hasAttributesOnly
+    * Visit attributes and collect them in chunks: attributes, options, events.
+    * @param node {Tag} Some tag.
+    * @param hasAttributesOnly {boolean} Flag to collect algorithm.
+    *  Component and Partial nodes have options such but Element node has only attributes.
+    *  If flag is true then no options will be collected.
     */
    visitAttributes(node: RawNodes.Tag, hasAttributesOnly: boolean): IAttributesCollection {
       const collection: IAttributesCollection = {
@@ -341,9 +346,9 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
    }
 
    /**
-    *
-    * @param node
-    * @param context
+    * Create instance of Partial node by its raw representation.
+    * @param node {Tag} Raw representation of Partial node.
+    * @param context {*} Current transform context.
     */
    createPartialNode(node: RawNodes.Tag, context?: any): AstNodes.PartialNode[] {
       const { attributes, events, options } = this.visitAttributes(node, false);
@@ -354,32 +359,33 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
       }
       const ast = new AstNodes.PartialNode(node.attributes['template'].value as string, attributes, options, events);
       const content = this.visitAll(node.children, context);
-      ast.options['content'] = new AstNodes.ContentOptionNode('content', content);
+      ast.options['content'] = new AstNodes.ContentOptionNode('content', AstNodes.validateContent(content));
       return [ast];
    }
 
    /**
-    *
-    * @param node
-    * @param context
+    * Create instance of Component node by its raw representation.
+    * @param node {Tag} Raw representation of Component node.
+    * @param context {*} Current transform context.
     */
    createComponentNode(node: RawNodes.Tag, context?: any): AstNodes.ComponentNode[] {
       const { attributes, events, options } = this.visitAttributes(node, false);
       let ast = new AstNodes.ComponentNode(node.name, attributes, options, events);
       const content = this.visitAll(node.children, context);
-      ast.options['content'] = new AstNodes.ContentOptionNode('content', content);
+      ast.options['content'] = new AstNodes.ContentOptionNode('content', AstNodes.validateContent(content));
       return [ast];
    }
 
    /**
-    *
-    * @param node
-    * @param context
+    * Create instance of Element node by its raw representation.
+    * @param node {Tag} Raw representation of Element node.
+    * @param context {*} Current transform context.
     */
    createElementNode(node: RawNodes.Tag, context?: any): AstNodes.ElementNode[] {
       const { attributes, events } = this.visitAttributes(node, true);
       let ast = new AstNodes.ElementNode(node.name, attributes, events);
-      ast.content = this.visitAll(node.children, context);
+      const content = this.visitAll(node.children, context);
+      ast.content = AstNodes.validateContent(content);
       return [ast];
    }
 }
