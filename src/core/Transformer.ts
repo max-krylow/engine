@@ -5,12 +5,11 @@ import * as AstNodes from "./Ast";
 import { IParser, Parser } from '../expression/Parser';
 import { processTextData } from "./TextProcessor";
 import { Scope } from "./Scope";
+import * as Names from './Names';
 
 /**
  * @file src/core/Transformer.ts
  */
-
-const EMPTY_STRING = '';
 
 /**
  *
@@ -30,61 +29,6 @@ interface IAttributesCollection {
    events: AstNodes.IEvents;
 }
 
-/**
- *
- * @param name
- */
-function isAttribute(name: string): boolean {
-   return /^attr:/gi.test(name);
-}
-
-/**
- *
- * @param name
- */
-function getAttributeName(name: string): string {
-   return name.replace(/^attr:/gi, EMPTY_STRING);
-}
-
-/**
- *
- * @param name
- */
-function isEvent(name: string): boolean {
-   return /^on:/gi.test(name);
-}
-
-/**
- *
- * @param name
- */
-function getEventName(name: string): string {
-   return name.replace(/^on:/gi, EMPTY_STRING);
-}
-
-/**
- *
- * @param name
- */
-function isBind(name: string): boolean {
-   return /^bind:/gi.test(name);
-}
-
-/**
- *
- * @param name
- */
-function getBindName(name: string): string {
-   return name.replace(/^bind:/gi, EMPTY_STRING);
-}
-
-/**
- *
- * @param name
- */
-function isComponentName(name: string): boolean {
-   return /(\w+[\.:])+\w+/gi.test(name);
-}
 
 /**
  *
@@ -223,7 +167,7 @@ export class TransformVisitor implements RawNodes.IVisitor<Scope, AstNodes.Ast[]
          case 'ws:partial':
             return this.createPartialNode(node, context);
          default:
-            if (isComponentName(node.name)) {
+            if (Names.isComponentName(node.name)) {
                return this.createComponentNode(node, context);
             }
             return this.createElementNode(node, context);
@@ -340,14 +284,14 @@ export class TransformVisitor implements RawNodes.IVisitor<Scope, AstNodes.Ast[]
       for (const attributeName in node.attributes) {
          if (node.attributes.hasOwnProperty(attributeName)) {
             const value = node.attributes[attributeName].value as string;
-            if (isBind(attributeName)) {
-               const property = getBindName(attributeName);
+            if (Names.isBind(attributeName)) {
+               const property = Names.getBindName(attributeName);
                optionsStorage[property] = new AstNodes.BindNode(property, this.expressionParser.parse(value));
-            } else if (isEvent(attributeName)) {
-               const event = getEventName(attributeName);
+            } else if (Names.isEvent(attributeName)) {
+               const event = Names.getEventName(attributeName);
                collection.events[event] = new AstNodes.EventNode(event, this.expressionParser.parse(value));
-            } else if (isAttribute(attributeName)) {
-               const attribute = getAttributeName(attributeName);
+            } else if (Names.isAttribute(attributeName)) {
+               const attribute = Names.getAttributeName(attributeName);
                const value = node.attributes[attributeName].value as string;
                const processedValue = processTextData(value, this.expressionParser);
                collection.attributes[attribute] = new AstNodes.AttributeNode(attribute, processedValue);
