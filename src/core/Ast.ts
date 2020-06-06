@@ -66,6 +66,7 @@ export interface IAstVisitor<C, R> {
    visitLocalization(node: LocalizationNode, context: C): R;
    visitAttributeNode(node: AttributeNode, context: C): R;
    visitOptionNode(node: OptionNode, context: C): R;
+   visitContentOptionNode(node: ContentOptionNode, context: C): R;
    visitBindNode(node: BindNode, context: C): R;
    visitEventNode(node: EventNode, context: C): R;
 }
@@ -175,6 +176,35 @@ export class OptionNode extends Ast {
 }
 
 /**
+ * Represents node for content node option or root content of ws:partial or Component.
+ */
+export class ContentOptionNode extends Ast {
+   /**
+    * Option name.
+    */
+   name: string;
+   /**
+    * Content data.
+    */
+   content: TContent[];
+
+   /**
+    * Initialize new instance of abstract syntax node.
+    * @param name {string} Option name.
+    * @param content {TContent[]} Content data.
+    */
+   constructor(name: string, content: TContent[]) {
+      super();
+      this.name = name;
+      this.content = content;
+   }
+
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
+      return visitor.visitContentOptionNode(this, context);
+   }
+}
+
+/**
  * Represents node for binding construction.
  *
  * ```
@@ -255,7 +285,7 @@ export interface IAttributes {
  * Interface for options collection.
  */
 export interface IOptions {
-   [option: string]: AttributeNode | BindNode;
+   [option: string]: OptionNode | BindNode | ContentOptionNode;
 }
 
 /**
@@ -296,7 +326,7 @@ export class TemplateNode extends Ast {
  * Abstract class for node of abstract syntax tree that
  * contains attributes and event handlers.
  */
-export abstract class ActiveNode extends Ast {
+export abstract class BaseHtmlElement extends Ast {
    /**
     * Node attributes.
     */
@@ -327,7 +357,7 @@ export abstract class ActiveNode extends Ast {
  *    </ws:partial>
  * ```
  */
-export class PartialNode extends ActiveNode {
+export class PartialNode extends BaseHtmlElement {
    name: string;
    options: IOptions;
 
@@ -358,7 +388,7 @@ export class PartialNode extends ActiveNode {
  *    </componentName>
  * ```
  */
-export class ComponentNode extends ActiveNode {
+export class ComponentNode extends BaseHtmlElement {
    /**
     * Component name.
     */
@@ -543,15 +573,11 @@ export class ForeachNode extends Ast {
  *    </tag>
  * ```
  */
-export class ElementNode extends ActiveNode {
+export class ElementNode extends BaseHtmlElement {
    /**
     * Element name.
     */
    name: string;
-   /**
-    * Node attribute binds.
-    */
-   binds: IOptions;
    /**
     * Element children.
     */
@@ -562,12 +588,10 @@ export class ElementNode extends ActiveNode {
     * @param name {string} Element name.
     * @param attributes {IAttributes} Element attributes collection.
     * @param events {IEvents} Element event handlers.
-    * @param binds {IOptions} Node attribute binds.
     */
-   constructor(name: string, attributes: IAttributes, events: IEvents, binds: IOptions) {
+   constructor(name: string, attributes: IAttributes, events: IEvents) {
       super(attributes, events);
       this.name = name;
-      this.binds = binds;
    }
 
    accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
@@ -784,8 +808,13 @@ export class MarkupVisitor implements IAstVisitor<IAstVisitorContext, string> {
       return `<!--${node.content}-->`;
    }
 
+   visitContentOptionNode(node: ContentOptionNode, context: IAstVisitorContext): string {
+      return this.visitAll(node.content, context);
+   }
+
    visitComponent(node: ComponentNode, context: IAstVisitorContext): string {
       let attributes = '';
+      let content = '';
       for (const name in node.attributes) {
          if (node.attributes.hasOwnProperty(name)) {
             const value = node.attributes[name].accept(this, { ...context, hasAttributesOnly: false });
@@ -799,16 +828,15 @@ export class MarkupVisitor implements IAstVisitor<IAstVisitorContext, string> {
          }
       }
       for (const name in node.options) {
-         if (node.options.hasOwnProperty(name) && name !== 'content') {
-            const value = node.options[name].accept(this, context);
-            attributes += ` ${value}`;
+         if (node.options.hasOwnProperty(name)) {
+            if (node.options[name] instanceof ContentOptionNode) {
+               content += node.options[name].accept(this, context);
+            } else {
+               const value = node.options[name].accept(this, context);
+               attributes += ` ${value}`;
+            }
          }
       }
-      let content = '';
-      if (node.options.hasOwnProperty('content')) {
-         content = this.visitAll(((node.options.content as unknown) as TContent[]), context) as string;
-      }
-
       return `<${node.name}${attributes}>${content}</${node.name}>`;
    }
 
@@ -827,12 +855,6 @@ export class MarkupVisitor implements IAstVisitor<IAstVisitorContext, string> {
       for (const name in node.events) {
          if (node.events.hasOwnProperty(name)) {
             const value = node.events[name].accept(this, context);
-            attributes += ` ${value}`;
-         }
-      }
-      for (const name in node.binds) {
-         if (node.binds.hasOwnProperty(name)) {
-            const value = node.binds[name].accept(this, context);
             attributes += ` ${value}`;
          }
       }
@@ -903,13 +925,14 @@ export class MarkupVisitor implements IAstVisitor<IAstVisitorContext, string> {
          }
       }
       for (const name in node.options) {
-         if (node.options.hasOwnProperty(name) && name !== 'content') {
-            const value = node.options[name].accept(this, context);
-            attributes += ` ${value}`;
+         if (node.options.hasOwnProperty(name)) {
+            if (node.options[name] instanceof ContentOptionNode) {
+               content += node.options[name].accept(this, context);
+            } else {
+               const value = node.options[name].accept(this, context);
+               attributes += ` ${value}`;
+            }
          }
-      }
-      if (node.options.hasOwnProperty('content')) {
-         content = this.visitAll(((node.options.content as unknown) as TContent[]), context) as string;
       }
       return `<ws:partial template="${node.name}"${attributes}>${content}</ws:partial>`;
    }

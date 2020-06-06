@@ -3,11 +3,18 @@ const { Annotator } = require('engine/core/Annotator');
 const { ERROR_HANDLER } = require('../ErrorHandler');
 
 function traverseAndAnnotate(html) {
-   const options = { };
+   const options = {
+      allowComments: true,
+      allowCDATA: true
+   };
    const traverser = new Traverser(options, ERROR_HANDLER);
    const annotator = new Annotator();
-   const traversed = traverser.traverse(html, 'unknown');
-   return annotator.annotate(traversed.ast);
+   const traversed = traverser.traverse(html, {
+      filePath: 'Annotator.wml'
+   });
+   return annotator.annotate(traversed.ast, {
+      module: 'Annotator'
+   });
 }
 
 describe('engine/core/Annotatator', () => {

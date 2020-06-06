@@ -53,7 +53,7 @@ describe('engine/core/Transformer', () => {
          assert.strictEqual(actual, html);
       });
       it('Element', () => {
-         const html = '<div class="text" on:click="handler(arg);" bind:value="_value;"></div>';
+         const html = '<div class="text" bind:value="_value;" on:click="handler(arg);"></div>';
          const actual = traverseAndStringify(html);
          assert.strictEqual(actual, html);
       });

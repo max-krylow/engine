@@ -154,15 +154,6 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
    }
 
    /**
-    * Visit attribute and generate its ast representation.
-    * @param node {Attribute} Attribute node.
-    * @param context {*} Context.
-    */
-   visitAttribute(node: RawNodes.Attribute, context?: any): any {
-      return { };
-   }
-
-   /**
     * Visit cdata node and generate its ast representation.
     * @param node {CData} CDATA section node.
     * @param context {*} Context.
@@ -311,23 +302,24 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
          options: { },
          events: { }
       };
+      const optionsStorage = hasAttributesOnly ? collection.attributes : collection.options;
       for (const attributeName in node.attributes) {
          if (node.attributes.hasOwnProperty(attributeName)) {
             const value = node.attributes[attributeName].value as string;
             if (isBind(attributeName)) {
                const property = getBindName(attributeName);
-               collection.options[property] = new AstNodes.BindNode(property, this.expressionParser.parse(value));
+               optionsStorage[property] = new AstNodes.BindNode(property, this.expressionParser.parse(value));
             } else if (isEvent(attributeName)) {
                const event = getEventName(attributeName);
                collection.events[event] = new AstNodes.EventNode(event, this.expressionParser.parse(value));
-            } else if (isAttribute(attributeName) || hasAttributesOnly) {
+            } else if (isAttribute(attributeName)) {
                const attribute = getAttributeName(attributeName);
                const value = node.attributes[attributeName].value as string;
                const processedValue = processTextData(value, this.expressionParser);
                collection.attributes[attribute] = new AstNodes.AttributeNode(attribute, processedValue);
             } else {
                const processedValue = processTextData(value, this.expressionParser);
-               collection.options[attributeName] = new AstNodes.OptionNode(attributeName, processedValue);
+               optionsStorage[attributeName] = new AstNodes.OptionNode(attributeName, processedValue);
             }
          }
       }
@@ -347,7 +339,8 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
          throw new Error(`Expected attribute "template" on tag "${node.name}". Ignore this tag`);
       }
       const ast = new AstNodes.PartialNode(node.attributes['template'].value as string, attributes, options, events);
-      ast.options['content'] = this.visitAll(node.children, context);
+      const content = this.visitAll(node.children, context);
+      ast.options['content'] = new AstNodes.ContentOptionNode('content', content);
       return [ast];
    }
 
@@ -359,7 +352,8 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
    createComponentNode(node: RawNodes.Tag, context?: any): AstNodes.ComponentNode[] {
       const { attributes, events, options } = this.visitAttributes(node, false);
       let ast = new AstNodes.ComponentNode(node.name, attributes, options, events);
-      ast.options['content'] = this.visitAll(node.children, context);
+      const content = this.visitAll(node.children, context);
+      ast.options['content'] = new AstNodes.ContentOptionNode('content', content);
       return [ast];
    }
 
@@ -369,8 +363,8 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
     * @param context
     */
    createElementNode(node: RawNodes.Tag, context?: any): AstNodes.ElementNode[] {
-      const { attributes, events, options } = this.visitAttributes(node, true);
-      let ast = new AstNodes.ElementNode(node.name, attributes, events, options);
+      const { attributes, events } = this.visitAttributes(node, true);
+      let ast = new AstNodes.ElementNode(node.name, attributes, events);
       ast.content = this.visitAll(node.children, context);
       return [ast];
    }

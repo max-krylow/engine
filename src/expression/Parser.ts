@@ -140,7 +140,7 @@ export class StringVisitor implements IExpressionVisitor<void, string> {
    public visitAssignmentExpressionNode(node: AssignmentExpressionNode, context: any): string {
       const left = node.left.accept(this, context);
       const right = node.right.accept(this, context);
-      return `${left}${node.operator}${right}`;
+      return `${left} ${node.operator} ${right}`;
    }
 
    public visitUpdateExpressionNode(node: UpdateExpressionNode, context: any): string {
@@ -359,7 +359,7 @@ export class AssignmentExpressionNode extends Node {
       this.right = right;
    }
    public accept(visitor: IExpressionVisitor<unknown, unknown>, context: unknown): unknown {
-      return visitor.visitBinaryExpressionNode(this, context);
+      return visitor.visitAssignmentExpressionNode(this, context);
    }
 }
 

@@ -25,7 +25,7 @@ export interface IDictionaryItem {
 }
 
 export class Dictionary {
-   private items: IDictionaryItem[];
+   private readonly items: IDictionaryItem[];
 
    constructor() {
       this.items = [];
@@ -37,5 +37,9 @@ export class Dictionary {
          text,
          context
       });
+   }
+
+   getItems(): IDictionaryItem[] {
+      return this.items;
    }
 }

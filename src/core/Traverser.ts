@@ -9,7 +9,7 @@ import { IVisitor } from "../html/base/Nodes";
 import { TransformVisitor } from "./Transformer";
 
 export interface IOptions extends IParserOptions {
-   // TODO
+   filePath: string;
 }
 
 const NODE_DESCRIPTION: INodeDescriptions = {
@@ -71,13 +71,13 @@ export class Traverser {
       this.transformer = new TransformVisitor();
    }
 
-   traverse(html: string, filePath: string): ITraversed {
-      const reader = new SourceReader(new SourceFile(html, filePath));
+   traverse(html: string, options: IOptions): ITraversed {
+      const reader = new SourceReader(new SourceFile(html, options.filePath));
       const tree = this.htmlParser.parse(reader);
       const ast = this.transformer.visitAll(tree, { });
       return {
          ast,
-         filePath
+         filePath: options.filePath
       };
    }
 }

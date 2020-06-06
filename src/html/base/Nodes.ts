@@ -13,13 +13,6 @@ import { SourceLocation } from "./SourceReader";
  */
 export interface IVisitor<C, R> {
    /**
-    * Visit attribute node.
-    * @param node {Attribute} Attribute node.
-    * @param context {*} Context.
-    */
-   visitAttribute(node: Attribute, context?: C): R;
-
-   /**
     * Visit comment node.
     * @param node {Comment} Comment node.
     * @param context {*} Context.
@@ -114,7 +107,7 @@ export abstract class Node implements IVisitable {
 /**
  * Attribute node.
  */
-export class Attribute extends Node {
+export class Attribute {
    /**
     * Attribute name.
     */
@@ -123,6 +116,10 @@ export class Attribute extends Node {
     * Attribute value.
     */
    value: string | null;
+   /**
+    * Attribute location in source.
+    */
+   location: SourceLocation;
 
    /**
     * Initialize new instance of attribute.
@@ -131,18 +128,9 @@ export class Attribute extends Node {
     * @param location {SourceLocation} Attribute location in source.
     */
    constructor(name: string, value: string | null, location: SourceLocation) {
-      super(location);
       this.name = name;
       this.value = value;
-   }
-
-   /**
-    * Accept visitor.
-    * @param visitor {IVisitor} Concrete visitor.
-    * @param context {*} Context.
-    */
-   accept(visitor: IVisitor<unknown, unknown>, context?: unknown): unknown {
-      return visitor.visitAttribute(this, context);
+      this.location = location;
    }
 }
 
@@ -332,17 +320,6 @@ export class Tag extends Node {
  */
 export class MarkupVisitor implements IVisitor<void, string> {
    /**
-    * Visit attribute and generate its string representation.
-    * @param node {Attribute} Attribute node.
-    */
-   visitAttribute(node: Attribute): string {
-      if (node.value) {
-         return `${node.name}="${node.value}"`;
-      }
-      return node.name;
-   }
-
-   /**
     * Visit text node and return its content.
     * @param node {Text} Text node.
     */
@@ -382,7 +359,11 @@ export class MarkupVisitor implements IVisitor<void, string> {
       let str = '';
       for (let name in attributes) {
          if (attributes.hasOwnProperty(name)) {
-            str += ` ${attributes[name].accept(this)}`;
+            if (attributes[name].value) {
+               str += ` ${attributes[name].name}="${attributes[name].value}"`;
+            } else {
+               str += ` ${attributes[name].name}`;
+            }
          }
       }
       return str;

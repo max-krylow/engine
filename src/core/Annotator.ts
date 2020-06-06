@@ -14,6 +14,10 @@ interface IAnnotatorContext {
    dependencies: string[];
 }
 
+interface IOptions {
+   module: string;
+}
+
 export class Annotator implements AstNodes.IAstVisitor<IAnnotatorContext, void> {
    visitAll(nodes: AstNodes.Ast[], context: IAnnotatorContext): void {
       nodes.map((node) => node.accept(this, context));
@@ -35,22 +39,18 @@ export class Annotator implements AstNodes.IAstVisitor<IAnnotatorContext, void> 
       return;
    }
 
+   visitNodeData(collection: AstNodes.IAttributes | AstNodes.IOptions | AstNodes.IEvents, context: IAnnotatorContext): void {
+      for (const name in collection) {
+         if (collection.hasOwnProperty(name)) {
+            collection[name].accept(this, context);
+         }
+      }
+   }
+
    visitComponent(node: AstNodes.ComponentNode, context: IAnnotatorContext): void {
-      for (const name in node.attributes) {
-         if (node.attributes.hasOwnProperty(name)) {
-            node.attributes[name].accept(this, context);
-         }
-      }
-      for (const name in node.options) {
-         if (node.options.hasOwnProperty(name) && name !== 'content') {
-            node.options[name].accept(this, context);
-         }
-      }
-      for (const name in node.events) {
-         if (node.events.hasOwnProperty(name)) {
-            node.events[name].accept(this, context);
-         }
-      }
+      this.visitNodeData(node.attributes, context);
+      this.visitNodeData(node.options, context);
+      this.visitNodeData(node.events, context);
       context.dependencies.push(node.name);
    }
 
@@ -59,21 +59,8 @@ export class Annotator implements AstNodes.IAstVisitor<IAnnotatorContext, void> 
    }
 
    visitElement(node: AstNodes.ElementNode, context: IAnnotatorContext): void {
-      for (const name in node.attributes) {
-         if (node.attributes.hasOwnProperty(name)) {
-            node.attributes[name].accept(this, context);
-         }
-      }
-      for (const name in node.binds) {
-         if (node.binds.hasOwnProperty(name)) {
-            node.binds[name].accept(this, context);
-         }
-      }
-      for (const name in node.events) {
-         if (node.events.hasOwnProperty(name)) {
-            node.events[name].accept(this, context);
-         }
-      }
+      this.visitNodeData(node.attributes, context);
+      this.visitNodeData(node.events, context);
       node.content.map((node) => node.accept(this, context));
    }
 
@@ -105,26 +92,18 @@ export class Annotator implements AstNodes.IAstVisitor<IAnnotatorContext, void> 
       context.dictionary.push(context.module, node.text, node.context);
    }
 
+   visitContentOptionNode(node: AstNodes.ContentOptionNode, context: IAnnotatorContext): void {
+      this.visitAll(node.content, context);
+   }
+
    visitOptionNode(node: AstNodes.OptionNode, context: IAnnotatorContext): void {
       node.value.map((node) => node.accept(this, context));
    }
 
    visitPartial(node: AstNodes.PartialNode, context: IAnnotatorContext): void {
-      for (const name in node.attributes) {
-         if (node.attributes.hasOwnProperty(name)) {
-            node.attributes[name].accept(this, context);
-         }
-      }
-      for (const name in node.options) {
-         if (node.options.hasOwnProperty(name) && name !== 'content') {
-            node.options[name].accept(this, context);
-         }
-      }
-      for (const name in node.events) {
-         if (node.events.hasOwnProperty(name)) {
-            node.events[name].accept(this, context);
-         }
-      }
+      this.visitNodeData(node.attributes, context);
+      this.visitNodeData(node.options, context);
+      this.visitNodeData(node.events, context);
    }
 
    visitTemplate(node: AstNodes.TemplateNode, context: IAnnotatorContext): void {
@@ -135,9 +114,9 @@ export class Annotator implements AstNodes.IAstVisitor<IAnnotatorContext, void> 
       context.dictionary.push(context.module, node.content);
    }
 
-   annotate(ast: AstNodes.Ast[]): IAnnotatedData {
+   annotate(ast: AstNodes.Ast[], options: IOptions): IAnnotatedData {
       const context: IAnnotatorContext = {
-         module: 'unknown',
+         module: options.module,
          dictionary: new Dictionary(),
          dependencies: []
       };
