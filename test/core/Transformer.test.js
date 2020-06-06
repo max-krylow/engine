@@ -43,7 +43,7 @@ describe('engine/core/Transformer', () => {
          assert.strictEqual(actual, html);
       });
       it('CDATA', () => {
-         const html = '<![CDATA[hello]]>';
+         const html = '<![CDATA[data]]>';
          const actual = traverseAndStringify(html);
          assert.strictEqual(actual, html);
       });

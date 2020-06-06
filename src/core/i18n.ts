@@ -18,3 +18,24 @@ export function splitLocalizationText(text: string): { text: string, context: st
    };
 }
 
+export interface IDictionaryItem {
+   module: string;
+   text: string;
+   context: string;
+}
+
+export class Dictionary {
+   private items: IDictionaryItem[];
+
+   constructor() {
+      this.items = [];
+   }
+
+   push(module: string, text: string, context: string = EMPTY_STRING) {
+      this.items.push({
+         module,
+         text,
+         context
+      });
+   }
+}
