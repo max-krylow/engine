@@ -125,6 +125,9 @@ export class StringVisitor implements IExpressionVisitor<void, string> {
 
    public visitUnaryExpressionNode(node: UnaryExpressionNode, context: any): string {
       const argument = node.argument.accept(this, context);
+      if (['delete', 'typeof', 'void'].indexOf(node.operator) > -1) {
+         return `${node.operator} ${argument}`;
+      }
       return `${node.operator}${argument}`;
    }
 
