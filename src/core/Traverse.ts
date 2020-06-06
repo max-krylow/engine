@@ -3,9 +3,10 @@
 import { SourceFile } from '../html/base/SourceFile';
 import { SourceReader } from '../html/base/SourceReader';
 import { getTagNodeDescription, NodeDescription, INodeDescriptions } from '../html/NodeDescription';
-import { IParser, Parser, IOptions as IParserOptions } from '../html/Parser';
+import { Parser, IOptions as IParserOptions } from '../html/Parser';
 import { IErrorHandler } from '../utils/ErrorHandler';
-import { TransformVisitor, ITransformedResult, ITransformer } from "./Transform";
+import { TransformVisitor } from "./Transform";
+import { Ast } from "./Ast";
 
 export interface IOptions extends IParserOptions {
    filePath: string;
@@ -52,31 +53,15 @@ export function getNodeDescription(name: string): NodeDescription {
    return getTagNodeDescription(name);
 }
 
-export interface ITraversedResult extends ITransformedResult {
-   ast: any[];
-   filePath: string;
+export function traverse(html: string, options: IOptions, errorHandler: IErrorHandler): Ast[] {
+   const config = {
+      ...options,
+      nodeDescriptor: getNodeDescription
+   };
+   const htmlParser = new Parser(config, errorHandler);
+   const transformer = new TransformVisitor();
+   const reader = new SourceReader(new SourceFile(html, options.filePath));
+   const tree = htmlParser.parse(reader);
+   return transformer.transform(tree);
 }
 
-export class TraverseVisitor {
-   htmlParser: IParser;
-   transformer: ITransformer;
-
-   constructor(options: IOptions, errorHandler: IErrorHandler) {
-      const config = {
-         ...options,
-         nodeDescriptor: getNodeDescription
-      };
-      this.htmlParser = new Parser(config, errorHandler);
-      this.transformer = new TransformVisitor();
-   }
-
-   traverse(html: string, options: IOptions): ITraversedResult {
-      const reader = new SourceReader(new SourceFile(html, options.filePath));
-      const tree = this.htmlParser.parse(reader);
-      const traversed = this.transformer.transform(tree);
-      return {
-         ...traversed,
-         filePath: options.filePath
-      };
-   }
-}

@@ -2,12 +2,11 @@
 
 import * as AstNodes from "./Ast";
 import { Dictionary } from "./i18n";
-import { ITraversedResult } from "./Traverse";
 
 /**
  * Interface for result object of annotation.
  */
-interface IAnnotatedData extends ITraversedResult {
+interface IAnnotatedData {
    /**
     * Annotated abstract syntax tree.
     */
@@ -261,19 +260,19 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotatorContext, 
 
    /**
     *
-    * @param traversed {ITraversedResult}
+    * @param ast {Ast[]}
     * @param options
     */
-   annotate(traversed: ITraversedResult, options: IOptions): IAnnotatedData {
+   annotate(ast: AstNodes.Ast[], options: IOptions): IAnnotatedData {
       const context: IAnnotatorContext = {
          module: options.module,
          dictionary: new Dictionary(),
          dependencies: [],
          fileName: options.fileName
       };
-      this.visitAll(traversed.ast, context);
+      this.visitAll(ast, context);
       return {
-         ...traversed,
+         ast,
          dictionary: context.dictionary
       }
    }

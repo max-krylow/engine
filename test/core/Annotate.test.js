@@ -1,20 +1,17 @@
-const { TraverseVisitor } = require('engine/core/Traverse');
+const { traverse } = require('engine/core/Traverse');
 const { AnnotateVisitor } = require('engine/core/Annotate');
 const { ERROR_HANDLER } = require('../ErrorHandler');
 
 function traverseAndAnnotate(html) {
    const options = {
+      filePath: 'Annotate.wml',
+      module: 'Annotate',
       allowComments: true,
       allowCDATA: true
    };
-   const traverser = new TraverseVisitor(options, ERROR_HANDLER);
    const annotator = new AnnotateVisitor();
-   const traversed = traverser.traverse(html, {
-      filePath: 'Annotator.wml'
-   });
-   return annotator.annotate(traversed, {
-      module: 'Annotator'
-   });
+   const traversed = traverse(html, options, ERROR_HANDLER);
+   return annotator.annotate(traversed, options);
 }
 
 describe('engine/core/Annotate', () => {

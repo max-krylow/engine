@@ -9,11 +9,9 @@ const { getTagNodeDescription } = require('engine/html/NodeDescription');
 const { ERROR_HANDLER } = require('../ErrorHandler');
 const { MarkupVisitor } = require('engine/core/Ast');
 const { StringVisitor } = require("engine/expression/Parser");
-const { Scope } = require('engine/core/Scope');
 
 function traverseAndStringify(html) {
    const transformer = new TransformVisitor();
-   const scope = new Scope();
    const parser = new Parser({
       nodeDescriptor: getTagNodeDescription,
       allowComments: true,
@@ -21,9 +19,9 @@ function traverseAndStringify(html) {
    }, ERROR_HANDLER);
    let reader = new SourceReader(new SourceFile(html));
    const tree = parser.parse(reader);
-   const transformResult = transformer.transform(tree, scope);
+   const ast = transformer.transform(tree);
    const visitor = new MarkupVisitor(new StringVisitor());
-   return visitor.visitAll(transformResult.ast);
+   return visitor.visitAll(ast);
 }
 
 describe('engine/core/Transform', () => {
