@@ -3,28 +3,13 @@
 import * as RawNodes from "../html/base/Nodes";
 import * as AstNodes from "./Ast";
 import { IParser, Parser } from '../expression/Parser';
+import { processTextData } from "./TextProcessor";
 
 /**
  * @file src/core/Transformer.ts
  */
 
 const EMPTY_STRING = '';
-
-/**
- * Regular expression for finding variables/expression inside of AST
- */
-const VARIABLES_PATTERN = /\{\{ ?([\s\S]*?) ?\}\}/g;
-const LOCALIZATION_PATTERN = /\{\[ ?([\s\S]*?) ?\]\}/g;
-
-/**
- * Safe replacing
- */
-const SAFE_REPLACE_CASE_PATTERN = /\r|\n|\t|\/\*[\s\S]*?\*\//g;
-
-/**
- * Safe whitespaces replacing
- */
-const SAFE_WHITESPACE_REMOVE_PATTERN = / +(?= )/g;
 
 /**
  *
@@ -90,69 +75,6 @@ function isBind(name: string): boolean {
  */
 function getBindName(name: string): string {
    return name.replace(/^bind:/gi, EMPTY_STRING);
-}
-
-/**
- *
- */
-declare type TWrapper = (text: string) => AstNodes.TText;
-
-/**
- *
- * @param nodes
- * @param regex
- * @param targetWrapper
- * @param defaultWrapper
- */
-function markDataByRegex(
-   nodes: AstNodes.TText[],
-   regex: RegExp,
-   targetWrapper: TWrapper,
-   defaultWrapper: TWrapper
-): AstNodes.TText[] {
-   let item;
-   let value;
-   let last;
-   const data = [];
-   for (let idx = 0; idx < nodes.length; ++idx) {
-      if (!(nodes[idx] instanceof AstNodes.TextNode)) {
-         data.push(nodes[idx]);
-         continue;
-      }
-
-      const stringData = (nodes[idx] as AstNodes.TextNode).content;
-
-      regex.lastIndex = 0;
-      last = 0;
-      while ((item = regex.exec(stringData))) {
-         if (last < item.index) {
-            value = stringData.slice(last, item.index);
-            data.push(defaultWrapper(value));
-         }
-         data.push(targetWrapper(item[1]));
-         last = item.index + item[0].length;
-      }
-
-      if (last === 0) {
-         data.push(nodes[idx]);
-      } else if (last < stringData.length) {
-         value = stringData.slice(last);
-         data.push(defaultWrapper(value));
-      }
-   }
-   return data;
-}
-
-/**
- *
- * @param text
- */
-function splitLocalizationText(text: string): { text: string, context: string } {
-   const pair = text.split('@@');
-   return {
-      text: pair.pop() || EMPTY_STRING,
-      context: pair.pop() || EMPTY_STRING
-   };
 }
 
 /**
@@ -306,39 +228,7 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
       if (value.length === 0) {
          return undefined;
       }
-      return this.processTextData(value);
-   }
-
-   /**
-    *
-    * @param text
-    */
-   processTextData(text: string): AstNodes.TText[] {
-      SAFE_REPLACE_CASE_PATTERN.lastIndex = 0;
-      SAFE_WHITESPACE_REMOVE_PATTERN.lastIndex = 0;
-
-      const originText = text
-         .replace(SAFE_REPLACE_CASE_PATTERN, ' ')
-         .replace(SAFE_WHITESPACE_REMOVE_PATTERN, EMPTY_STRING);
-
-      const processedText = [new AstNodes.TextNode(originText)];
-
-      const processedExpressions = markDataByRegex(
-         processedText,
-         VARIABLES_PATTERN,
-         (data: string) => new AstNodes.ExpressionNode(this.expressionParser.parse(data)),
-         (data: string) => new AstNodes.TextNode(data)
-      );
-
-      return markDataByRegex(
-         processedExpressions,
-         LOCALIZATION_PATTERN,
-         (data: string) => {
-            const { text, context } = splitLocalizationText(data);
-            return new AstNodes.LocalizationNode(text, context);
-         },
-         (data: string) => new AstNodes.TextNode(data)
-      );
+      return processTextData(value, this.expressionParser);
    }
 
    /**
@@ -433,10 +323,10 @@ export class TransformVisitor implements RawNodes.IVisitor<any, AstNodes.Ast> {
             } else if (isAttribute(attributeName) || hasAttributesOnly) {
                const attribute = getAttributeName(attributeName);
                const value = node.attributes[attributeName].value as string;
-               const processedValue = this.processTextData(value);
+               const processedValue = processTextData(value, this.expressionParser);
                collection.attributes[attribute] = new AstNodes.AttributeNode(attribute, processedValue);
             } else {
-               const processedValue = this.processTextData(value);
+               const processedValue = processTextData(value, this.expressionParser);
                collection.options[attributeName] = new AstNodes.OptionNode(attributeName, processedValue);
             }
          }
