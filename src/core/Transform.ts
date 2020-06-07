@@ -223,8 +223,9 @@ export class TransformVisitor implements RawNodes.IVisitor<void, AstNodes.Ast[]>
     */
    createForNode(node: RawNodes.Tag): AstNodes.ForNode[] {
       const dataNode = getDataNode(node, 'data');
-      const data = this.expressionParser.parse(dataNode);
-      const ast = new AstNodes.ForNode(data);
+      const expression = this.expressionParser.parse(dataNode);
+      const { init, test, update } = AstNodes.ForNode.parseExpression(expression);
+      const ast = new AstNodes.ForNode(init, test, update);
       const content = this.visitAll(node.children);
       ast.content = AstNodes.validateContent(content);
       return [ast];
@@ -236,8 +237,9 @@ export class TransformVisitor implements RawNodes.IVisitor<void, AstNodes.Ast[]>
     */
    createForeachNode(node: RawNodes.Tag): AstNodes.ForeachNode[] {
       const dataNode = getDataNode(node, 'data');
-      const data = this.expressionParser.parse(dataNode);
-      const ast = new AstNodes.ForeachNode(data);
+      const expression = this.expressionParser.parse(dataNode);
+      const { index, iterator, collection } = AstNodes.ForeachNode.parseExpression(expression);
+      const ast = new AstNodes.ForeachNode(index, iterator, collection);
       const content = this.visitAll(node.children);
       ast.content = AstNodes.validateContent(content);
       return [ast];

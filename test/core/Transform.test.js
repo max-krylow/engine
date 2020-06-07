@@ -52,7 +52,7 @@ describe('engine/core/Transform', () => {
          assert.strictEqual(actual, html);
       });
       it('Element', () => {
-         const html = '<div class="text" bind:value="_value;" on:click="handler(arg);"></div>';
+         const html = '<div class="text" bind:value="_value" on:click="handler(arg)"></div>';
          const actual = traverseAndStringify(html);
          assert.strictEqual(actual, html);
       });
@@ -69,47 +69,47 @@ describe('engine/core/Transform', () => {
          assert.strictEqual(actual, html);
       });
       it('Expression', () => {
-         const html = '{{item.get("data");}}';
+         const html = '{{item.get("data")}}';
          const actual = traverseAndStringify(html);
          assert.strictEqual(actual, html);
       });
       it('Mixed text', () => {
-         const html = '{{a1;}} | a2 | {[a3]}';
+         const html = '{{a1}} | a2 | {[a3]}';
          const actual = traverseAndStringify(html);
          assert.strictEqual(actual, html);
       });
       it('ws:for', () => {
-         const html = '<ws:for data="i = 0;i < 10;i++;">{{2 * i + 1;}}</ws:for>';
+         const html = '<ws:for data="i = 0; i < 10; i++">{{2 * i + 1}}</ws:for>';
          const actual = traverseAndStringify(html);
          assert.strictEqual(actual, html);
       });
       it('ws:foreach 1', () => {
-         const html = '<ws:foreach data="item in collection;">{{item.get("data");}}</ws:foreach>';
+         const html = '<ws:foreach data="item in collection">{{item.get("data")}}</ws:foreach>';
          const actual = traverseAndStringify(html);
          assert.strictEqual(actual, html);
       });
       it('ws:foreach 2', () => {
-         const html = '<ws:foreach data="index,item in collection;">{{index;}} - {{item.get("data");}}</ws:foreach>';
+         const html = '<ws:foreach data="index, item in collection">{{index}} - {{item.get("data")}}</ws:foreach>';
          const actual = traverseAndStringify(html);
          assert.strictEqual(actual, html);
       });
       it('ws:if', () => {
-         const html = '<ws:if data="condition;">First</ws:if>';
+         const html = '<ws:if data="condition">First</ws:if>';
          const actual = traverseAndStringify(html);
          assert.strictEqual(actual, html);
       });
       it('ws:else 1', () => {
-         const html = '<ws:if data="condition;">First</ws:if><ws:else>Second</ws:else>';
+         const html = '<ws:if data="condition">First</ws:if><ws:else>Second</ws:else>';
          const actual = traverseAndStringify(html);
          assert.strictEqual(actual, html);
       });
       it('ws:else 2', () => {
-         const html = '<ws:if data="condition;">First</ws:if><ws:else data="other;">Second</ws:else>';
+         const html = '<ws:if data="condition">First</ws:if><ws:else data="other">Second</ws:else>';
          const actual = traverseAndStringify(html);
          assert.strictEqual(actual, html);
       });
       it('ws:else 3', () => {
-         const html = '<ws:if data="condition;">First</ws:if><ws:else data="other;">Second</ws:else><ws:else>Third</ws:else>';
+         const html = '<ws:if data="condition">First</ws:if><ws:else data="other">Second</ws:else><ws:else>Third</ws:else>';
          const actual = traverseAndStringify(html);
          assert.strictEqual(actual, html);
       });
@@ -119,12 +119,12 @@ describe('engine/core/Transform', () => {
          assert.strictEqual(actual, html);
       });
       it('ws:partial', () => {
-         const html = '<ws:template name="tmpl"><div>Hello</div></ws:template><ws:partial template="tmpl" attr:class="className" on:click="handler(arg);" text="string" bind:value="_value;"><div>Hello</div></ws:partial>';
+         const html = '<ws:template name="tmpl"><div>Hello</div></ws:template><ws:partial template="tmpl" attr:class="className" on:click="handler(arg)" text="string" bind:value="_value"><div>Hello</div></ws:partial>';
          const actual = traverseAndStringify(html);
          assert.strictEqual(actual, html);
       });
       it('Component', () => {
-         const html = '<User.Component attr:class="className" on:click="handler(arg);" text="string" bind:value="_value;"><div>Hello</div></User.Component>';
+         const html = '<User.Component attr:class="className" on:click="handler(arg)" text="string" bind:value="_value"><div>Hello</div></User.Component>';
          const actual = traverseAndStringify(html);
          assert.strictEqual(actual, html);
       });
@@ -132,7 +132,7 @@ describe('engine/core/Transform', () => {
    describe('Stress', () => {
       it('ws:if unexpected attribute', () => {
          try {
-            const html = '<ws:if data="condition;" value="123">Hello</ws:if>';
+            const html = '<ws:if data="condition" value="123">Hello</ws:if>';
             traverseAndStringify(html);
          } catch (error) {
             assert.strictEqual(error.message, 'Unexpected attribute "value" on tag "ws:if". Ignore this attribute');
@@ -164,7 +164,7 @@ describe('engine/core/Transform', () => {
       });
       it('ws:else expected ws:else has data', () => {
          try {
-            const html = '<ws:if data="condition;">First</ws:if><ws:else>Second</ws:else><ws:else>Third</ws:else>';
+            const html = '<ws:if data="condition">First</ws:if><ws:else>Second</ws:else><ws:else>Third</ws:else>';
             traverseAndStringify(html);
          } catch (error) {
             assert.strictEqual(error.message, 'Unexpected tag "ws:else" before tag "ws:else" without attribute "data". Ignore this tag');
@@ -172,7 +172,7 @@ describe('engine/core/Transform', () => {
       });
       it('ws:else expected attribute', () => {
          try {
-            const html = '<ws:if data="condition;">First</ws:if><ws:else data>Second</ws:else>';
+            const html = '<ws:if data="condition">First</ws:if><ws:else data>Second</ws:else>';
             traverseAndStringify(html);
          } catch (error) {
             assert.strictEqual(error.message, 'Expected attribute "data" on tag "ws:else" has value. Ignore this tag');
@@ -204,7 +204,7 @@ describe('engine/core/Transform', () => {
       });
       it('ws:partial must be declared', () => {
          try {
-            const html = '<ws:partial template="tmpl" attr:class="className" on:click="handler(arg);" text="string" bind:value="_value;"><div>Hello</div></ws:partial>';
+            const html = '<ws:partial template="tmpl" attr:class="className" on:click="handler(arg)" text="string" bind:value="_value"><div>Hello</div></ws:partial>';
             traverseAndStringify(html);
          } catch (error) {
             assert.strictEqual(error.message, 'Template with name "tmpl" has not been declared in this scope');

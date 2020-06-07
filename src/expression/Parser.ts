@@ -56,7 +56,7 @@ export class StringVisitor implements IExpressionVisitor<void, string> {
    }
 
    public visitExpressionStatementNode(node: ExpressionStatementNode, context: any): string {
-      return node.expression.accept(this, context) + ";";
+      return node.expression.accept(this, context);
    }
 
    public visitVariableDeclarationNode(node: VariableDeclarationNode, context: any): string {
@@ -72,7 +72,7 @@ export class StringVisitor implements IExpressionVisitor<void, string> {
    }
 
    public visitVariableDeclaratorNode(node: VariableDeclaratorNode, context: any): string {
-      let str = node.id.accept(this, context) as string;
+      let str = node.id.accept(this, context);
       let init = node.init;
       if (init !== null) {
          str += " = " + init.accept(this, context);
@@ -210,16 +210,16 @@ export abstract class Node {
       this.type = type;
       this.loc = loc;
    }
-   abstract accept(visitor: IExpressionVisitor<unknown, unknown>, context: unknown): unknown;
+   abstract accept(visitor: IExpressionVisitor<any, any>, context: any): any;
 }
 
 export class ProgramNode extends Node {
-   public body: Node[];
-   constructor(body: Node[], loc: SourceLocation) {
+   public body: ExpressionStatementNode[];
+   constructor(body: ExpressionStatementNode[], loc: SourceLocation) {
       super("Program", loc);
       this.body = body;
    }
-   public accept(visitor: IExpressionVisitor<unknown, unknown>, context: unknown): unknown {
+   public accept(visitor: IExpressionVisitor<any, any>, context: any): any {
       return visitor.visitProgramNode(this, context);
    }
 }
@@ -228,7 +228,7 @@ export class EmptyStatementNode extends Node {
    constructor(loc: SourceLocation) {
       super("EmptyStatement", loc);
    }
-   public accept(visitor: IExpressionVisitor<unknown, unknown>, context: unknown): unknown {
+   public accept(visitor: IExpressionVisitor<any, any>, context: any): any {
       return visitor.visitEmptyStatementNode(this, context);
    }
 }
@@ -239,7 +239,7 @@ export class ExpressionStatementNode extends Node {
       super("ExpressionStatement", loc);
       this.expression = expression;
    }
-   public accept(visitor: IExpressionVisitor<unknown, unknown>, context: unknown): unknown {
+   public accept(visitor: IExpressionVisitor<any, any>, context: any): any {
       return visitor.visitExpressionStatementNode(this, context);
    }
 }
@@ -252,7 +252,7 @@ export class VariableDeclarationNode extends Node {
       this.declarations = declarations;
       this.kind = kind;
    }
-   public accept(visitor: IExpressionVisitor<unknown, unknown>, context: unknown): unknown {
+   public accept(visitor: IExpressionVisitor<any, any>, context: any): any {
       return visitor.visitVariableDeclarationNode(this, context);
    }
 }
@@ -265,7 +265,7 @@ export class VariableDeclaratorNode extends Node {
       this.id = id;
       this.init = init;
    }
-   public accept(visitor: IExpressionVisitor<unknown, unknown>, context: unknown): unknown {
+   public accept(visitor: IExpressionVisitor<any, any>, context: any): any {
       return visitor.visitVariableDeclaratorNode(this, context);
    }
 }
@@ -274,7 +274,7 @@ export class ThisExpressionNode extends Node {
    constructor(discriminant: Node, cases: Node[], loc: SourceLocation) {
       super("ThisExpression", loc);
    }
-   public accept(visitor: IExpressionVisitor<unknown, unknown>, context: unknown): unknown {
+   public accept(visitor: IExpressionVisitor<any, any>, context: any): any {
       return visitor.visitThisExpressionNode(this, context);
    }
 }
@@ -285,7 +285,7 @@ export class ArrayExpressionNode extends Node {
       super("ArrayExpression", loc);
       this.elements = elements;
    }
-   public accept(visitor: IExpressionVisitor<unknown, unknown>, context: unknown): unknown {
+   public accept(visitor: IExpressionVisitor<any, any>, context: any): any {
       return visitor.visitArrayExpressionNode(this, context);
    }
 }
@@ -301,7 +301,7 @@ export class ObjectExpressionNode extends Node {
       super("ObjectExpression", loc);
       this.properties = properties;
    }
-   public accept(visitor: IExpressionVisitor<unknown, unknown>, context: unknown): unknown {
+   public accept(visitor: IExpressionVisitor<any, any>, context: any): any {
       return visitor.visitObjectExpressionNode(this, context);
    }
 }
@@ -312,7 +312,7 @@ export class SequenceExpressionNode extends Node {
       super("SequenceExpression", loc);
       this.expressions = expressions;
    }
-   public accept(visitor: IExpressionVisitor<unknown, unknown>, context: unknown): unknown {
+   public accept(visitor: IExpressionVisitor<any, any>, context: any): any {
       return visitor.visitSequenceExpressionNode(this, context);
    }
 }
@@ -328,7 +328,7 @@ export class UnaryExpressionNode extends Node {
       this.argument = argument;
       this.loc = loc;
    }
-   public accept(visitor: IExpressionVisitor<unknown, unknown>, context: unknown): unknown {
+   public accept(visitor: IExpressionVisitor<any, any>, context: any): any {
       return visitor.visitUnaryExpressionNode(this, context);
    }
 }
@@ -343,7 +343,7 @@ export class BinaryExpressionNode extends Node {
       this.left = left;
       this.right = right;
    }
-   public accept(visitor: IExpressionVisitor<unknown, unknown>, context: unknown): unknown {
+   public accept(visitor: IExpressionVisitor<any, any>, context: any): any {
       return visitor.visitBinaryExpressionNode(this, context);
    }
 }
@@ -358,7 +358,7 @@ export class AssignmentExpressionNode extends Node {
       this.left = left;
       this.right = right;
    }
-   public accept(visitor: IExpressionVisitor<unknown, unknown>, context: unknown): unknown {
+   public accept(visitor: IExpressionVisitor<any, any>, context: any): any {
       return visitor.visitAssignmentExpressionNode(this, context);
    }
 }
@@ -373,7 +373,7 @@ export class UpdateExpressionNode extends Node {
       this.argument = argument;
       this.prefix = prefix;
    }
-   public accept(visitor: IExpressionVisitor<unknown, unknown>, context: unknown): unknown {
+   public accept(visitor: IExpressionVisitor<any, any>, context: any): any {
       return visitor.visitUpdateExpressionNode(this, context);
    }
 }
@@ -388,7 +388,7 @@ export class LogicalExpressionNode extends Node {
       this.left = left;
       this.right = right;
    }
-   public accept(visitor: IExpressionVisitor<unknown, unknown>, context: unknown): unknown {
+   public accept(visitor: IExpressionVisitor<any, any>, context: any): any {
       return visitor.visitLogicalExpressionNode(this, context);
    }
 }
@@ -403,7 +403,7 @@ export class ConditionalExpressionNode extends Node {
       this.consequent = consequent;
       this.alternate = alternate;
    }
-   public accept(visitor: IExpressionVisitor<unknown, unknown>, context: unknown): unknown {
+   public accept(visitor: IExpressionVisitor<any, any>, context: any): any {
       return visitor.visitConditionalExpressionNode(this, context);
    }
 }
@@ -416,7 +416,7 @@ export class NewExpressionNode extends Node {
       this.callee = callee;
       this.arguments = args;
    }
-   public accept(visitor: IExpressionVisitor<unknown, unknown>, context: unknown): unknown {
+   public accept(visitor: IExpressionVisitor<any, any>, context: any): any {
       return visitor.visitNewExpressionNode(this, context);
    }
 }
@@ -429,7 +429,7 @@ export class CallExpressionNode extends Node {
       this.callee = callee;
       this.arguments = args;
    }
-   public accept(visitor: IExpressionVisitor<unknown, unknown>, context: unknown): unknown {
+   public accept(visitor: IExpressionVisitor<any, any>, context: any): any {
       return visitor.visitCallExpressionNode(this, context);
    }
 }
@@ -444,7 +444,7 @@ export class MemberExpressionNode extends Node {
       this.property = property;
       this.computed = computed;
    }
-   public accept(visitor: IExpressionVisitor<unknown, unknown>, context: unknown): unknown {
+   public accept(visitor: IExpressionVisitor<any, any>, context: any): any {
       return visitor.visitMemberExpressionNode(this, context);
    }
 }
@@ -455,7 +455,7 @@ export class IdentifierNode extends Node {
       super("Identifier", loc);
       this.name = name;
    }
-   public accept(visitor: IExpressionVisitor<unknown, unknown>, context: unknown): unknown {
+   public accept(visitor: IExpressionVisitor<any, any>, context: any): any {
       return visitor.visitIdentifierNode(this, context);
    }
 }
@@ -466,7 +466,7 @@ export class LiteralNode extends Node {
       super("Literal", loc);
       this.value = value;
    }
-   public accept(visitor: IExpressionVisitor<unknown, unknown>, context: unknown): unknown {
+   public accept(visitor: IExpressionVisitor<any, any>, context: any): any {
       return visitor.visitLiteralNode(this, context);
    }
 }

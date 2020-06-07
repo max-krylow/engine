@@ -1,6 +1,12 @@
 /// <amd-module name="engine/core/Ast" />
 
-import { ProgramNode } from '../expression/Parser';
+import {
+   BinaryExpressionNode,
+   ExpressionStatementNode,
+   IdentifierNode,
+   ProgramNode,
+   SequenceExpressionNode
+} from '../expression/Parser';
 import { IExpressionVisitor } from "../expression/Parser";
 
 /**
@@ -683,9 +689,17 @@ export class ElseNode extends Ast {
  */
 export class ForNode extends Ast {
    /**
-    * Cycle expression aka 'init; test; update'.
+    * Initialize expression.
     */
-   expression: ProgramNode;
+   init: ProgramNode | undefined;
+   /**
+    * Test expression.
+    */
+   test: ProgramNode | undefined;
+   /**
+    * Update expression.
+    */
+   update: ProgramNode | undefined;
    /**
     * Content nodes.
     */
@@ -693,15 +707,48 @@ export class ForNode extends Ast {
 
    /**
     * Initialize new instance of abstract syntax node.
-    * @param expression {ProgramNode} Initialize expression.
+    * @param init {ProgramNode | undefined} Initialize expression.
+    * @param test {ProgramNode | undefined} Test expression.
+    * @param update {ProgramNode | undefined} Update expression.
     */
-   constructor(expression: ProgramNode) {
+   constructor(init: ProgramNode | undefined, test: ProgramNode | undefined, update: ProgramNode | undefined) {
       super();
-      this.expression = expression;
+      this.init = init;
+      this.test = test;
+      this.update = update;
    }
 
    accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitFor(this, context);
+   }
+
+   static parseExpression(expression: ProgramNode): {
+      init: ProgramNode;
+      test: ProgramNode;
+      update: ProgramNode;
+   } {
+      let init = undefined;
+      let test = undefined;
+      let update = undefined;
+      if (expression.body.length === 3) {
+         if (expression.body[1] instanceof ExpressionStatementNode) {
+            init = new ProgramNode([
+               expression.body[0]
+            ], expression.body[0].loc);
+            test = new ProgramNode([
+               expression.body[1]
+            ], expression.body[1].loc);
+            update = new ProgramNode([
+               expression.body[2]
+            ], expression.body[2].loc);
+            return {
+               init,
+               test,
+               update
+            };
+         }
+      }
+      throw new Error(`Expected expression satisfying schema "[init]; test; [update]"`);
    }
 }
 
@@ -709,16 +756,24 @@ export class ForNode extends Ast {
  * Represents node for ws:for.
  *
  * ```
- *    <ws:foreach data="index, iterator in collection">
+ *    <ws:foreach data="[index, ] iterator in collection">
  *       content
  *    </ws:foreach>
  * ```
  */
 export class ForeachNode extends Ast {
    /**
-    * Cycle expression aka '[index, ] item in collection'.
+    * Expression for iterator indexer.
     */
-   expression: ProgramNode;
+   index: ProgramNode | undefined;
+   /**
+    * Iterator expression.
+    */
+   iterator: ProgramNode;
+   /**
+    * Collection expression.
+    */
+   collection: ProgramNode;
    /**
     * Content nodes.
     */
@@ -726,15 +781,95 @@ export class ForeachNode extends Ast {
 
    /**
     * Initialize new instance of abstract syntax node.
-    * @param expression {ProgramNode} Cycle expression aka '[index, ] item in collection'.
+    * @param index {ProgramNode | undefined} Expression for iterator indexer.
+    * @param iterator {ProgramNode} Iterator expression.
+    * @param collection {ProgramNode} Collection expression.
     */
-   constructor(expression: ProgramNode) {
+   constructor(index: ProgramNode | undefined, iterator: ProgramNode, collection: ProgramNode) {
       super();
-      this.expression = expression;
+      this.index = index;
+      this.iterator = iterator;
+      this.collection = collection;
    }
 
    accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitForeach(this, context);
+   }
+
+   static parseExpression(expression: ProgramNode): {
+      index: ProgramNode | undefined;
+      iterator: ProgramNode;
+      collection: ProgramNode;
+   } {
+      let index = undefined;
+      let iterator = undefined;
+      let collection = undefined;
+      if (expression.body.length === 1) {
+         const binaryNode = expression.body[0].expression;
+         if (binaryNode instanceof BinaryExpressionNode) {
+            // aka "iterator in collection"
+            if (binaryNode.operator === 'in') {
+               if (binaryNode.left instanceof IdentifierNode) {
+                  iterator = new ProgramNode([
+                     new ExpressionStatementNode(
+                        binaryNode.left,
+                        binaryNode.left.loc
+                     )
+                  ], binaryNode.left.loc);
+                  collection = new ProgramNode([
+                     new ExpressionStatementNode(
+                        binaryNode.right,
+                        binaryNode.right.loc
+                     )
+                  ], binaryNode.loc);
+                  return {
+                     index,
+                     iterator,
+                     collection
+                  };
+               }
+            }
+         } else if (expression.body[0].expression instanceof SequenceExpressionNode) {
+            // aka "index, iterator in collection"
+            if (expression.body[0].expression.expressions.length === 2) {
+               const identifierNode = expression.body[0].expression.expressions[0];
+               if (identifierNode instanceof IdentifierNode) {
+                  const binaryNode = expression.body[0].expression.expressions[1];
+                  if (binaryNode instanceof BinaryExpressionNode) {
+                     if (binaryNode.operator === 'in') {
+                        if (binaryNode.left instanceof IdentifierNode) {
+                           index = new ProgramNode([
+                              new ExpressionStatementNode(
+                                 identifierNode,
+                                 identifierNode.loc
+                              )
+                           ], identifierNode.loc);
+                           iterator = new ProgramNode([
+                              new ExpressionStatementNode(
+                                 binaryNode.left,
+                                 binaryNode.left.loc
+                              )
+                           ], binaryNode.left.loc);
+                           collection = new ProgramNode([
+                              new ExpressionStatementNode(
+                                 binaryNode.right,
+                                 binaryNode.right.loc
+                              )
+                           ], binaryNode.right.loc);
+                           return {
+                              index,
+                              iterator,
+                              collection
+                           };
+                        }
+                     }
+
+                  }
+               }
+            }
+         }
+      }
+      throw new Error(`Expected expression satisfying schema "[Identifier, ] Identifier in Expression"`);
    }
 }
 
@@ -1120,9 +1255,20 @@ export class MarkupVisitor implements IAstVisitor<IAstVisitorContext, string> {
     * @param context {IAstVisitorContext} Current visiting context.
     */
    visitFor(node: ForNode, context: IAstVisitorContext): string {
-      const data = node.expression.accept(this.expressionVisitor, context);
+      let dataValue = '';
+      if (node.init) {
+         dataValue += node.init.accept(this.expressionVisitor, context);
+      }
+      dataValue += '; ';
+      if (node.test) {
+         dataValue += node.test.accept(this.expressionVisitor, context);
+      }
+      dataValue += '; ';
+      if (node.update) {
+         dataValue += node.update.accept(this.expressionVisitor, context);
+      }
       const content = this.visitAll(node.content, context);
-      return `<ws:for data="${data}">${content}</ws:for>`;
+      return `<ws:for data="${dataValue}">${content}</ws:for>`;
    }
 
    /**
@@ -1131,9 +1277,16 @@ export class MarkupVisitor implements IAstVisitor<IAstVisitorContext, string> {
     * @param context {IAstVisitorContext} Current visiting context.
     */
    visitForeach(node: ForeachNode, context: IAstVisitorContext): string {
-      const data = node.expression.accept(this.expressionVisitor, context);
+      let dataValue = '';
+      if (node.index) {
+         dataValue += node.index.accept(this.expressionVisitor, context);
+         dataValue += ', ';
+      }
+      dataValue += node.iterator.accept(this.expressionVisitor, context);
+      dataValue += ' in ';
+      dataValue += node.collection.accept(this.expressionVisitor, context);
       const content = this.visitAll(node.content, context);
-      return `<ws:foreach data="${data}">${content}</ws:foreach>`;
+      return `<ws:foreach data="${dataValue}">${content}</ws:foreach>`;
    }
 
    /**

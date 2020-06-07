@@ -17,213 +17,213 @@ describe('engine/expression/Parser', () => {
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('Boolean literal', () => {
-         const expression = 'true;';
+         const expression = 'true';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('Boolean literal 2', () => {
-         const expression = 'false;';
+         const expression = 'false';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('Number literal - Integer notation', () => {
-         const expression = '-123;';
+         const expression = '-123';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('Number literal - Real notation', () => {
-         const expression = '-1.23;';
+         const expression = '-1.23';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('Number literal - Exponent notation', () => {
-         const expression = '-1e3;';
+         const expression = '-1e3';
          const actual = parseAndStringify(expression);
-         const standard = '-1000;';
+         const standard = '-1000';
          assert.strictEqual(actual, standard);
       });
       it('Number literal - Octal notation', () => {
-         const expression = '064316461;';
+         const expression = '064316461';
          const actual = parseAndStringify(expression);
-         const standard = '13737265;';
+         const standard = '13737265';
          assert.strictEqual(actual, standard);
       });
       it('Number literal - Hexadecimal notation', () => {
-         const expression = '0x58a7b4c;';
+         const expression = '0x58a7b4c';
          const actual = parseAndStringify(expression);
-         const standard = '92961612;';
+         const standard = '92961612';
          assert.strictEqual(actual, standard);
       });
       it('String literal', () => {
-         const expression = '"string";';
+         const expression = '"string"';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('Array literal', () => {
-         const expression = '[1,2,3];';
+         const expression = '[1,2,3]';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('Object literal', () => {
-         const expression = '{a:1,b:true,c:[]};';
+         const expression = '{a:1,b:true,c:[]}';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('Identifier', () => {
-         const expression = 'identifier;';
+         const expression = 'identifier';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('MemberExpression', () => {
-         const expression = 'tree.node.leaf;';
+         const expression = 'tree.node.leaf';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('MemberExpression Program', () => {
-         const expression = 'tree[node].leaf;';
+         const expression = 'tree[node].leaf';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('CallExpression', () => {
-         const expression = 'func(arg);';
+         const expression = 'func(arg)';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('CallExpression 2', () => {
-         const expression = 'func(arg1,arg2,arg3);';
+         const expression = 'func(arg1,arg2,arg3)';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('ConditionalExpression', () => {
-         const expression = 'condition?true:false;';
+         const expression = 'condition?true:false';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('LogicalExpression', () => {
-         const expression = 'first&&second;';
+         const expression = 'first&&second';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('LogicalExpression 2', () => {
-         const expression = 'first||second;';
+         const expression = 'first||second';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('UpdateExpression postfix 1', () => {
-         const expression = 'identifier++;';
+         const expression = 'identifier++';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('UpdateExpression prefix 1', () => {
-         const expression = '++identifier;';
+         const expression = '++identifier';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('UpdateExpression postfix 2', () => {
-         const expression = 'identifier--;';
+         const expression = 'identifier--';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('UpdateExpression prefix 2', () => {
-         const expression = '--identifier;';
+         const expression = '--identifier';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('BinaryExpression 1', () => {
-         const expression = 'first & second;';
+         const expression = 'first & second';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('BinaryExpression 2', () => {
-         const expression = 'first | second;';
+         const expression = 'first | second';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('BinaryExpression 3', () => {
-         const expression = 'first ^ second;';
+         const expression = 'first ^ second';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('BinaryExpression 4', () => {
-         const expression = 'first == second;';
+         const expression = 'first == second';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('BinaryExpression 5', () => {
-         const expression = 'first === second;';
+         const expression = 'first === second';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('BinaryExpression 6', () => {
-         const expression = 'first != second;';
+         const expression = 'first != second';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('BinaryExpression 7', () => {
-         const expression = 'first !== second;';
+         const expression = 'first !== second';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('BinaryExpression 8', () => {
-         const expression = 'first > second;';
+         const expression = 'first > second';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('BinaryExpression 9', () => {
-         const expression = 'first < second;';
+         const expression = 'first < second';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('BinaryExpression 10', () => {
-         const expression = 'first >= second;';
+         const expression = 'first >= second';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('BinaryExpression 11', () => {
-         const expression = 'first <= second;';
+         const expression = 'first <= second';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('BinaryExpression 12', () => {
-         const expression = 'first << second;';
+         const expression = 'first << second';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('BinaryExpression 13', () => {
-         const expression = 'first >> second;';
+         const expression = 'first >> second';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('BinaryExpression 14', () => {
-         const expression = 'first >>> second;';
+         const expression = 'first >>> second';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('BinaryExpression 15', () => {
-         const expression = 'first + second;';
+         const expression = 'first + second';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('BinaryExpression 16', () => {
-         const expression = 'first - second;';
+         const expression = 'first - second';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('BinaryExpression 17', () => {
-         const expression = 'first * second;';
+         const expression = 'first * second';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('BinaryExpression 18', () => {
-         const expression = 'first / second;';
+         const expression = 'first / second';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('BinaryExpression 19', () => {
-         const expression = 'first % second;';
+         const expression = 'first % second';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('BinaryExpression 20', () => {
-         const expression = 'index,item in collection;';
+         const expression = 'index,item in collection';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('UnaryExpression 1', () => {
-         const expression = '-identifier;';
+         const expression = '-identifier';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('UnaryExpression 2', () => {
-         const expression = '+identifier;';
+         const expression = '+identifier';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('UnaryExpression 3', () => {
-         const expression = 'delete identifier["property"];';
+         const expression = 'delete identifier["property"]';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('UnaryExpression 4', () => {
-         const expression = 'typeof identifier;';
+         const expression = 'typeof identifier';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('UnaryExpression 5', () => {
-         const expression = 'void 0;';
+         const expression = 'void 0';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('UnaryExpression 6', () => {
-         const expression = '!identifier;';
+         const expression = '!identifier';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('UnaryExpression 7', () => {
-         const expression = '~identifier;';
+         const expression = '~identifier';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('SequenceExpression', () => {
-         const expression = 'a,b,c,d,e,f;';
+         const expression = 'a,b,c,d,e,f';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('ObjectExpression', () => {
-         const expression = 'var object = {property:value};';
+         const expression = 'var object = {property:value}';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('ArrayExpression', () => {
@@ -231,79 +231,79 @@ describe('engine/expression/Parser', () => {
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('ThisExpression', () => {
-         const expression = 'this.update();';
+         const expression = 'this.update()';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('AssignmentExpression', () => {
-         const expression = 'identifier = value;';
+         const expression = 'identifier = value';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('AssignmentExpression 2', () => {
-         const expression = 'object[property] = item.value;';
+         const expression = 'object[property] = item.value';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('AssignmentExpression 3', () => {
-         const expression = 'identifier += value;';
+         const expression = 'identifier += value';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('AssignmentExpression 4', () => {
-         const expression = 'identifier -= value;';
+         const expression = 'identifier -= value';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('AssignmentExpression 5', () => {
-         const expression = 'identifier *= value;';
+         const expression = 'identifier *= value';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('AssignmentExpression 6', () => {
-         const expression = 'identifier /= value;';
+         const expression = 'identifier /= value';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('AssignmentExpression 7', () => {
-         const expression = 'identifier %= value;';
+         const expression = 'identifier %= value';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('AssignmentExpression 8', () => {
-         const expression = 'identifier &= value;';
+         const expression = 'identifier &= value';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('AssignmentExpression 9', () => {
-         const expression = 'identifier |= value;';
+         const expression = 'identifier |= value';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('AssignmentExpression 10', () => {
-         const expression = 'identifier ^= value;';
+         const expression = 'identifier ^= value';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('AssignmentExpression 11', () => {
-         const expression = 'identifier <<= value;';
+         const expression = 'identifier <<= value';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('AssignmentExpression 12', () => {
-         const expression = 'identifier >>= value;';
+         const expression = 'identifier >>= value';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('AssignmentExpression 13', () => {
-         const expression = 'identifier >>>= value;';
+         const expression = 'identifier >>>= value';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('VariableDeclaration', () => {
-         const expression = 'var a = 1,b = true,c = "string";';
+         const expression = 'var a = 1,b = true,c = "string"';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('VariableDeclaration', () => {
-         const expression = 'var a,b,c;';
+         const expression = 'var a,b,c';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('NewExpression', () => {
-         const expression = 'item = new Class();';
+         const expression = 'item = new Class()';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('NewExpression 2', () => {
-         const expression = 'new Class();';
+         const expression = 'new Class()';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('NewExpression with arguments', () => {
-         const expression = 'item = new Class(arg1,arg2,arg3);';
+         const expression = 'item = new Class(arg1,arg2,arg3)';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
    });
