@@ -4,23 +4,11 @@ import * as AstNodes from "./Ast";
 import { splitLocalizationText } from "./i18n";
 import { IParser } from "../expression/Parser";
 
-const EMPTY_STRING = '';
-
 /**
  * Regular expression for finding variables/expression inside of AST
  */
 const VARIABLES_PATTERN = /\{\{ ?([\s\S]*?) ?\}\}/g;
 const LOCALIZATION_PATTERN = /\{\[ ?([\s\S]*?) ?\]\}/g;
-
-/**
- * Safe replacing
- */
-const SAFE_REPLACE_CASE_PATTERN = /\r|\n|\t|\/\*[\s\S]*?\*\//g;
-
-/**
- * Safe whitespaces replacing
- */
-const SAFE_WHITESPACE_REMOVE_PATTERN = / +(?= )/g;
 
 /**
  *
@@ -88,14 +76,9 @@ function markDataByRegex(
  * @param expressionParser
  */
 export function processTextData(text: string, expressionParser: IParser): AstNodes.TText[] {
-   SAFE_REPLACE_CASE_PATTERN.lastIndex = 0;
-   SAFE_WHITESPACE_REMOVE_PATTERN.lastIndex = 0;
-
-   const originText = text
-      .replace(SAFE_REPLACE_CASE_PATTERN, ' ')
-      .replace(SAFE_WHITESPACE_REMOVE_PATTERN, EMPTY_STRING);
-
-   const processedText = [new AstNodes.TextNode(originText)];
+   const processedText = [
+      new AstNodes.TextNode(text)
+   ];
 
    const processedExpressions = markDataByRegex(
       processedText,

@@ -32,9 +32,9 @@ describe('engine/core/Transform', () => {
          assert.strictEqual(actual, html);
       });
       it('Text 2', () => {
-         const html = '\n\r\n\r\n\r\r\r\n\n\n\r\n\r';
+         const html = '\n\r\n\n\r\n\n\r\n\n\r\n\r\n\n\r\n\r\n\r\n\n\r';
          const actual = traverseAndStringify(html);
-         assert.strictEqual(actual, '');
+         assert.strictEqual(actual, '\n\n\n\n\n\n\n\n\n\n\n\n\n\n');
       });
       it('Comment', () => {
          const html = '<!--data-->';
