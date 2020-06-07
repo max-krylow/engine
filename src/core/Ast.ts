@@ -2,7 +2,7 @@
 
 import { ProgramNode } from '../expression/Parser';
 import { IExpressionVisitor } from "../expression/Parser";
-import {Scope} from "./Scope";
+import { Scope } from "./Scope";
 
 /**
  * @file src/core/Ast.ts

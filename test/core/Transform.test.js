@@ -210,5 +210,13 @@ describe('engine/core/Transform', () => {
             assert.strictEqual(error.message, 'Template with name "tmpl" has not been declared in this scope');
          }
       });
+      it('ws:template invalid name', () => {
+         try {
+            const html = '<ws:template name="?-!"><div>Content</div></ws:template>';
+            traverseAndStringify(html);
+         } catch (error) {
+            assert.strictEqual(error.message, 'Invalid template name "?-!"');
+         }
+      });
    });
 });
