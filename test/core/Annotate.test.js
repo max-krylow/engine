@@ -83,10 +83,10 @@ describe('engine/core/Annotate', () => {
          const annotatedAst = traverseAndAnnotate(html);
          debugger;
       });
-      // it('Directive ws:partial', () => {
-      //    const html = '<ws:partial template="tmpl" attr:class="className" on:click="handler(arg);" text="string" bind:value="_value;"><div>Hello</div></ws:partial>';
-      //    const annotatedAst = traverseAndAnnotate(html);
-      //    debugger;
-      // });
+      it('Directive ws:partial', () => {
+         const html = '<ws:partial template="tmpl" attr:class="className" on:click="handler(arg);" text="string" bind:value="_value;"><div>Hello</div></ws:partial>';
+         const annotatedAst = traverseAndAnnotate(html);
+         debugger;
+      });
    });
 });
