@@ -227,6 +227,7 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotationContext,
     * @param context
     */
    visitPartial(node: AstNodes.PartialNode, context: IAnnotationContext): void {
+      context.scope.registerTemplateUsage(node.name);
       this.visitNodeData(node.attributes, context);
       this.visitNodeData(node.options, context);
       this.visitNodeData(node.events, context);
@@ -238,6 +239,7 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotationContext,
     * @param context
     */
    visitTemplate(node: AstNodes.TemplateNode, context: IAnnotationContext): void {
+      context.scope.registerTemplate(node);
       node.content.map((node) => node.accept(this, context));
    }
 

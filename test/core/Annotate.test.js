@@ -54,27 +54,27 @@ describe('engine/core/Annotate', () => {
          debugger;
       });
       it('Directive ws:for', () => {
-         const html = '<ws:for data="i = 0;i < 10;i++;">{{2 * i + 1;}}</ws:for>';
+         const html = '<ws:for data="i = 0;i < 10;i++">{{2 * i + 1}}</ws:for>';
          const annotatedAst = traverseAndAnnotate(html);
          debugger;
       });
       it('Directive ws:foreach', () => {
-         const html = '<ws:foreach data="item in collection;">{{item.get("data");}}</ws:foreach>';
+         const html = '<ws:foreach data="item in collection">{{item.get("data")}}</ws:foreach>';
          const annotatedAst = traverseAndAnnotate(html);
          debugger;
       });
       it('Directive ws:if', () => {
-         const html = '<ws:if data="condition;">First</ws:if>';
+         const html = '<ws:if data="condition">First</ws:if>';
          const annotatedAst = traverseAndAnnotate(html);
          debugger;
       });
       it('Directive ws:else', () => {
-         const html = '<ws:if data="condition;">First</ws:if><ws:else>Second</ws:else>';
+         const html = '<ws:if data="condition">First</ws:if><ws:else>Second</ws:else>';
          const annotatedAst = traverseAndAnnotate(html);
          debugger;
       });
       it('Directive ws:else 2', () => {
-         const html = '<ws:if data="condition;">First</ws:if><ws:else data="other;">Second</ws:else><ws:else>Third</ws:else>';
+         const html = '<ws:if data="condition">First</ws:if><ws:else data="other">Second</ws:else><ws:else>Third</ws:else>';
          const annotatedAst = traverseAndAnnotate(html);
          debugger;
       });
@@ -84,7 +84,7 @@ describe('engine/core/Annotate', () => {
          debugger;
       });
       it('Directive ws:partial', () => {
-         const html = '<ws:partial template="tmpl" attr:class="className" on:click="handler(arg);" text="string" bind:value="_value;"><div>Hello</div></ws:partial>';
+         const html = '<ws:template name="tmpl"><div>Hello</div></ws:template><ws:partial template="tmpl" attr:class="className" on:click="handler(arg)" text="string" bind:value="_value"><div>Hello</div></ws:partial>';
          const annotatedAst = traverseAndAnnotate(html);
          debugger;
       });
