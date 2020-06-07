@@ -8,6 +8,7 @@ import { IErrorHandler } from '../utils/ErrorHandler';
 import { TransformVisitor } from "./Transform";
 import { Ast } from "./Ast";
 import { isComponentName } from "./Names";
+import { Parser as ExpressionParser } from '../expression/Parser';
 
 export interface IOptions extends IParserOptions {
    filePath: string;
@@ -56,7 +57,7 @@ export function traverse(html: string, options: IOptions, errorHandler: IErrorHa
       nodeDescriptor: getNodeDescription
    };
    const htmlParser = new Parser(config, errorHandler);
-   const transformer = new TransformVisitor();
+   const transformer = new TransformVisitor(new ExpressionParser(), errorHandler);
    const reader = new SourceReader(new SourceFile(html, options.filePath));
    const tree = htmlParser.parse(reader);
    return transformer.transform(tree);

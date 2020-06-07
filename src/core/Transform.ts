@@ -2,35 +2,35 @@
 
 import * as RawNodes from "../html/base/Nodes";
 import * as AstNodes from "./Ast";
-import { IParser, Parser } from '../expression/Parser';
+import { IParser } from '../expression/Parser';
 import { processTextData } from "./TextProcessor";
 import * as Names from './Names';
+import { IErrorHandler } from "../utils/ErrorHandler";
 
 /**
  * @file src/core/Transformer.ts
  */
 
 /**
- *
+ * Collection of sorted attributes.
  */
 interface IAttributesCollection {
    /**
-    *
+    * Set of attributes and binds for elements.
     */
    attributes: AstNodes.IAttributes;
    /**
-    *
+    * Set of options and binds for component.
     */
    options: AstNodes.IOptions;
    /**
-    *
+    * Set of events for element and component.
     */
    events: AstNodes.IEvents;
 }
 
-
 /**
- *
+ * Collection of filtered attributes.
  */
 interface IFilteredAttributes {
    [name: string]: RawNodes.Attribute;
@@ -85,7 +85,14 @@ function validateElseNode(node: RawNodes.Tag) {
    }
 }
 
+/**
+ * Transformer interface.
+ */
 export interface ITransformer {
+   /**
+    * Transform raw nodes into Wasaby nodes.
+    * @param nodes {IVisitable[]} Collection of raw nodes.
+    */
    transform(nodes: RawNodes.IVisitable[]): AstNodes.Ast[];
 }
 
@@ -94,12 +101,16 @@ export interface ITransformer {
  */
 export class TransformVisitor implements RawNodes.IVisitor<void, AstNodes.Ast[]>, ITransformer {
    expressionParser: IParser;
+   errorHandler: IErrorHandler;
 
    /**
     * Initialize new instance of transform visitor.
+    * @param expressionParser
+    * @param errorHandler
     */
-   constructor() {
-      this.expressionParser = new Parser();
+   constructor(expressionParser: IParser, errorHandler: IErrorHandler) {
+      this.expressionParser = expressionParser;
+      this.errorHandler = errorHandler;
    }
 
    /**
@@ -118,7 +129,8 @@ export class TransformVisitor implements RawNodes.IVisitor<void, AstNodes.Ast[]>
     * @param node {CData} CDATA section node.
     */
    visitCData(node: RawNodes.CData): AstNodes.Ast[] {
-      return [new AstNodes.CDataNode(node.value)];
+      const ast = new AstNodes.CDataNode(node.value);
+      return [ast];
    }
 
    /**
@@ -126,7 +138,8 @@ export class TransformVisitor implements RawNodes.IVisitor<void, AstNodes.Ast[]>
     * @param node {Comment} Comment node.
     */
    visitComment(node: RawNodes.Comment): AstNodes.Ast[] {
-      return [new AstNodes.CommentNode(node.value)];
+      const ast = new AstNodes.CommentNode(node.value);
+      return [ast];
    }
 
    /**
@@ -134,7 +147,8 @@ export class TransformVisitor implements RawNodes.IVisitor<void, AstNodes.Ast[]>
     * @param node {Doctype} Doctype node.
     */
    visitDoctype(node: RawNodes.Doctype): AstNodes.Ast[] {
-      return [new AstNodes.DoctypeNode(node.value)];
+      const ast = new AstNodes.DoctypeNode(node.value);
+      return [ast];
    }
 
    /**
@@ -168,6 +182,7 @@ export class TransformVisitor implements RawNodes.IVisitor<void, AstNodes.Ast[]>
     * @param node {Tag} Raw representation of Text nodes.
     */
    visitText(node: RawNodes.Text): AstNodes.Ast[] {
+      // TODO: Release whitespace visitor
       const value = node.value
          .replace(/(\r|\r\n|\n|\n\r)/gi, '')
          .trim();
@@ -185,7 +200,8 @@ export class TransformVisitor implements RawNodes.IVisitor<void, AstNodes.Ast[]>
       const dataNode = getDataNode(node, 'data');
       const test = this.expressionParser.parse(dataNode);
       const consequent = this.visitAll(node.children);
-      return [new AstNodes.IfNode(test, AstNodes.validateContent(consequent))];
+      const ast = new AstNodes.IfNode(test, AstNodes.validateContent(consequent));
+      return [ast];
    }
 
    /**
@@ -204,7 +220,8 @@ export class TransformVisitor implements RawNodes.IVisitor<void, AstNodes.Ast[]>
          }
       }
       const consequent = this.visitAll(node.children);
-      return [new AstNodes.ElseNode(AstNodes.validateContent(consequent), test)];
+      const ast = new AstNodes.ElseNode(AstNodes.validateContent(consequent), test);
+      return [ast];
    }
 
    /**

@@ -8,10 +8,10 @@ const { Parser } = require("engine/html/Parser");
 const { getTagNodeDescription } = require('engine/html/NodeDescription');
 const { ERROR_HANDLER } = require('../ErrorHandler');
 const { MarkupVisitor } = require('engine/core/Ast');
-const { StringVisitor } = require("engine/expression/Parser");
+const { StringVisitor, Parser: ExpressionParser } = require("engine/expression/Parser");
 
 function traverseAndStringify(html) {
-   const transformer = new TransformVisitor();
+   const transformer = new TransformVisitor(new ExpressionParser());
    const parser = new Parser({
       nodeDescriptor: getTagNodeDescription,
       allowComments: true,
