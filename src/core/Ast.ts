@@ -2,7 +2,6 @@
 
 import { ProgramNode } from '../expression/Parser';
 import { IExpressionVisitor } from "../expression/Parser";
-import { Scope } from "./Scope";
 
 /**
  * @file src/core/Ast.ts
@@ -489,14 +488,6 @@ export class TemplateNode extends Ast {
    accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitTemplate(this, context);
    }
-
-   /**
-    * Create scope object.
-    * @param currentScope {Scope} Current scope.
-    */
-   static createScope(currentScope: Scope): Scope {
-      return new Scope(currentScope);
-   }
 }
 
 /**
@@ -560,14 +551,6 @@ export class PartialNode extends BaseHtmlElement {
    accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitPartial(this, context);
    }
-
-   /**
-    * Create scope object.
-    * @param currentScope {Scope} Current scope.
-    */
-   static createScope(currentScope: Scope): Scope {
-      return currentScope;
-   }
 }
 
 /**
@@ -604,14 +587,6 @@ export class ComponentNode extends BaseHtmlElement {
 
    accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitComponent(this, context);
-   }
-
-   /**
-    * Create scope object.
-    * @param currentScope {Scope} Current scope.
-    */
-   static createScope(currentScope: Scope): Scope {
-      return currentScope;
    }
 }
 
@@ -654,14 +629,6 @@ export class IfNode extends Ast {
    accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitIf(this, context);
    }
-
-   /**
-    * Create scope object.
-    * @param currentScope {Scope} Current scope.
-    */
-   static createScope(currentScope: Scope): Scope {
-      return currentScope;
-   }
 }
 
 /**
@@ -703,14 +670,6 @@ export class ElseNode extends Ast {
    accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitElse(this, context);
    }
-
-   /**
-    * Create scope object.
-    * @param currentScope {Scope} Current scope.
-    */
-   static createScope(currentScope: Scope): Scope {
-      return currentScope;
-   }
 }
 
 /**
@@ -744,14 +703,6 @@ export class ForNode extends Ast {
    accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitFor(this, context);
    }
-
-   /**
-    * Create scope object.
-    * @param currentScope {Scope} Current scope.
-    */
-   static createScope(currentScope: Scope): Scope {
-      return new Scope(currentScope);
-   }
 }
 
 /**
@@ -784,14 +735,6 @@ export class ForeachNode extends Ast {
 
    accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitForeach(this, context);
-   }
-
-   /**
-    * Create scope object.
-    * @param currentScope {Scope} Current scope.
-    */
-   static createScope(currentScope: Scope): Scope {
-      return new Scope(currentScope);
    }
 }
 
@@ -828,14 +771,6 @@ export class ElementNode extends BaseHtmlElement {
    accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitElement(this, context);
    }
-
-   /**
-    * Create scope object.
-    * @param currentScope {Scope} Current scope.
-    */
-   static createScope(currentScope: Scope): Scope {
-      return currentScope;
-   }
 }
 
 /**
@@ -858,14 +793,6 @@ export class TextNode extends Ast {
 
    accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitText(this, context);
-   }
-
-   /**
-    * Create scope object.
-    * @param currentScope {Scope} Current scope.
-    */
-   static createScope(currentScope: Scope): Scope {
-      return currentScope;
    }
 }
 
@@ -895,14 +822,6 @@ export class DoctypeNode extends Ast {
    accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitDoctype(this, context);
    }
-
-   /**
-    * Create scope object.
-    * @param currentScope {Scope} Current scope.
-    */
-   static createScope(currentScope: Scope): Scope {
-      return currentScope;
-   }
 }
 
 /**
@@ -929,14 +848,6 @@ export class CDataNode extends Ast {
 
    accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitCData(this, context);
-   }
-
-   /**
-    * Create scope object.
-    * @param currentScope {Scope} Current scope.
-    */
-   static createScope(currentScope: Scope): Scope {
-      return currentScope;
    }
 }
 
@@ -965,14 +876,6 @@ export class CommentNode extends Ast {
    accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitComment(this, context);
    }
-
-   /**
-    * Create scope object.
-    * @param currentScope {Scope} Current scope.
-    */
-   static createScope(currentScope: Scope): Scope {
-      return currentScope;
-   }
 }
 
 /**
@@ -999,14 +902,6 @@ export class ExpressionNode extends Ast {
 
    accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitExpression(this, context);
-   }
-
-   /**
-    * Create scope object.
-    * @param currentScope {Scope} Current scope.
-    */
-   static createScope(currentScope: Scope): Scope {
-      return currentScope;
    }
 }
 
@@ -1040,14 +935,6 @@ export class LocalizationNode extends Ast {
 
    accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
       return visitor.visitLocalization(this, context);
-   }
-
-   /**
-    * Create scope object.
-    * @param currentScope {Scope} Current scope.
-    */
-   static createScope(currentScope: Scope): Scope {
-      return currentScope;
    }
 }
 

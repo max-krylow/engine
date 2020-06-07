@@ -1,11 +1,12 @@
 /// <amd-module name="engine/core/Scope" />
 
-import * as AstNodes from './Ast';
+import { TemplateNode } from './Ast';
+import { Dictionary, IDictionaryItem } from "./i18n";
 
 /**
  *
  */
-interface ITemplates {
+export interface ITemplates {
    /**
     *
     */
@@ -13,7 +14,7 @@ interface ITemplates {
       /**
        *
        */
-      node: AstNodes.TemplateNode;
+      node: TemplateNode;
       /**
        *
        */
@@ -28,11 +29,19 @@ export class Scope {
    /**
     *
     */
-   parent: Scope | null;
+   protected parent: Scope | null;
    /**
     *
     */
-   templates: ITemplates;
+   private readonly templates: ITemplates;
+   /**
+    *
+    */
+   private readonly translations: Dictionary;
+   /**
+    *
+    */
+   private readonly dependencies: string[];
 
    /**
     *
@@ -41,13 +50,15 @@ export class Scope {
    constructor(parent: Scope | null = null) {
       this.parent = parent;
       this.templates = parent !== null ? parent.templates : { };
+      this.translations = parent !== null ? parent.translations : new Dictionary();
+      this.dependencies = parent !== null ? parent.dependencies : [];
    }
 
    /**
     *
     * @param node
     */
-   registerTemplate(node: AstNodes.TemplateNode): void {
+   registerTemplate(node: TemplateNode): void {
       if (this.templates.hasOwnProperty(node.name)) {
          throw new Error(`Template with name "${node.name}" has already been declared in this scope`);
       }
@@ -72,7 +83,7 @@ export class Scope {
     *
     * @param name
     */
-   getTemplateNode(name: string): AstNodes.TemplateNode {
+   getTemplateNode(name: string): TemplateNode {
       if (!this.templates.hasOwnProperty(name)) {
          throw new Error(`Template with name "${name}" has not been declared in this scope`);
       }
@@ -88,5 +99,37 @@ export class Scope {
          throw new Error(`Template with name "${name}" has not been declared in this scope`);
       }
       return this.templates[name].usages;
+   }
+
+   /**
+    *
+    * @param module
+    * @param text
+    * @param context
+    */
+   registerTranslation(module: string, text: string, context: string = ''): void {
+      this.translations.push(module, text, context);
+   }
+
+   /**
+    *
+    * @param name
+    */
+   registerDependency(name: string): void {
+      this.dependencies.push(name);
+   }
+
+   /**
+    *
+    */
+   getDependencies(): string[] {
+      return this.dependencies;
+   }
+
+   /**
+    *
+    */
+   getTranslations(): IDictionaryItem[] {
+      return this.translations.getItems();
    }
 }

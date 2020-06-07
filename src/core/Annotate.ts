@@ -1,7 +1,31 @@
 /// <amd-module name="engine/core/Annotate" />
 
 import * as AstNodes from "./Ast";
-import { Dictionary } from "./i18n";
+import { Scope } from "./Scope";
+
+/**
+ *
+ */
+export interface IOptions {
+   /**
+    * Module name.
+    */
+   module: string;
+   /**
+    * File name.
+    */
+   fileName: string;
+}
+
+/**
+ *
+ */
+interface IAnnotationContext extends IOptions {
+   /**
+    *
+    */
+   scope: Scope;
+}
 
 /**
  * Interface for result object of annotation.
@@ -12,58 +36,22 @@ interface IAnnotatedData {
     */
    ast: AstNodes.Ast[];
    /**
-    * Translations dictionary.
+    *
     */
-   dictionary: Dictionary;
-}
-
-/**
- * Annotation process context.
- */
-interface IAnnotatorContext {
-   /**
-    * Translations dictionary.
-    */
-   dictionary: Dictionary;
-   /**
-    * Module name.
-    */
-   module: string;
-   /**
-    * File name.
-    */
-   fileName: string;
-   /**
-    * Dependencies collection.
-    */
-   dependencies: string[];
-}
-
-/**
- * Options for annotation process.
- */
-interface IOptions {
-   /**
-    * Module name.
-    */
-   module: string;
-   /**
-    * File name.
-    */
-   fileName: string;
+   scope: Scope;
 }
 
 /**
  * Represents methods for AST nodes annotation.
  */
-export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotatorContext, void> {
+export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotationContext, void> {
 
    /**
     *
     * @param nodes
     * @param context
     */
-   visitAll(nodes: AstNodes.Ast[], context: IAnnotatorContext): void {
+   visitAll(nodes: AstNodes.Ast[], context: IAnnotationContext): void {
       nodes.map((node) => node.accept(this, context));
    }
 
@@ -72,7 +60,7 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotatorContext, 
     * @param node
     * @param context
     */
-   visitAttributeNode(node: AstNodes.AttributeNode, context: IAnnotatorContext): void {
+   visitAttributeNode(node: AstNodes.AttributeNode, context: IAnnotationContext): void {
       node.value.map((node) => node.accept(this, context));
    }
 
@@ -81,7 +69,7 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotatorContext, 
     * @param node
     * @param context
     */
-   visitBindNode(node: AstNodes.BindNode, context: IAnnotatorContext): void {
+   visitBindNode(node: AstNodes.BindNode, context: IAnnotationContext): void {
       return undefined;
    }
 
@@ -90,7 +78,7 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotatorContext, 
     * @param node
     * @param context
     */
-   visitCData(node: AstNodes.CDataNode, context: IAnnotatorContext): void {
+   visitCData(node: AstNodes.CDataNode, context: IAnnotationContext): void {
       return;
    }
 
@@ -99,7 +87,7 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotatorContext, 
     * @param node
     * @param context
     */
-   visitComment(node: AstNodes.CommentNode, context: IAnnotatorContext): void {
+   visitComment(node: AstNodes.CommentNode, context: IAnnotationContext): void {
       return;
    }
 
@@ -108,7 +96,7 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotatorContext, 
     * @param collection
     * @param context
     */
-   visitNodeData(collection: AstNodes.IAttributes | AstNodes.IOptions | AstNodes.IEvents, context: IAnnotatorContext): void {
+   visitNodeData(collection: AstNodes.IAttributes | AstNodes.IOptions | AstNodes.IEvents, context: IAnnotationContext): void {
       for (const name in collection) {
          if (collection.hasOwnProperty(name)) {
             collection[name].accept(this, context);
@@ -121,11 +109,11 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotatorContext, 
     * @param node
     * @param context
     */
-   visitComponent(node: AstNodes.ComponentNode, context: IAnnotatorContext): void {
+   visitComponent(node: AstNodes.ComponentNode, context: IAnnotationContext): void {
       this.visitNodeData(node.attributes, context);
       this.visitNodeData(node.options, context);
       this.visitNodeData(node.events, context);
-      context.dependencies.push(node.name);
+      context.scope.registerDependency(node.name);
    }
 
    /**
@@ -133,7 +121,7 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotatorContext, 
     * @param node
     * @param context
     */
-   visitDoctype(node: AstNodes.DoctypeNode, context: IAnnotatorContext): void {
+   visitDoctype(node: AstNodes.DoctypeNode, context: IAnnotationContext): void {
       return;
    }
 
@@ -142,7 +130,7 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotatorContext, 
     * @param node
     * @param context
     */
-   visitElement(node: AstNodes.ElementNode, context: IAnnotatorContext): void {
+   visitElement(node: AstNodes.ElementNode, context: IAnnotationContext): void {
       this.visitNodeData(node.attributes, context);
       this.visitNodeData(node.events, context);
       node.content.map((node) => node.accept(this, context));
@@ -153,7 +141,7 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotatorContext, 
     * @param node
     * @param context
     */
-   visitElse(node: AstNodes.ElseNode, context: IAnnotatorContext): void {
+   visitElse(node: AstNodes.ElseNode, context: IAnnotationContext): void {
       node.consequent.map((node) => node.accept(this, context));
    }
 
@@ -162,7 +150,7 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotatorContext, 
     * @param node
     * @param context
     */
-   visitEventNode(node: AstNodes.EventNode, context: IAnnotatorContext): void {
+   visitEventNode(node: AstNodes.EventNode, context: IAnnotationContext): void {
       return undefined;
    }
 
@@ -171,7 +159,7 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotatorContext, 
     * @param node
     * @param context
     */
-   visitExpression(node: AstNodes.ExpressionNode, context: IAnnotatorContext): void {
+   visitExpression(node: AstNodes.ExpressionNode, context: IAnnotationContext): void {
       return undefined;
    }
 
@@ -180,8 +168,10 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotatorContext, 
     * @param node
     * @param context
     */
-   visitFor(node: AstNodes.ForNode, context: IAnnotatorContext): void {
-      node.content.map((node) => node.accept(this, context));
+   visitFor(node: AstNodes.ForNode, context: IAnnotationContext): void {
+      const newContext: IAnnotationContext = { ...context };
+      newContext.scope = new Scope(context.scope);
+      node.content.map((node) => node.accept(this, newContext));
    }
 
    /**
@@ -189,8 +179,10 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotatorContext, 
     * @param node
     * @param context
     */
-   visitForeach(node: AstNodes.ForeachNode, context: IAnnotatorContext): void {
-      node.content.map((node) => node.accept(this, context));
+   visitForeach(node: AstNodes.ForeachNode, context: IAnnotationContext): void {
+      const newContext: IAnnotationContext = { ...context };
+      newContext.scope = new Scope(context.scope);
+      node.content.map((node) => node.accept(this, newContext));
    }
 
    /**
@@ -198,7 +190,7 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotatorContext, 
     * @param node
     * @param context
     */
-   visitIf(node: AstNodes.IfNode, context: IAnnotatorContext): void {
+   visitIf(node: AstNodes.IfNode, context: IAnnotationContext): void {
       node.consequent.map((node) => node.accept(this, context));
    }
 
@@ -207,8 +199,8 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotatorContext, 
     * @param node
     * @param context
     */
-   visitLocalization(node: AstNodes.LocalizationNode, context: IAnnotatorContext): void {
-      context.dictionary.push(context.module, node.text, node.context);
+   visitLocalization(node: AstNodes.LocalizationNode, context: IAnnotationContext): void {
+      context.scope.registerTranslation(context.module, node.text, node.context);
    }
 
    /**
@@ -216,7 +208,7 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotatorContext, 
     * @param node
     * @param context
     */
-   visitContentOptionNode(node: AstNodes.ContentOptionNode, context: IAnnotatorContext): void {
+   visitContentOptionNode(node: AstNodes.ContentOptionNode, context: IAnnotationContext): void {
       this.visitAll(node.content, context);
    }
 
@@ -225,7 +217,7 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotatorContext, 
     * @param node
     * @param context
     */
-   visitOptionNode(node: AstNodes.OptionNode, context: IAnnotatorContext): void {
+   visitOptionNode(node: AstNodes.OptionNode, context: IAnnotationContext): void {
       node.value.map((node) => node.accept(this, context));
    }
 
@@ -234,7 +226,7 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotatorContext, 
     * @param node
     * @param context
     */
-   visitPartial(node: AstNodes.PartialNode, context: IAnnotatorContext): void {
+   visitPartial(node: AstNodes.PartialNode, context: IAnnotationContext): void {
       this.visitNodeData(node.attributes, context);
       this.visitNodeData(node.options, context);
       this.visitNodeData(node.events, context);
@@ -245,7 +237,7 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotatorContext, 
     * @param node
     * @param context
     */
-   visitTemplate(node: AstNodes.TemplateNode, context: IAnnotatorContext): void {
+   visitTemplate(node: AstNodes.TemplateNode, context: IAnnotationContext): void {
       node.content.map((node) => node.accept(this, context));
    }
 
@@ -254,8 +246,8 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotatorContext, 
     * @param node
     * @param context
     */
-   visitText(node: AstNodes.TextNode, context: IAnnotatorContext): void {
-      context.dictionary.push(context.module, node.content);
+   visitText(node: AstNodes.TextNode, context: IAnnotationContext): void {
+      context.scope.registerTranslation(context.module, node.content);
    }
 
    /**
@@ -264,16 +256,14 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotatorContext, 
     * @param options
     */
    annotate(ast: AstNodes.Ast[], options: IOptions): IAnnotatedData {
-      const context: IAnnotatorContext = {
-         module: options.module,
-         dictionary: new Dictionary(),
-         dependencies: [],
-         fileName: options.fileName
+      const context: IAnnotationContext = {
+         ...options,
+         scope: new Scope()
       };
       this.visitAll(ast, context);
       return {
          ast,
-         dictionary: context.dictionary
+         scope: context.scope
       }
    }
 }
