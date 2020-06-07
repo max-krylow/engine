@@ -48,10 +48,17 @@ export class Scope {
     * @param parent
     */
    constructor(parent: Scope | null = null) {
-      this.parent = parent;
-      this.templates = parent !== null ? parent.templates : { };
-      this.translations = parent !== null ? parent.translations : new Dictionary();
-      this.dependencies = parent !== null ? parent.dependencies : [];
+      if (parent) {
+         this.parent = parent;
+         this.templates = parent.templates;
+         this.translations = parent.translations;
+         this.dependencies = parent.dependencies;
+         return;
+      }
+      this.parent = null;
+      this.templates = { };
+      this.translations = new Dictionary();
+      this.dependencies = [];
    }
 
    /**

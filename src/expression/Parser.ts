@@ -246,8 +246,8 @@ export class ExpressionStatementNode extends Node {
 
 export class VariableDeclarationNode extends Node {
    public declarations: Node[];
-   public kind: Node;
-   constructor(declarations: Node[], kind: Node, loc: SourceLocation) {
+   public kind: string;
+   constructor(declarations: Node[], kind: string, loc: SourceLocation) {
       super("VariableDeclaration", loc);
       this.declarations = declarations;
       this.kind = kind;
@@ -258,9 +258,9 @@ export class VariableDeclarationNode extends Node {
 }
 
 export class VariableDeclaratorNode extends Node {
-   public id: Node;
+   public id: IdentifierNode;
    public init: Node | null;
-   constructor(id: Node, init: Node | null, loc: SourceLocation) {
+   constructor(id: IdentifierNode, init: Node | null, loc: SourceLocation) {
       super("VariableDeclarator", loc);
       this.id = id;
       this.init = init;
