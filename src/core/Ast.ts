@@ -748,7 +748,7 @@ export class ForNode extends Ast {
             };
          }
       }
-      throw new Error(`Expected expression satisfying schema "[init]; test; [update]"`);
+      throw new Error(`Expected expression satisfying schema "[Expression | Empty]; Expression; [Expression | Empty]"`);
    }
 }
 
