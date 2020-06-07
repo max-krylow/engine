@@ -319,7 +319,7 @@ describe('engine/expression/Parser', () => {
       });
       it('LabeledStatement', (done) => {
          try {
-            parseAndStringify('label: value;');
+            parseAndStringify('label: value');
          } catch (error) {
             done();
             return;
@@ -328,7 +328,7 @@ describe('engine/expression/Parser', () => {
       });
       it('BreakStatement', (done) => {
          try {
-            parseAndStringify('break label;');
+            parseAndStringify('break label');
          } catch (error) {
             done();
             return;
@@ -337,7 +337,7 @@ describe('engine/expression/Parser', () => {
       });
       it('ContinueStatement', (done) => {
          try {
-            parseAndStringify('continue label;');
+            parseAndStringify('continue label');
          } catch (error) {
             done();
             return;
@@ -346,7 +346,7 @@ describe('engine/expression/Parser', () => {
       });
       it('WithStatement', (done) => {
          try {
-            parseAndStringify('with (file) file.send();');
+            parseAndStringify('with (file) file.send()');
          } catch (error) {
             done();
             return;
@@ -364,7 +364,7 @@ describe('engine/expression/Parser', () => {
       });
       it('ReturnStatement', (done) => {
          try {
-            parseAndStringify('return null;');
+            parseAndStringify('return null');
          } catch (error) {
             done();
             return;
@@ -373,7 +373,7 @@ describe('engine/expression/Parser', () => {
       });
       it('ThrowStatement', (done) => {
          try {
-            parseAndStringify('throw new Error("what a terrible failure");');
+            parseAndStringify('throw new Error("what a terrible failure")');
          } catch (error) {
             done();
             return;
@@ -400,7 +400,7 @@ describe('engine/expression/Parser', () => {
       });
       it('DoWhileStatement', (done) => {
          try {
-            parseAndStringify('do { } while (condition);');
+            parseAndStringify('do { } while (condition)');
          } catch (error) {
             done();
             return;
@@ -427,7 +427,7 @@ describe('engine/expression/Parser', () => {
       });
       it('DebuggerStatement', (done) => {
          try {
-            parseAndStringify('debugger;');
+            parseAndStringify('debugger');
          } catch (error) {
             done();
             return;
@@ -445,7 +445,7 @@ describe('engine/expression/Parser', () => {
       });
       it('FunctionExpression', (done) => {
          try {
-            parseAndStringify('var func = function() { };');
+            parseAndStringify('var func = function() { }');
          } catch (error) {
             done();
             return;
@@ -454,7 +454,7 @@ describe('engine/expression/Parser', () => {
       });
       it('SwitchCase', (done) => {
          try {
-            parseAndStringify('case "value": break;');
+            parseAndStringify('case "value": break');
          } catch (error) {
             done();
             return;
@@ -472,7 +472,7 @@ describe('engine/expression/Parser', () => {
       });
       it('ReservedWord', (done) => {
          try {
-            parseAndStringify('class = 5;');
+            parseAndStringify('class = 5');
          } catch (error) {
             done();
             return;
@@ -482,7 +482,7 @@ describe('engine/expression/Parser', () => {
    });
    describe('Node types', () => {
       it('NaN literal', () => {
-         const expression = 'NaN;';
+         const expression = 'NaN';
          const parser = new Parser();
          const actual = parser.parse(expression);
          assert.strictEqual(actual.type, 'Program');
@@ -492,7 +492,7 @@ describe('engine/expression/Parser', () => {
          assert.isNaN(actual.body[0].expression.value);
       });
       it('Null literal', () => {
-         const expression = 'null;';
+         const expression = 'null';
          const parser = new Parser();
          const actual = parser.parse(expression);
          assert.strictEqual(actual.type, 'Program');
