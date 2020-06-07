@@ -392,3 +392,54 @@ export class MarkupVisitor implements IVisitor<void, string> {
       return nodes.map(child => child.accept(this)).join('');
    }
 }
+
+const IGNORE_TAG = [
+   'pre',
+   'template',
+   'textarea',
+   'script',
+   'style'
+];
+
+export class WhitespaceVisitor implements IVisitor<any, any> {
+   visitAll(nodes: Node[]): any {
+      const children = [];
+      for (let i = 0; i < nodes.length; ++i) {
+         const node = nodes[i].accept(this);
+         if (node) {
+            children.push(node);
+         }
+      }
+      return children;
+   }
+
+   visitCData(node: CData, context: any): any {
+      return node;
+   }
+
+   visitComment(node: Comment, context: any): any {
+      return node;
+   }
+
+   visitDoctype(node: Doctype, context: any): any {
+      return node;
+   }
+
+   visitTag(node: Tag, context: any): any {
+      if (IGNORE_TAG.indexOf(node.name) === -1) {
+         node.children = this.visitAll(node.children);
+      }
+      return node;
+   }
+
+   visitText(node: Text, context: any): any {
+      const value = node.value
+         .replace(/(\r|\r\n|\n|\n\r)/gi, '')
+         .replace(/\s{2,}/gi, ' ')
+         .trim();
+      if (value.length === 0) {
+         return undefined;
+      }
+      return new Text(value, node.location);
+   }
+}
