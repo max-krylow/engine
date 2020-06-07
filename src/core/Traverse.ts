@@ -9,6 +9,7 @@ import { TransformVisitor } from "./Transform";
 import { Ast } from "./Ast";
 import { isComponentName } from "./Names";
 import { Parser as ExpressionParser } from '../expression/Parser';
+import { WhitespaceVisitor } from "../html/base/Nodes";
 
 export interface IOptions extends IParserOptions {
    filePath: string;
@@ -60,6 +61,8 @@ export function traverse(html: string, options: IOptions, errorHandler: IErrorHa
    const transformer = new TransformVisitor(new ExpressionParser(), errorHandler);
    const reader = new SourceReader(new SourceFile(html, options.filePath));
    const tree = htmlParser.parse(reader);
-   return transformer.transform(tree);
+   const whitespaceVisitor = new WhitespaceVisitor();
+   const processedTree = whitespaceVisitor.visitAll(tree);
+   return transformer.transform(processedTree);
 }
 

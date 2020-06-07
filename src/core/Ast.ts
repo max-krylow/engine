@@ -47,6 +47,7 @@ export function isTypeofWasaby(value: any): boolean {
       value instanceof PartialNode ||
       value instanceof ComponentNode ||
       value instanceof IfNode ||
+      value instanceof ElseNode ||
       value instanceof ForNode ||
       value instanceof ForeachNode;
 }

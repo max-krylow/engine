@@ -404,10 +404,16 @@ const IGNORE_TAG = [
 export class WhitespaceVisitor implements IVisitor<any, any> {
    visitAll(nodes: Node[]): any {
       const children = [];
+      let prev = null;
       for (let i = 0; i < nodes.length; ++i) {
-         const node = nodes[i].accept(this);
+         const node = nodes[i].accept(this) as Tag;
          if (node) {
+            if (prev) {
+               prev.next = node;
+            }
+            node.prev = prev;
             children.push(node);
+            prev = node;
          }
       }
       return children;
