@@ -182,14 +182,7 @@ export class TransformVisitor implements RawNodes.IVisitor<void, AstNodes.Ast[]>
     * @param node {Tag} Raw representation of Text nodes.
     */
    visitText(node: RawNodes.Text): AstNodes.Ast[] {
-      // TODO: Release whitespace visitor
-      const value = node.value
-         .replace(/(\r|\r\n|\n|\n\r)/gi, '')
-         .trim();
-      if (value.length === 0) {
-         return [];
-      }
-      return processTextData(value, this.expressionParser);
+      return processTextData(node.value, this.expressionParser);
    }
 
    /**
