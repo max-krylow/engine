@@ -11,66 +11,54 @@ import { SourceLocation } from "./SourceReader";
  * @param C Type of context.
  * @param R Type of visit functions return value.
  */
-export interface IVisitor<C, R> {
+export interface INodeVisitor {
    /**
     * Visit comment node.
     * @param node {Comment} Comment node.
     * @param context {*} Context.
     */
-   visitText(node: Text, context?: C): R;
+   visitText(node: Text, context?: any): any;
 
    /**
     *
     * @param node
     * @param context {*} Context.
     */
-   visitComment(node: Comment, context?: C): R;
+   visitComment(node: Comment, context?: any): any;
 
    /**
     * Visit CDATA section node.
     * @param node {CData} CDATA section node.
     * @param context {*} Context.
     */
-   visitCData(node: CData, context?: C): R;
+   visitCData(node: CData, context?: any): any;
 
    /**
     * Visit doctype node.
     * @param node {Doctype} Doctype node.
     * @param context {*} Context.
     */
-   visitDoctype(node: Doctype, context?: C): R;
+   visitDoctype(node: Doctype, context?: any): any;
 
    /**
     * Visit tag node.
     * @param node {Tag} Tag node.
     * @param context {*} Context.
     */
-   visitTag(node: Tag, context?: C): R;
+   visitTag(node: Tag, context?: any): any;
 
    /**
     * Visit all nodes in the given array.
-    * @param nodes {IVisitable[]} Array of nodes.
+    * @param nodes {Node[]} Array of nodes.
     * @param context {*} Context.
     */
-   visitAll(nodes: IVisitable[], context?: C): R;
-}
-
-/**
- * Interface for node that supports visiting.
- */
-export interface IVisitable {
-   /**
-    * Accept visitor.
-    * @param visitor {IVisitor} Concrete visitor.
-    * @param context {*} Context.
-    */
-   accept(visitor: IVisitor<unknown, unknown>, context?: unknown): unknown;
+   visitAll(nodes: Node[], context?: any): any;
 }
 
 /**
  * Abstract class for all nodes.
  */
-export abstract class Node implements IVisitable {
+export abstract class Node {
    /**
     * Attribute location in source.
     */
@@ -98,10 +86,10 @@ export abstract class Node implements IVisitable {
 
    /**
     * Accept visitor.
-    * @param visitor {IVisitor} Concrete visitor.
+    * @param visitor {INodeVisitor} Concrete visitor.
     * @param context {*} Context.
     */
-   abstract accept(visitor: IVisitor<unknown, unknown>, context?: unknown): unknown;
+   abstract accept(visitor: INodeVisitor, context?: any): any;
 }
 
 /**
@@ -167,10 +155,10 @@ export class Text extends Node {
 
    /**
     * Accept visitor.
-    * @param visitor {IVisitor} Concrete visitor.
+    * @param visitor {INodeVisitor} Concrete visitor.
     * @param context {*} Context.
     */
-   accept(visitor: IVisitor<unknown, unknown>, context?: unknown): unknown {
+   accept(visitor: INodeVisitor, context?: any): any {
       return visitor.visitText(this, context);
    }
 }
@@ -197,10 +185,10 @@ export class Comment extends Node {
 
    /**
     * Accept visitor.
-    * @param visitor {IVisitor} Concrete visitor.
+    * @param visitor {INodeVisitor} Concrete visitor.
     * @param context {*} Context.
     */
-   accept(visitor: IVisitor<unknown, unknown>, context?: unknown): unknown {
+   accept(visitor: INodeVisitor, context?: any): any {
       return visitor.visitComment(this, context);
    }
 }
@@ -227,10 +215,10 @@ export class CData extends Node {
 
    /**
     * Accept visitor.
-    * @param visitor {IVisitor} Concrete visitor.
+    * @param visitor {INodeVisitor} Concrete visitor.
     * @param context {*} Context.
     */
-   accept(visitor: IVisitor<unknown, unknown>, context?: unknown): unknown {
+   accept(visitor: INodeVisitor, context?: any): any {
       return visitor.visitCData(this, context);
    }
 }
@@ -257,10 +245,10 @@ export class Doctype extends Node {
 
    /**
     * Accept visitor.
-    * @param visitor {IVisitor} Concrete visitor.
+    * @param visitor {INodeVisitor} Concrete visitor.
     * @param context {*} Context.
     */
-   accept(visitor: IVisitor<unknown, unknown>, context?: unknown): unknown {
+   accept(visitor: INodeVisitor, context?: any): any {
       return visitor.visitDoctype(this, context);
    }
 }
@@ -305,10 +293,10 @@ export class Tag extends Node {
 
    /**
     * Accept visitor.
-    * @param visitor {IVisitor} Concrete visitor.
+    * @param visitor {INodeVisitor} Concrete visitor.
     * @param context {*} Context.
     */
-   accept(visitor: IVisitor<unknown, unknown>, context?: unknown): unknown {
+   accept(visitor: INodeVisitor, context?: any): any {
       return visitor.visitTag(this, context);
    }
 }
@@ -318,7 +306,7 @@ export class Tag extends Node {
  * Recursively visit all nodes in given tree
  * and returns string representation.
  */
-export class MarkupVisitor implements IVisitor<void, string> {
+export class MarkupVisitor implements INodeVisitor {
    /**
     * Visit text node and return its content.
     * @param node {Text} Text node.
@@ -386,9 +374,9 @@ export class MarkupVisitor implements IVisitor<void, string> {
 
    /**
     * Visit all nodes in the given array and generate string representation.
-    * @param nodes {IVisitable[]} Array of nodes.
+    * @param nodes {Node[]} Array of nodes.
     */
-   visitAll(nodes: IVisitable[]): string {
+   visitAll(nodes: Node[]): string {
       return nodes.map(child => child.accept(this)).join('');
    }
 }
@@ -401,7 +389,7 @@ const IGNORE_TAG = [
    'style'
 ];
 
-export class WhitespaceVisitor implements IVisitor<any, any> {
+export class WhitespaceVisitor implements INodeVisitor {
    visitAll(nodes: Node[]): any {
       const children = [];
       let prev = null;

@@ -91,15 +91,15 @@ function validateElseNode(node: RawNodes.Tag) {
 export interface ITransformer {
    /**
     * Transform raw nodes into Wasaby nodes.
-    * @param nodes {IVisitable[]} Collection of raw nodes.
+    * @param nodes {Node[]} Collection of raw nodes.
     */
-   transform(nodes: RawNodes.IVisitable[]): AstNodes.Ast[];
+   transform(nodes: RawNodes.Node[]): AstNodes.Ast[];
 }
 
 /**
  * Releases transformation from parse tree into abstract syntax tree.
  */
-export class TransformVisitor implements RawNodes.IVisitor<void, AstNodes.Ast[]>, ITransformer {
+export class TransformVisitor implements RawNodes.INodeVisitor, ITransformer {
    expressionParser: IParser;
    errorHandler: IErrorHandler;
 
@@ -115,9 +115,9 @@ export class TransformVisitor implements RawNodes.IVisitor<void, AstNodes.Ast[]>
 
    /**
     * Visit all nodes in the given array and generate their ast representation.
-    * @param nodes {IVisitable} Collection of nodes.
+    * @param nodes {Node[]} Collection of nodes.
     */
-   visitAll(nodes: RawNodes.IVisitable[]): AstNodes.Ast[] {
+   visitAll(nodes: RawNodes.Node[]): AstNodes.Ast[] {
       const children = nodes
          .map(node => node.accept(this, context))
          .reduce((acc: any[], cur) => acc.concat(cur), []);
@@ -341,7 +341,7 @@ export class TransformVisitor implements RawNodes.IVisitor<void, AstNodes.Ast[]>
     * Transform raw nodes into wasaby nodes.
     * @param nodes {RawNodes[]} Raw nodes.
     */
-   transform(nodes: RawNodes.IVisitable[]): AstNodes.Ast[] {
+   transform(nodes: RawNodes.Node[]): AstNodes.Ast[] {
       return this.visitAll(nodes);
    }
 }
