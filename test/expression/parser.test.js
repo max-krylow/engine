@@ -58,7 +58,15 @@ describe('engine/expression/Parser', () => {
          const expression = '[1,2,3]';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
-      it('Object literal', () => {
+      it('Object literal 1', () => {
+         const expression = '{}';
+         assert.strictEqual(parseAndStringify(expression), expression);
+      });
+      it('Object literal 2', () => {
+         const expression = '{a:1}';
+         assert.strictEqual(parseAndStringify(expression), expression);
+      });
+      it('Object literal 3', () => {
          const expression = '{a:1,b:true,c:[]}';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
@@ -190,6 +198,10 @@ describe('engine/expression/Parser', () => {
          const expression = 'index,item in collection';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
+      it('BinaryExpression 21', () => {
+         const expression = 'ident instanceof Object';
+         assert.strictEqual(parseAndStringify(expression), expression);
+      });
       it('UnaryExpression 1', () => {
          const expression = '-identifier';
          assert.strictEqual(parseAndStringify(expression), expression);
@@ -226,8 +238,28 @@ describe('engine/expression/Parser', () => {
          const expression = 'var object = {property:value}';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
-      it('ArrayExpression', () => {
+      it('ArrayExpression 1', () => {
          const expression = 'var array = [1,true,{},[1]]';
+         assert.strictEqual(parseAndStringify(expression), expression);
+      });
+      it('ArrayExpression 2', () => {
+         const expression = '[]';
+         assert.strictEqual(parseAndStringify(expression), expression);
+      });
+      it('ArrayExpression 2', () => {
+         const expression = '[,]';
+         assert.strictEqual(parseAndStringify(expression), expression);
+      });
+      it('ArrayExpression 3', () => {
+         const expression = '[1,true,{},[1]]';
+         assert.strictEqual(parseAndStringify(expression), expression);
+      });
+      it('ArrayExpression 4', () => {
+         const expression = '[1,true,{},[1],]';
+         assert.strictEqual(parseAndStringify(expression), expression);
+      });
+      it('ArrayExpression 5', () => {
+         const expression = '[1,true,{},[1],,,]';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('ThisExpression', () => {
@@ -294,12 +326,24 @@ describe('engine/expression/Parser', () => {
          const expression = 'var a,b,c';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
-      it('NewExpression', () => {
+      it('NewExpression 1', () => {
          const expression = 'item = new Class()';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('NewExpression 2', () => {
          const expression = 'new Class()';
+         assert.strictEqual(parseAndStringify(expression), expression);
+      });
+      it('NewExpression 3', () => {
+         const expression = 'new Class(true)';
+         assert.strictEqual(parseAndStringify(expression), expression);
+      });
+      it('NewExpression 4', () => {
+         const expression = 'new Library.Class()';
+         assert.strictEqual(parseAndStringify(expression), expression);
+      });
+      it('NewExpression 5', () => {
+         const expression = 'new Library.Class(config)';
          assert.strictEqual(parseAndStringify(expression), expression);
       });
       it('NewExpression with arguments', () => {
@@ -470,9 +514,63 @@ describe('engine/expression/Parser', () => {
          }
          done(new Error('This test must be failed with parse error'));
       });
-      it('ReservedWord', (done) => {
+      it('ReservedWord 1', (done) => {
          try {
             parseAndStringify('class = 5');
+         } catch (error) {
+            done();
+            return;
+         }
+         done(new Error('This test must be failed with parse error'));
+      });
+      it('ReservedWord 2', (done) => {
+         try {
+            parseAndStringify('const');
+         } catch (error) {
+            done();
+            return;
+         }
+         done(new Error('This test must be failed with parse error'));
+      });
+      it('ReservedWord 3', (done) => {
+         try {
+            parseAndStringify('enum');
+         } catch (error) {
+            done();
+            return;
+         }
+         done(new Error('This test must be failed with parse error'));
+      });
+      it('ReservedWord 4', (done) => {
+         try {
+            parseAndStringify('export');
+         } catch (error) {
+            done();
+            return;
+         }
+         done(new Error('This test must be failed with parse error'));
+      });
+      it('ReservedWord 5', (done) => {
+         try {
+            parseAndStringify('extends');
+         } catch (error) {
+            done();
+            return;
+         }
+         done(new Error('This test must be failed with parse error'));
+      });
+      it('ReservedWord 6', (done) => {
+         try {
+            parseAndStringify('import');
+         } catch (error) {
+            done();
+            return;
+         }
+         done(new Error('This test must be failed with parse error'));
+      });
+      it('ReservedWord 7', (done) => {
+         try {
+            parseAndStringify('super');
          } catch (error) {
             done();
             return;

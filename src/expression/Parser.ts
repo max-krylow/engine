@@ -88,10 +88,13 @@ export class StringVisitor implements IExpressionVisitor<void, string> {
       let str = "[";
       let elements = node.elements;
       for (let i = 0, len = elements.length; i < len; i++) {
+         const element = elements[i];
          if (i !== 0) {
             str += ",";
          }
-         str += elements[i].accept(this, context);
+         if (element !== null) {
+            str += element.accept(this, context);
+         }
       }
       return str + "]";
    }
@@ -279,8 +282,10 @@ export class ThisExpressionNode extends Node {
    }
 }
 
+declare type TArrayElement = Node | null;
+
 export class ArrayExpressionNode extends Node {
-   public elements: Node[];
+   public elements: TArrayElement[];
    constructor(elements: Node[], loc: SourceLocation) {
       super("ArrayExpression", loc);
       this.elements = elements;
