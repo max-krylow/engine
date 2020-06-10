@@ -341,32 +341,6 @@ ExpressionStatement
         }
     ;
 
-StatementList
-    : StatementList Statement
-        {
-            $$ = $1.concat($2);
-        }
-    |
-        {
-            $$ = [];
-        }
-    ;
-
-FormalParameterList
-    : "IDENTIFIER"
-        {
-            $$ = [new parser.nodes.IdentifierNode($1, createSourceLocation(null, @1, @1))];
-        }
-    | FormalParameterList "," "IDENTIFIER"
-        {
-            $$ = $1.concat(new parser.nodes.IdentifierNode($3, createSourceLocation(null, @3, @3)));
-        }
-    ;
-
-FunctionBody
-    : SourceElements
-    ;
-
 Expression
     : AssignmentExpression
     | Expression "," AssignmentExpression
@@ -1027,57 +1001,6 @@ UnaryExpr
     | "!" UnaryExpression
         {
             $$ = new parser.nodes.UnaryExpressionNode("!", true, $2, createSourceLocation(null, @1, @2));
-        }
-    ;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-VariableDeclarationListNoIn
-    : VariableDeclarationNoIn
-        {
-            $$ = [$1];
-        }
-    | VariableDeclarationListNoIn "," VariableDeclarationNoIn
-        {
-            $$ = $1.concat($3);
-        }
-    ;
-
-VariableDeclarationNoIn
-    : "IDENTIFIER"
-        {
-            $$ = new parser.nodes.VariableDeclaratorNode(new parser.nodes.IdentifierNode($1, createSourceLocation(null, @1, @1)), null, createSourceLocation(null, @1, @1));
-        }
-    | "IDENTIFIER" InitializerNoIn
-        {
-            $$ = new parser.nodes.VariableDeclaratorNode(new parser.nodes.IdentifierNode($1, createSourceLocation(null, @1, @1)), $2, createSourceLocation(null, @1, @2));
-        }
-    ;
-
-InitializerNoIn
-    : "=" AssignmentExpressionNoIn
-        {
-            $$ = $2;
         }
     ;
 
