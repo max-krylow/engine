@@ -36,6 +36,8 @@ interface IFilteredAttributes {
    [name: string]: RawNodes.Attribute;
 }
 
+const KEY_SEPARATOR = '_';
+
 /**
  *
  * @param node
@@ -102,6 +104,7 @@ export interface ITransformer {
 export class TransformVisitor implements RawNodes.INodeVisitor, ITransformer {
    expressionParser: IParser;
    errorHandler: IErrorHandler;
+   keys: number[];
 
    /**
     * Initialize new instance of transform visitor.
@@ -111,6 +114,7 @@ export class TransformVisitor implements RawNodes.INodeVisitor, ITransformer {
    constructor(expressionParser: IParser, errorHandler: IErrorHandler) {
       this.expressionParser = expressionParser;
       this.errorHandler = errorHandler;
+      this.keys = [];
    }
 
    /**
@@ -118,10 +122,29 @@ export class TransformVisitor implements RawNodes.INodeVisitor, ITransformer {
     * @param nodes {Node[]} Collection of nodes.
     */
    visitAll(nodes: RawNodes.Node[]): AstNodes.Ast[] {
-      const children = nodes
-         .map(node => node.accept(this, context))
-         .reduce((acc: any[], cur) => acc.concat(cur), []);
-      return children.filter((node: AstNodes.Ast) => node !== undefined);
+      const children: AstNodes.Ast[] = [];
+      let key = 0;
+      for (let i = 0; i < nodes.length; ++i) {
+         this.keys.push(key);
+         const child = nodes[i].accept(this);
+         if (Array.isArray(child)) {
+            this.keys.pop();
+            for (let j = 0; j < child.length; ++j) {
+               this.keys.push(key);
+               child[j].key = this.keys.join(KEY_SEPARATOR) + KEY_SEPARATOR;
+               children.push(child[j]);
+               ++key;
+               this.keys.pop();
+            }
+            this.keys.push(key);
+         } else if (child) {
+            child.key = this.keys.join(KEY_SEPARATOR) + KEY_SEPARATOR;
+            children.push(child);
+            ++key;
+         }
+         this.keys.pop();
+      }
+      return children;
    }
 
    /**

@@ -248,12 +248,15 @@ export abstract class Ast {
     */
    flags: Flags;
 
+   key: string;
+
    /**
     * Initialize new instance of abstract syntax node.
     * @param flags Initialize flags.
     */
    protected constructor(flags: Flags = 0) {
       this.flags = flags;
+      this.key = '';
    }
 
    /**
