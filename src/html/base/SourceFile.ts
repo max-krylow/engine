@@ -33,6 +33,12 @@ export interface ISource {
     * @returns {number} Total characters count in source content.
     */
    getSize(): number;
+
+   /**
+    * Get source file path.
+    * @returns {string} Source file path.
+    */
+   getPath(): string;
 }
 
 /**

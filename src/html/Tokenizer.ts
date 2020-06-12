@@ -1594,7 +1594,12 @@ export class Tokenizer implements ITokenizer {
    }
 
    private getCurrentLocation(): SourceLocation {
-      return new SourceLocation(this.startPosition as SourcePosition, this.currentPosition as SourcePosition);
+      const filePath = this.source ? this.source.getPath() : 'Unknown file';
+      return new SourceLocation(
+         this.startPosition as SourcePosition,
+         this.currentPosition as SourcePosition,
+         filePath
+      );
    }
 
    private resetPosition(): void {

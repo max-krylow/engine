@@ -113,7 +113,11 @@ export default class TreeBuilder implements ITokenHandler {
    public onText(data: string, location: SourceLocation): void {
       if (this.dataNode instanceof Nodes.Text) {
          this.dataNode.value += data;
-         this.dataNode.location = new SourceLocation(this.dataNode.location.start, location.end);
+         this.dataNode.location = new SourceLocation(
+            this.dataNode.location.start,
+            location.end,
+            this.dataNode.location.fileName
+         );
          return;
       }
       let node = new Nodes.Text(data, location);
@@ -129,7 +133,11 @@ export default class TreeBuilder implements ITokenHandler {
    public onComment(data: string, location: SourceLocation): void {
       if (this.dataNode instanceof Nodes.Comment) {
          this.dataNode.value += data;
-         this.dataNode.location = new SourceLocation(this.dataNode.location.start, location.end);
+         this.dataNode.location = new SourceLocation(
+            this.dataNode.location.start,
+            location.end,
+            this.dataNode.location.fileName
+         );
          return;
       }
       let node = new Nodes.Comment(data, location);

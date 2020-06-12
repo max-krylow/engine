@@ -44,15 +44,21 @@ export class SourceLocation {
     * Zero-based end position of the span in source.
     */
    readonly end: SourcePosition;
+   /**
+    * Input file name.
+    */
+   readonly fileName: string;
 
    /**
     * Initialize new instance of location.
     * @param start {SourcePosition} Start position of the span in source.
     * @param end {SourcePosition} End position of the span in source.
+    * @param fileName Input file name.
     */
-   constructor(start: SourcePosition, end: SourcePosition) {
+   constructor(start: SourcePosition, end: SourcePosition, fileName: string) {
       this.start = start;
       this.end = end;
+      this.fileName = fileName;
    }
 }
 
@@ -87,6 +93,12 @@ export interface ISourceReader {
     * @returns {SourcePosition} Zero-based current position in the source.
     */
    getPosition(): SourcePosition;
+
+   /**
+    * Get source file path.
+    * @returns {string} Source file path.
+    */
+   getPath(): string;
 }
 
 /**
@@ -213,5 +225,13 @@ export class SourceReader implements ISourceReader {
          return this.source.getChar(this.index);
       }
       return EOF;
+   }
+
+   /**
+    * Get source file path.
+    * @returns {string} Source file path.
+    */
+   getPath(): string {
+      return this.source.getPath();
    }
 }
