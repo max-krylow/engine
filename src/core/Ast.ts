@@ -1192,20 +1192,8 @@ export class MarkupVisitor implements IAstVisitor<IAstVisitorContext, string> {
     * @param context {IAstVisitorContext} Current visiting context.
     */
    visitComponent(node: ComponentNode, context: IAstVisitorContext): string {
-      let attributes = '';
+      let attributes = this.processAttributes(node);
       let content = '';
-      for (const name in node.attributes) {
-         if (node.attributes.hasOwnProperty(name)) {
-            const value = node.attributes[name].accept(this, { ...context, hasAttributesOnly: false });
-            attributes += ` ${value}`;
-         }
-      }
-      for (const name in node.events) {
-         if (node.events.hasOwnProperty(name)) {
-            const value = node.events[name].accept(this, context);
-            attributes += ` ${value}`;
-         }
-      }
       for (const name in node.options) {
          if (node.options.hasOwnProperty(name)) {
             if (node.options[name] instanceof ContentOptionNode) {
@@ -1234,19 +1222,7 @@ export class MarkupVisitor implements IAstVisitor<IAstVisitorContext, string> {
     * @param context {IAstVisitorContext} Current visiting context.
     */
    visitElement(node: ElementNode, context: IAstVisitorContext): string {
-      let attributes = '';
-      for (const name in node.attributes) {
-         if (node.attributes.hasOwnProperty(name)) {
-            const value = node.attributes[name].accept(this, { ...context, hasAttributesOnly: true });
-            attributes += ` ${value}`;
-         }
-      }
-      for (const name in node.events) {
-         if (node.events.hasOwnProperty(name)) {
-            const value = node.events[name].accept(this, context);
-            attributes += ` ${value}`;
-         }
-      }
+      let attributes = this.processAttributes(node);
       const content = this.visitAll(node.content, context);
       return `<${node.name}${attributes}>${content}</${node.name}>`;
    }
@@ -1357,13 +1333,11 @@ export class MarkupVisitor implements IAstVisitor<IAstVisitorContext, string> {
    }
 
    /**
-    * Generate text representation of node.
-    * @param node {PartialNode} Partial node.
-    * @param context {IAstVisitorContext} Current visiting context.
+    *
+    * @param node
     */
-   visitPartial(node: PartialNode, context: IAstVisitorContext): string {
+   processAttributes(node: BaseHtmlElement): string {
       let attributes = '';
-      let content = '';
       for (const name in node.attributes) {
          if (node.attributes.hasOwnProperty(name)) {
             const value = node.attributes[name].accept(this, { ...context, hasAttributesOnly: false });
@@ -1376,6 +1350,17 @@ export class MarkupVisitor implements IAstVisitor<IAstVisitorContext, string> {
             attributes += ` ${value}`;
          }
       }
+      return attributes;
+   }
+
+   /**
+    * Generate text representation of node.
+    * @param node {PartialNode} Partial node.
+    * @param context {IAstVisitorContext} Current visiting context.
+    */
+   visitPartial(node: PartialNode, context: IAstVisitorContext): string {
+      let attributes = this.processAttributes(node);
+      let content = '';
       for (const name in node.options) {
          if (node.options.hasOwnProperty(name)) {
             if (node.options[name] instanceof ContentOptionNode) {
