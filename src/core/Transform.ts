@@ -127,17 +127,7 @@ export class TransformVisitor implements RawNodes.INodeVisitor, ITransformer {
       for (let i = 0; i < nodes.length; ++i) {
          this.keys.push(key);
          const child = nodes[i].accept(this);
-         if (Array.isArray(child)) {
-            this.keys.pop();
-            for (let j = 0; j < child.length; ++j) {
-               this.keys.push(key);
-               child[j].key = this.keys.join(KEY_SEPARATOR) + KEY_SEPARATOR;
-               children.push(child[j]);
-               ++key;
-               this.keys.pop();
-            }
-            this.keys.push(key);
-         } else if (child) {
+         if (child) {
             child.key = this.keys.join(KEY_SEPARATOR) + KEY_SEPARATOR;
             children.push(child);
             ++key;
@@ -151,34 +141,31 @@ export class TransformVisitor implements RawNodes.INodeVisitor, ITransformer {
     * Visit cdata node and generate its ast representation.
     * @param node {CData} CDATA section node.
     */
-   visitCData(node: RawNodes.CData): AstNodes.Ast[] {
-      const ast = new AstNodes.CDataNode(node.value);
-      return [ast];
+   visitCData(node: RawNodes.CData): AstNodes.Ast {
+      return new AstNodes.CDataNode(node.value);
    }
 
    /**
     * Visit comment node and generate its ast representation.
     * @param node {Comment} Comment node.
     */
-   visitComment(node: RawNodes.Comment): AstNodes.Ast[] {
-      const ast = new AstNodes.CommentNode(node.value);
-      return [ast];
+   visitComment(node: RawNodes.Comment): AstNodes.Ast {
+      return new AstNodes.CommentNode(node.value);
    }
 
    /**
     * Visit doctype node and generate its ast representation.
     * @param node {Doctype} Doctype node.
     */
-   visitDoctype(node: RawNodes.Doctype): AstNodes.Ast[] {
-      const ast = new AstNodes.DoctypeNode(node.value);
-      return [ast];
+   visitDoctype(node: RawNodes.Doctype): AstNodes.Ast {
+      return new AstNodes.DoctypeNode(node.value);
    }
 
    /**
     * Visit tag node and generate its ast representation.
     * @param node {Tag} Tag node.
     */
-   visitTag(node: RawNodes.Tag): AstNodes.Ast[] {
+   visitTag(node: RawNodes.Tag): AstNodes.Ast {
       switch (node.name) {
          case 'ws:if':
             return this.createIfNode(node);
@@ -204,27 +191,27 @@ export class TransformVisitor implements RawNodes.INodeVisitor, ITransformer {
     * Process text node and split it into expressions, text and localizations.
     * @param node {Tag} Raw representation of Text nodes.
     */
-   visitText(node: RawNodes.Text): AstNodes.Ast[] {
-      return processTextData(node.value, this.expressionParser);
+   visitText(node: RawNodes.Text): AstNodes.TextNode {
+      const content = processTextData(node.value, this.expressionParser);
+      return new AstNodes.TextNode(content);
    }
 
    /**
     * Create instance of If node by its raw representation.
     * @param node {Tag} Raw representation of If node.
     */
-   createIfNode(node: RawNodes.Tag): AstNodes.IfNode[] {
+   createIfNode(node: RawNodes.Tag): AstNodes.IfNode {
       const dataNode = getDataNode(node, 'data');
       const test = this.expressionParser.parse(dataNode);
       const consequent = this.visitAll(node.children);
-      const ast = new AstNodes.IfNode(test, AstNodes.validateContent(consequent));
-      return [ast];
+      return new AstNodes.IfNode(test, AstNodes.validateContent(consequent));
    }
 
    /**
     * Create instance of Else node by its raw representation.
     * @param node {Tag} Raw representation of Else node.
     */
-   createElseNode(node: RawNodes.Tag): AstNodes.ElseNode[] {
+   createElseNode(node: RawNodes.Tag): AstNodes.ElseNode {
       let test;
       validateElseNode(node);
       const { data: dataNode } = filterAttributes(node, ['data']);
@@ -236,49 +223,48 @@ export class TransformVisitor implements RawNodes.INodeVisitor, ITransformer {
          }
       }
       const consequent = this.visitAll(node.children);
-      const ast = new AstNodes.ElseNode(AstNodes.validateContent(consequent), test);
-      return [ast];
+      return new AstNodes.ElseNode(AstNodes.validateContent(consequent), test);
    }
 
    /**
     * Create instance of For node by its raw representation.
     * @param node {Tag} Raw representation of For node.
     */
-   createForNode(node: RawNodes.Tag): AstNodes.ForNode[] {
+   createForNode(node: RawNodes.Tag): AstNodes.ForNode {
       const dataNode = getDataNode(node, 'data');
       const expression = this.expressionParser.parse(dataNode);
       const { init, test, update } = AstNodes.ForNode.parseExpression(expression);
       const ast = new AstNodes.ForNode(init, test, update);
       const content = this.visitAll(node.children);
       ast.content = AstNodes.validateContent(content);
-      return [ast];
+      return ast;
    }
 
    /**
     * Create instance of Foreach node by its raw representation.
     * @param node {Tag} Raw representation of Foreach node.
     */
-   createForeachNode(node: RawNodes.Tag): AstNodes.ForeachNode[] {
+   createForeachNode(node: RawNodes.Tag): AstNodes.ForeachNode {
       const dataNode = getDataNode(node, 'data');
       const expression = this.expressionParser.parse(dataNode);
       const { index, iterator, collection } = AstNodes.ForeachNode.parseExpression(expression);
       const ast = new AstNodes.ForeachNode(index, iterator, collection);
       const content = this.visitAll(node.children);
       ast.content = AstNodes.validateContent(content);
-      return [ast];
+      return ast;
    }
 
    /**
     * Create instance of Template node by its raw representation.
     * @param node {Tag} Raw representation of Template node.
     */
-   createTemplateNode(node: RawNodes.Tag): AstNodes.TemplateNode[] {
+   createTemplateNode(node: RawNodes.Tag): AstNodes.TemplateNode {
       const name = getDataNode(node, 'name');
       const templateName = AstNodes.validateTemplateName(name);
       const ast = new AstNodes.TemplateNode(templateName);
       const content = this.visitAll(node.children);
       ast.content = AstNodes.validateContent(content);
-      return [ast];
+      return ast;
    }
 
    /**
@@ -322,7 +308,7 @@ export class TransformVisitor implements RawNodes.INodeVisitor, ITransformer {
     * Create instance of Partial node by its raw representation.
     * @param node {Tag} Raw representation of Partial node.
     */
-   createPartialNode(node: RawNodes.Tag): AstNodes.PartialNode[] {
+   createPartialNode(node: RawNodes.Tag): AstNodes.PartialNode {
       const { attributes, events, options } = this.visitAttributes(node, false);
       const { template } = options;
       delete options['template'];
@@ -333,31 +319,31 @@ export class TransformVisitor implements RawNodes.INodeVisitor, ITransformer {
       const ast = new AstNodes.PartialNode(templateName, attributes, options, events);
       const content = this.visitAll(node.children);
       ast.options['content'] = new AstNodes.ContentOptionNode('content', AstNodes.validateContent(content));
-      return [ast];
+      return ast;
    }
 
    /**
     * Create instance of Component node by its raw representation.
     * @param node {Tag} Raw representation of Component node.
     */
-   createComponentNode(node: RawNodes.Tag): AstNodes.ComponentNode[] {
+   createComponentNode(node: RawNodes.Tag): AstNodes.ComponentNode {
       const { attributes, events, options } = this.visitAttributes(node, false);
       let ast = new AstNodes.ComponentNode(node.name, attributes, options, events);
       const content = this.visitAll(node.children);
       ast.options['content'] = new AstNodes.ContentOptionNode('content', AstNodes.validateContent(content));
-      return [ast];
+      return ast;
    }
 
    /**
     * Create instance of Element node by its raw representation.
     * @param node {Tag} Raw representation of Element node.
     */
-   createElementNode(node: RawNodes.Tag): AstNodes.ElementNode[] {
+   createElementNode(node: RawNodes.Tag): AstNodes.ElementNode {
       const { attributes, events } = this.visitAttributes(node, true);
       let ast = new AstNodes.ElementNode(node.name, attributes, events);
       const content = this.visitAll(node.children);
       ast.content = AstNodes.validateContent(content);
-      return [ast];
+      return ast;
    }
 
    /**

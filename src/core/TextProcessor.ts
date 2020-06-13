@@ -20,8 +20,8 @@ function createLocalizationNode(data: string): AstNodes.LocalizationNode {
    return new AstNodes.LocalizationNode(text, context);
 }
 
-function createTextNode(data: string): AstNodes.TextNode {
-   return new AstNodes.TextNode(data);
+function createTextNode(data: string): AstNodes.TextDataNode {
+   return new AstNodes.TextDataNode(data);
 }
 
 /**
@@ -42,12 +42,12 @@ function markDataByRegex(
    let last;
    const data = [];
    for (let idx = 0; idx < nodes.length; ++idx) {
-      if (!(nodes[idx] instanceof AstNodes.TextNode)) {
+      if (!(nodes[idx] instanceof AstNodes.TextDataNode)) {
          data.push(nodes[idx]);
          continue;
       }
 
-      const stringData = (nodes[idx] as AstNodes.TextNode).content;
+      const stringData = (nodes[idx] as AstNodes.TextDataNode).content;
 
       regex.lastIndex = 0;
       last = 0;
@@ -77,7 +77,7 @@ function markDataByRegex(
  */
 export function processTextData(text: string, expressionParser: IParser): AstNodes.TText[] {
    const processedText = [
-      new AstNodes.TextNode(text)
+      new AstNodes.TextDataNode(text)
    ];
 
    const processedExpressions = markDataByRegex(

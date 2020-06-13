@@ -34,11 +34,11 @@ export enum Flags {
 /**
  * Text representation type.
  */
-export declare type TText = ExpressionNode | TextNode | LocalizationNode;
+export declare type TText = ExpressionNode | TextDataNode | LocalizationNode;
 
 export function isTypeofText(value: any): boolean {
    return value instanceof ExpressionNode ||
-      value instanceof TextNode ||
+      value instanceof TextDataNode ||
       value instanceof LocalizationNode;
 }
 
@@ -60,22 +60,23 @@ export function isTypeofWasaby(value: any): boolean {
 /**
  * Html node type.
  */
-export declare type THtml = ElementNode | DoctypeNode | CDataNode | CommentNode;
+export declare type THtml = ElementNode | DoctypeNode | CDataNode | CommentNode | TextNode;
 
 export function isTypeofHtml(value: any): boolean {
    return value instanceof ElementNode ||
       value instanceof DoctypeNode ||
       value instanceof CDataNode ||
-      value instanceof CommentNode;
+      value instanceof CommentNode ||
+      value instanceof TextNode;
 }
 
 /**
  * Content representation type.
  */
-export declare type TContent = TWasaby | TText | THtml;
+export declare type TContent = TWasaby | THtml;
 
 export function isTypeofContent(value: any): boolean {
-   return isTypeofWasaby(value) || isTypeofText(value) || isTypeofHtml(value);
+   return isTypeofWasaby(value) || isTypeofHtml(value);
 }
 
 export function validateContent(value: Ast[]): TContent[] {
@@ -163,7 +164,14 @@ export interface IAstVisitor<C, R> {
 
    /**
     * Visit AST node.
-    * @param node {TextNode} Text node.
+    * @param node {TextDataNode} Text node.
+    * @param context {C} Current visiting context.
+    */
+   visitTextData(node: TextDataNode, context: C): R;
+
+   /**
+    * Visit AST node.
+    * @param node {TextDataNode} Text node.
     * @param context {C} Current visiting context.
     */
    visitText(node: TextNode, context: C): R;
@@ -620,7 +628,7 @@ export class IfNode extends Ast {
    /**
     * Alternate nodes.
     */
-   alternate: TContent | undefined;
+   alternate: ElseNode | null;
 
    /**
     * Initialize new instance of abstract syntax node.
@@ -628,7 +636,7 @@ export class IfNode extends Ast {
     * @param consequent {TContent} Consequent nodes.
     * @param alternate {TContent} Alternate nodes.
     */
-   constructor(test: ProgramNode, consequent: TContent[], alternate?: TContent) {
+   constructor(test: ProgramNode, consequent: TContent[], alternate: ElseNode | null = null) {
       super();
       this.test = test;
       this.consequent = consequent;
@@ -661,7 +669,7 @@ export class ElseNode extends Ast {
    /**
     * Alternate nodes that is not empty if and only if there is test expression.
     */
-   alternate: TContent | undefined;
+   alternate: ElseNode | null;
 
    /**
     * Initialize new instance of abstract syntax node.
@@ -669,7 +677,7 @@ export class ElseNode extends Ast {
     * @param test {ProgramNode} Test expression.
     * @param alternate {TContent} Alternate nodes.
     */
-   constructor(consequent: TContent[], test?: ProgramNode, alternate?: TContent) {
+   constructor(consequent: TContent[], test?: ProgramNode, alternate: ElseNode | null = null) {
       super();
       this.consequent = consequent;
       this.test = test;
@@ -914,7 +922,7 @@ export class ElementNode extends BaseHtmlElement {
 /**
  * Represents node for text.
  */
-export class TextNode extends Ast {
+export class TextDataNode extends Ast {
    /**
     * Text content.
     */
@@ -925,6 +933,29 @@ export class TextNode extends Ast {
     * @param content {string} Text content.
     */
    constructor(content: string) {
+      super();
+      this.content = content;
+   }
+
+   accept(visitor: IAstVisitor<unknown, unknown>, context: unknown): unknown {
+      return visitor.visitTextData(this, context);
+   }
+}
+
+/**
+ * Represents node for text.
+ */
+export class TextNode extends Ast {
+   /**
+    * Text content.
+    */
+   content: TText[];
+
+   /**
+    * Initialize new instance of abstract syntax node.
+    * @param content {string} Text content.
+    */
+   constructor(content: TText[]) {
       super();
       this.content = content;
    }
@@ -1370,11 +1401,20 @@ export class MarkupVisitor implements IAstVisitor<IAstVisitorContext, string> {
 
    /**
     * Generate text representation of node.
+    * @param node {TextDataNode} Text node.
+    * @param context {IAstVisitorContext} Current visiting context.
+    */
+   visitTextData(node: TextDataNode, context: IAstVisitorContext): string {
+      return node.content;
+   }
+
+   /**
+    * Generate text representation of node.
     * @param node {TextNode} Text node.
     * @param context {IAstVisitorContext} Current visiting context.
     */
    visitText(node: TextNode, context: IAstVisitorContext): string {
-      return node.content;
+      return this.visitAll(node.content, context);
    }
 
    /**

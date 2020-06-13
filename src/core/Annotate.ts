@@ -248,8 +248,17 @@ export class AnnotateVisitor implements AstNodes.IAstVisitor<IAnnotationContext,
     * @param node
     * @param context
     */
-   visitText(node: AstNodes.TextNode, context: IAnnotationContext): void {
+   visitTextData(node: AstNodes.TextDataNode, context: IAnnotationContext): void {
       context.scope.registerTranslation(context.module, node.content);
+   }
+
+   /**
+    *
+    * @param node
+    * @param context
+    */
+   visitText(node: AstNodes.TextNode, context: IAnnotationContext): void {
+      this.visitAll(node.content, context);
    }
 
    /**
